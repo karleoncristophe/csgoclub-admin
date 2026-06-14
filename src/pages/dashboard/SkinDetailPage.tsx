@@ -1,6 +1,10 @@
 import { useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Expand } from 'lucide-react'
+import {
+  formatSkinsPrice,
+  normalizeSkinsCurrency,
+} from '@/constants/skinsCurrency'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
@@ -13,13 +17,6 @@ import {
 } from '@/utils/skinWeaponType'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { SkinDescriptionHtml } from '@/components/skins/SkinDescriptionHtml'
-
-function formatPrice(value: number, currency: string) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: (currency || 'BRL').toUpperCase(),
-  }).format(value)
-}
 
 function DetailRow({ label, value }: { label: string; value?: string | number | null }) {
   if (value == null || value === '') return null
@@ -44,11 +41,12 @@ export default function SkinDetailPage() {
   const [searchParams] = useSearchParams()
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false)
   const skinName = searchParams.get('name')?.trim() ?? ''
+  const currency = normalizeSkinsCurrency(searchParams.get('currency'))
 
   const handleGoBack = () => navigate(-1)
 
   const { data, isLoading, isError, error } = useGetSkinsCatalogItemQuery(
-    { name: skinName, currency: 'BRL' },
+    { name: skinName, currency },
     { skip: !skinName },
   )
 
@@ -145,10 +143,10 @@ export default function SkinDetailPage() {
 
           <div className="mt-4 space-y-1 border-b border-zinc-200 pb-6 dark:border-zinc-800">
             <ThemeText as="p" tone="faint" className="text-sm line-through">
-              {formatPrice(data.price, data.currency)}
+              {formatSkinsPrice(data.price, data.currency)}
             </ThemeText>
             <ThemeText as="p" tone="primary" className="text-2xl font-bold">
-              {formatPrice(data.priceWithTax ?? data.price, data.currency)}
+              {formatSkinsPrice(data.priceWithTax ?? data.price, data.currency)}
             </ThemeText>
             <ThemeText as="p" tone="secondary" className="text-xs">
               Taxa da categoria: {data.taxPercent ?? 0}%
@@ -165,11 +163,11 @@ export default function SkinDetailPage() {
             <DetailRow label="Nome (market hash)" value={data.name} />
             <DetailRow label="Class ID" value={data.classId} />
             <DetailRow label="Moeda" value={data.currency} />
-            <DetailRow label="Preço base" value={formatPrice(data.price, data.currency)} />
+            <DetailRow label="Preço base" value={formatSkinsPrice(data.price, data.currency)} />
             <DetailRow label="Taxa (%)" value={`${data.taxPercent ?? 0}%`} />
             <DetailRow
               label="Preço com taxa"
-              value={formatPrice(data.priceWithTax ?? data.price, data.currency)}
+              value={formatSkinsPrice(data.priceWithTax ?? data.price, data.currency)}
             />
             <DetailRow label="Disponíveis" value={data.availableCount} />
             <DetailRow label="Tipo de arma" value={weaponType} />

@@ -1,4 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react'
+import { SkinsCurrency } from '@/constants/skinsCurrency'
 import { SKINSBACK } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
 
@@ -40,7 +41,7 @@ export type SkinsCatalogItemDetail = SkinsCatalogItem & {
 
 export type GetSkinsCatalogItemParams = {
   name: string
-  currency?: string
+  currency?: SkinsCurrency
 }
 
 export type SkinsCatalogPriceRange = {
@@ -65,7 +66,7 @@ export type SkinsCatalogResponse = {
 }
 
 export type GetSkinsCatalogParams = {
-  currency?: string
+  currency?: SkinsCurrency
   search?: string
   weaponType?: string
   rarity?: string

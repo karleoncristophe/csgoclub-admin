@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  formatSkinsPrice,
+  SKINS_CURRENCY_OPTIONS,
+  SkinsCurrency,
+} from '@/constants/skinsCurrency'
 import { Input } from '@/components/ui/Input'
 import { Pagination } from '@/components/ui/Pagination'
 import { Select } from '@/components/ui/Select'
@@ -22,14 +27,6 @@ import {
 const PAGE_SIZE_OPTIONS = [12, 24, 30, 48, 60] as const
 const DEFAULT_PAGE_SIZE = 24
 
-function formatPrice(value: number | null | undefined, currency: string) {
-  if (value == null || !Number.isFinite(value)) return '—'
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: (currency || 'BRL').toUpperCase(),
-  }).format(value)
-}
-
 export function UserInventoryPanel({ userId }: { userId: string }) {
   const productsAnchorRef = useRef<HTMLDivElement>(null)
   const [searchInput, setSearchInput] = useState('')
@@ -38,6 +35,7 @@ export function UserInventoryPanel({ userId }: { userId: string }) {
   const [tradableFilter, setTradableFilter] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_PAGE_SIZE)
+  const [currency, setCurrency] = useState<SkinsCurrency>(SkinsCurrency.BRL)
 
   const debouncedSearch = useDebounce(searchInput.trim(), 350)
   const safePage = Math.max(page, 1)
@@ -46,7 +44,7 @@ export function UserInventoryPanel({ userId }: { userId: string }) {
 
   const { data, isLoading, isFetching, isError, error } = useGetUserInventoryQuery({
     userId,
-    currency: 'BRL',
+    currency,
     search: debouncedSearch || undefined,
     weaponType: weaponTypeFilter || undefined,
     rarity: rarityFilter || undefined,
@@ -94,6 +92,22 @@ export function UserInventoryPanel({ userId }: { userId: string }) {
       </ThemeText>
 
       <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <Select
+          label="Moeda"
+          name="currency"
+          value={currency}
+          onChange={(e) => {
+            setCurrency(e.target.value as SkinsCurrency)
+            resetPage()
+          }}
+        >
+          {SKINS_CURRENCY_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
+
         <Input
           label="Buscar skin"
           name="searchInventory"
@@ -210,7 +224,7 @@ export function UserInventoryPanel({ userId }: { userId: string }) {
             Faixa de preço
           </ThemeText>
           <ThemeText as="p" tone="primary" className="mt-1 text-sm font-semibold">
-            {formatPrice(priceRange.min, 'BRL')} - {formatPrice(priceRange.max, 'BRL')}
+            {formatSkinsPrice(priceRange.min, currency)} - {formatSkinsPrice(priceRange.max, currency)}
           </ThemeText>
         </Surface>
       </div>
@@ -315,7 +329,7 @@ export function UserInventoryPanel({ userId }: { userId: string }) {
           {items.map((skin) => (
             <Link
               key={skin.assetId}
-              to={`/dashboard/skins/item?name=${encodeURIComponent(skin.name)}`}
+              to={`/dashboard/skins/item?name=${encodeURIComponent(skin.name)}&currency=${currency}`}
               className="group block rounded-xl transition hover:opacity-95"
             >
               <Surface variant="cardInset" className="!p-4">
@@ -349,7 +363,9 @@ export function UserInventoryPanel({ userId }: { userId: string }) {
                 </ThemeText>
                 <div className="mt-3 flex items-end justify-between gap-3">
                   <ThemeText as="p" tone="primary" className="text-base font-semibold">
-                    {formatPrice(skin.priceLocal ?? skin.price, skin.currency)}
+                    {skin.priceLocal != null || skin.price != null
+                      ? formatSkinsPrice(skin.priceLocal ?? skin.price ?? 0, skin.currency)
+                      : '—'}
                   </ThemeText>
                   <ThemeText as="p" tone="faint" className="text-xs">
                     {skin.tradable ? 'Negociável' : 'Bloqueado'}

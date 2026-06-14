@@ -1,4 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react'
+import { SkinsCurrency } from '@/constants/skinsCurrency'
 import { USERS } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
 
@@ -34,7 +35,7 @@ export type UserInventoryItem = {
   price: number | null
   priceLocal: number | null
   multipliedPriceLocal: number | null
-  currency: string
+  currency: SkinsCurrency | string
   classId?: string
   wear?: string
   itemType?: string
@@ -62,7 +63,7 @@ export type UserInventoryResponse = {
 
 export type GetUserInventoryParams = {
   userId: string
-  currency?: string
+  currency?: SkinsCurrency
   search?: string
   weaponType?: string
   rarity?: string

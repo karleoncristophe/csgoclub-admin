@@ -1,9 +1,16 @@
 export type CaseValueMode = 'base' | 'with_tax'
 
+export const DEFAULT_ITEM_PROBABILITY_TOLERANCE = 0.0001
+
+export type CaseEconomyLedger = {
+  totalRevenue: number
+  totalPayout: number
+  totalRealOpens?: number
+}
+
 export type CaseEconomicsConfig = {
   targetMarginPercent: number
   probabilityTargetPercent: number
-  probabilityTolerance: number
   discountPercent: number
 }
 
@@ -12,6 +19,18 @@ export type CaseEconomicsItem = {
   priceWithTax: number
   price: number
   probability: number
+  minMarginPercent?: number
+  enabled?: boolean
+  skinName?: string
+}
+
+export type DropEligibilityResult = {
+  instant: boolean
+  cumulative: boolean
+  eligible: boolean
+  instantMarginPercent: number
+  cumulativeMarginPercent: number
+  requiredMarginPercent: number
 }
 
 export function resolveItemEconomicsValue(
@@ -21,10 +40,15 @@ export function resolveItemEconomicsValue(
   return valueMode === 'base' ? item.basePrice : item.priceWithTax
 }
 
+export function getEnabledDropItems<T extends CaseEconomicsItem>(items: T[]): T[] {
+  return items.filter((item) => item.enabled !== false && item.probability > 0)
+}
+
 export function computeItemExpectedValue(
   item: CaseEconomicsItem,
   valueMode: CaseValueMode,
 ): number {
+  if (item.enabled === false || item.probability <= 0) return 0
   const value = resolveItemEconomicsValue(item, valueMode)
   return value * (item.probability / 100)
 }
@@ -65,8 +89,78 @@ export function computeRealMargin(
   return (finalPrice - totalExpectedValue) / finalPrice
 }
 
-export function computeProbabilitySum(probabilities: number[]): number {
-  return probabilities.reduce((sum, value) => sum + value, 0)
+export function computeInstantMarginPercent(
+  openPrice: number,
+  itemValue: number,
+): number {
+  if (!Number.isFinite(openPrice) || openPrice <= 0) return 0
+  return ((openPrice - itemValue) / openPrice) * 100
+}
+
+export function computeCumulativeMarginPercent(
+  ledger: CaseEconomyLedger,
+  openPrice: number,
+  itemValue: number,
+): number {
+  const revenue = ledger.totalRevenue + openPrice
+  if (revenue <= 0) return 0
+  const payout = ledger.totalPayout + itemValue
+  return ((revenue - payout) / revenue) * 100
+}
+
+export function resolveRequiredItemMarginPercent(
+  item: Pick<CaseEconomicsItem, 'minMarginPercent'>,
+  caseTargetMarginPercent: number,
+): number {
+  if (
+    typeof item.minMarginPercent === 'number' &&
+    Number.isFinite(item.minMarginPercent)
+  ) {
+    return item.minMarginPercent
+  }
+  return caseTargetMarginPercent
+}
+
+export function evaluateDropEligibility(input: {
+  item: CaseEconomicsItem
+  openPrice: number
+  caseTargetMarginPercent: number
+  ledger: CaseEconomyLedger
+  valueMode: CaseValueMode
+}): DropEligibilityResult {
+  const itemValue = resolveItemEconomicsValue(input.item, input.valueMode)
+  const requiredMarginPercent = resolveRequiredItemMarginPercent(
+    input.item,
+    input.caseTargetMarginPercent,
+  )
+  const instantMarginPercent = computeInstantMarginPercent(
+    input.openPrice,
+    itemValue,
+  )
+  const cumulativeMarginPercent = computeCumulativeMarginPercent(
+    input.ledger,
+    input.openPrice,
+    itemValue,
+  )
+  const instant = instantMarginPercent >= requiredMarginPercent
+  const cumulative = cumulativeMarginPercent >= input.caseTargetMarginPercent
+
+  return {
+    instant,
+    cumulative,
+    eligible: instant && cumulative,
+    instantMarginPercent: roundEconomics(instantMarginPercent, 4),
+    cumulativeMarginPercent: roundEconomics(cumulativeMarginPercent, 4),
+    requiredMarginPercent,
+  }
+}
+
+export function computeProbabilitySum(
+  items: Array<Pick<CaseEconomicsItem, 'probability' | 'enabled'>>,
+): number {
+  return items
+    .filter((item) => item.enabled !== false)
+    .reduce((sum, item) => sum + item.probability, 0)
 }
 
 export function roundEconomics(value: number, decimals = 4): number {
@@ -76,6 +170,14 @@ export function roundEconomics(value: number, decimals = 4): number {
 
 export function roundPrice(value: number): number {
   return Math.round(value * 100) / 100
+}
+
+export function computeAggregatedProbabilityTolerance(
+  items: Array<Pick<CaseEconomicsItem, 'probabilityTolerance' | 'enabled'>>,
+): number {
+  return items
+    .filter((item) => item.enabled !== false)
+    .reduce((sum, item) => sum + (item.probabilityTolerance ?? 0.0001), 0)
 }
 
 export function isProbabilitySumValid(
@@ -95,15 +197,17 @@ export function getProbabilityDelta(
 }
 
 export function hasZeroPricedItems(
-  items: Array<Pick<CaseEconomicsItem, 'basePrice' | 'priceWithTax'>>,
+  items: Array<Pick<CaseEconomicsItem, 'basePrice' | 'priceWithTax' | 'enabled'>>,
 ): boolean {
-  return items.some(
-    (item) =>
-      !Number.isFinite(item.basePrice) ||
-      item.basePrice <= 0 ||
-      !Number.isFinite(item.priceWithTax) ||
-      item.priceWithTax <= 0,
-  )
+  return items
+    .filter((item) => item.enabled !== false)
+    .some(
+      (item) =>
+        !Number.isFinite(item.basePrice) ||
+        item.basePrice <= 0 ||
+        !Number.isFinite(item.priceWithTax) ||
+        item.priceWithTax <= 0,
+    )
 }
 
 export function hasNegativeMargin(
@@ -111,6 +215,24 @@ export function hasNegativeMargin(
   totalExpectedValue: number,
 ): boolean {
   return finalPrice < totalExpectedValue
+}
+
+export function countEligibleDropItems(input: {
+  items: CaseEconomicsItem[]
+  openPrice: number
+  caseTargetMarginPercent: number
+  ledger: CaseEconomyLedger
+  valueMode: CaseValueMode
+}): number {
+  return getEnabledDropItems(input.items).filter((item) =>
+    evaluateDropEligibility({
+      item,
+      openPrice: input.openPrice,
+      caseTargetMarginPercent: input.caseTargetMarginPercent,
+      ledger: input.ledger,
+      valueMode: input.valueMode,
+    }).eligible,
+  ).length
 }
 
 export function slugifyCaseName(name: string): string {
@@ -134,6 +256,7 @@ export function catalogSkinToCaseItem(
   },
   valueMode: CaseValueMode,
   probability = 0,
+  targetMarginPercent = 30,
 ) {
   const economicsValue = resolveItemEconomicsValue(
     {
@@ -153,6 +276,10 @@ export function catalogSkinToCaseItem(
     priceWithTax: skin.priceWithTax,
     price: economicsValue,
     probability,
+    minMarginPercent: targetMarginPercent,
+    probabilityTolerance: DEFAULT_ITEM_PROBABILITY_TOLERANCE,
+    enabled: true,
+    expectedValue: roundPrice(economicsValue * (probability / 100)),
   }
 }
 
@@ -165,10 +292,39 @@ export function remapCaseItemsForValueMode<
     skinName: string
     image?: string
     taxPercent: number
+    minMarginPercent?: number
+    enabled?: boolean
+    expectedValue?: number
   },
 >(items: T[], valueMode: CaseValueMode): T[] {
-  return items.map((item) => ({
+  return items.map((item) => {
+    const price = resolveItemEconomicsValue(item, valueMode)
+    return {
+      ...item,
+      price,
+      expectedValue: roundPrice(price * (item.probability / 100)),
+    }
+  })
+}
+
+export function normalizeCaseItemEconomics<
+  T extends {
+    price: number
+    probability: number
+    minMarginPercent?: number
+    enabled?: boolean
+  },
+>(item: T, targetMarginPercent: number): T & {
+  minMarginPercent: number
+  enabled: boolean
+  expectedValue: number
+} {
+  const minMarginPercent = item.minMarginPercent ?? targetMarginPercent
+  const enabled = item.enabled ?? true
+  return {
     ...item,
-    price: resolveItemEconomicsValue(item, valueMode),
-  }))
+    minMarginPercent,
+    enabled,
+    expectedValue: roundPrice(item.price * (item.probability / 100)),
+  }
 }

@@ -9,6 +9,12 @@ export type CaseDropItemRarity = {
   color?: string
 }
 
+export type CaseEconomyLedger = {
+  totalRevenue: number
+  totalPayout: number
+  totalRealOpens: number
+}
+
 export type CaseDropItem = {
   skinName: string
   image?: string
@@ -18,6 +24,10 @@ export type CaseDropItem = {
   priceWithTax: number
   price: number
   probability: number
+  probabilityTolerance: number
+  minMarginPercent: number
+  enabled: boolean
+  expectedValue?: number
 }
 
 export type LootCase = {
@@ -39,6 +49,7 @@ export type LootCase = {
   realMarginPercent: number
   probabilitySum: number
   items: CaseDropItem[]
+  economyLedger?: CaseEconomyLedger
   active: boolean
   totalOpens: number
   totalTestOpens: number

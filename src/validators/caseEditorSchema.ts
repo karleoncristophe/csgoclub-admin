@@ -3,6 +3,7 @@ import { SkinsCurrency } from '@/constants/skinsCurrency'
 import {
   computeProbabilitySum,
   computeTotalExpectedValue,
+  countEligibleDropItems,
   isProbabilitySumValid,
   type CaseValueMode,
 } from '@/utils/caseEconomics'
@@ -19,6 +20,9 @@ export const caseDropItemSchema = Yup.object({
   priceWithTax: Yup.number().min(0.01, 'Preço com taxa inválido').required(),
   price: Yup.number().min(0.01).required(),
   probability: Yup.number().min(0).max(100).required(),
+  probabilityTolerance: Yup.number().min(0).max(5).required(),
+  minMarginPercent: Yup.number().min(0).max(99.99).required(),
+  enabled: Yup.boolean().required(),
 })
 
 export const caseEditorSchema = Yup.object({
@@ -52,10 +56,6 @@ export const caseEditorSchema = Yup.object({
     .min(0)
     .max(100)
     .required('Informe a meta de probabilidade'),
-  probabilityTolerance: Yup.number()
-    .min(0)
-    .max(5)
-    .required('Informe a tolerância'),
   discountPercent: Yup.number().min(0).max(100).required('Informe o desconto'),
   listPrice: Yup.number().when('items', {
     is: (items: unknown[]) => Array.isArray(items) && items.length > 0,
@@ -78,17 +78,30 @@ export const caseEditorSchema = Yup.object({
   items: Yup.array()
     .of(caseDropItemSchema)
     .min(1, 'Adicione pelo menos um item à caixa')
+    .test('enabled-items', 'Habilite pelo menos um item no pool de drop', function (items) {
+      if (!items?.length) return true
+      return items.some((item) => item.enabled !== false)
+    })
     .test('probability-sum', 'Soma das probabilidades inválida', function (items) {
       if (!items?.length) return true
-      const { probabilityTargetPercent, probabilityTolerance } = this.parent as {
+      const { probabilityTargetPercent } = this.parent as {
         probabilityTargetPercent: number
-        probabilityTolerance: number
       }
-      const sum = computeProbabilitySum(items.map((item) => item.probability))
+      const enabledItems = items.filter((item) => item.enabled !== false)
+      const sum = computeProbabilitySum(
+        items.map((item) => ({
+          probability: item.probability,
+          enabled: item.enabled,
+        })),
+      )
+      const aggregatedTolerance = enabledItems.reduce(
+        (total, item) => total + (item.probabilityTolerance ?? 0.0001),
+        0,
+      )
       if (
         isProbabilitySumValid(sum, {
           probabilityTargetPercent,
-          probabilityTolerance,
+          probabilityTolerance: aggregatedTolerance,
         })
       ) {
         return true
@@ -97,17 +110,46 @@ export const caseEditorSchema = Yup.object({
       return this.createError({
         message: `Soma atual: ${sum.toFixed(4)}% — ${
           delta > 0 ? 'falta' : 'sobra'
-        } ${Math.abs(delta).toFixed(4)}% (meta: ${probabilityTargetPercent}% ± ${probabilityTolerance}%)`,
+        } ${Math.abs(delta).toFixed(4)}% (meta: ${probabilityTargetPercent}% ± ${aggregatedTolerance.toFixed(4)}% soma das tolerâncias dos itens)`,
       })
     })
     .test('item-prices', 'Itens sem preço válido no catálogo', function (items) {
       if (!items?.length) return true
       const invalid = items.find(
-        (item) => item.basePrice <= 0 || item.priceWithTax <= 0,
+        (item) =>
+          item.enabled !== false &&
+          (item.basePrice <= 0 || item.priceWithTax <= 0),
       )
       if (!invalid) return true
       return this.createError({
         message: `"${invalid.skinName}" está sem preço válido no catálogo`,
+      })
+    })
+    .test('droppable-pool', 'Nenhum item elegível para drop', function (items) {
+      if (!items?.length) return true
+      const parent = this.parent as {
+        price: number
+        targetMarginPercent: number
+        valueMode: CaseValueMode
+      }
+      const eligible = countEligibleDropItems({
+        items: items.map((item) => ({
+          basePrice: item.basePrice,
+          priceWithTax: item.priceWithTax,
+          price: item.price,
+          probability: item.probability,
+          minMarginPercent: item.minMarginPercent,
+          enabled: item.enabled,
+        })),
+        openPrice: parent.price,
+        caseTargetMarginPercent: parent.targetMarginPercent,
+        ledger: { totalRevenue: 0, totalPayout: 0 },
+        valueMode: parent.valueMode,
+      })
+      if (eligible > 0) return true
+      return this.createError({
+        message:
+          'Nenhum item habilitado pode cair com o preço e margens atuais. Ajuste preço, margem mín. ou chances.',
       })
     }),
 }).test('margin-check', 'Margem negativa', function (values) {
@@ -118,6 +160,7 @@ export const caseEditorSchema = Yup.object({
       priceWithTax: item.priceWithTax,
       price: item.price,
       probability: item.probability,
+      enabled: item.enabled,
     })),
     values.valueMode as CaseValueMode,
   )
@@ -141,7 +184,6 @@ export const caseEditorInitialValues: CaseEditorFormValues = {
   active: false,
   targetMarginPercent: 30,
   probabilityTargetPercent: 100,
-  probabilityTolerance: 0.0001,
   discountPercent: 0,
   listPrice: 0,
   price: 0,

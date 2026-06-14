@@ -5,6 +5,7 @@ import {
   SKINS_CURRENCY_OPTIONS,
   SkinsCurrency,
 } from '@/constants/skinsCurrency'
+import { useAdminPreferences } from '@/theme/AdminPreferencesContext'
 import { Input } from '@/components/ui/Input'
 import { Pagination } from '@/components/ui/Pagination'
 import { Select } from '@/components/ui/Select'
@@ -49,6 +50,7 @@ function toPercentPriceRange(
 
 export default function SkinsPage() {
   const productsAnchorRef = useRef<HTMLDivElement>(null)
+  const { skinsCurrency, setSkinsCurrency } = useAdminPreferences()
   const [searchInput, setSearchInput] = useState('')
   const [weaponTypeFilter, setWeaponTypeFilter] = useState('')
   const [rarityFilter, setRarityFilter] = useState('')
@@ -56,7 +58,6 @@ export default function SkinsPage() {
   const [maxPercentInput, setMaxPercentInput] = useState(100)
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_PAGE_SIZE)
-  const [currency, setCurrency] = useState<SkinsCurrency>(SkinsCurrency.BRL)
 
   const debouncedSearch = useDebounce(searchInput.trim(), 350)
   const debouncedMinPercent = useDebounce(minPercentInput, 350)
@@ -69,7 +70,7 @@ export default function SkinsPage() {
   const { data: weaponCategories = [] } = useGetWeaponCategoriesQuery()
 
   const { data, isLoading, isFetching, isError, error } = useGetSkinsCatalogQuery({
-    currency,
+    currency: skinsCurrency,
     search: debouncedSearch || undefined,
     weaponType: weaponTypeFilter || undefined,
     rarity: rarityFilter || undefined,
@@ -123,9 +124,9 @@ export default function SkinsPage() {
           <Select
             label="Moeda"
             name="currency"
-            value={currency}
+            value={skinsCurrency}
             onChange={(e) => {
-              setCurrency(e.target.value as SkinsCurrency)
+              setSkinsCurrency(e.target.value as SkinsCurrency)
               resetPage()
             }}
           >
@@ -253,7 +254,7 @@ export default function SkinsPage() {
               Faixa de preço base
             </ThemeText>
             <ThemeText as="p" tone="primary" className="mt-1 text-sm font-semibold">
-              {formatSkinsPrice(priceRange.min, currency)} - {formatSkinsPrice(priceRange.max, currency)}
+              {formatSkinsPrice(priceRange.min, skinsCurrency)} - {formatSkinsPrice(priceRange.max, skinsCurrency)}
             </ThemeText>
           </Surface>
           <Surface variant="statTile" className="!p-4">
@@ -261,8 +262,8 @@ export default function SkinsPage() {
               Faixa selecionada
             </ThemeText>
             <ThemeText as="p" tone="primary" className="mt-1 text-sm font-semibold">
-              {formatSkinsPrice(selectedPriceRange.minPrice, currency)} -{' '}
-              {formatSkinsPrice(selectedPriceRange.maxPrice, currency)}
+              {formatSkinsPrice(selectedPriceRange.minPrice, skinsCurrency)} -{' '}
+              {formatSkinsPrice(selectedPriceRange.maxPrice, skinsCurrency)}
             </ThemeText>
           </Surface>
         </div>
@@ -359,7 +360,7 @@ export default function SkinsPage() {
             {catalogItems.map((skin) => (
               <Link
                 key={`${skin.name}-${skin.classId ?? ''}`}
-                to={`/dashboard/skins/item?name=${encodeURIComponent(skin.name)}&currency=${currency}`}
+                to={`/dashboard/skins/item?name=${encodeURIComponent(skin.name)}&currency=${skinsCurrency}`}
                 className="group block rounded-xl transition hover:opacity-95"
               >
                 <Surface variant="cardInset" className="!p-4">

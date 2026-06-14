@@ -1,9 +1,13 @@
 import { type InputHTMLAttributes, type ReactNode, useId } from 'react'
+import type { FieldHelp } from '@/components/ui/fieldHelp'
+import { FieldHelpButton } from '@/components/ui/FieldHelpButton'
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string
   error?: string
   hint?: string
+  description?: string
+  fieldHelp?: FieldHelp
   endAdornment?: ReactNode
 }
 
@@ -11,6 +15,8 @@ export function Input({
   label,
   error,
   hint,
+  description,
+  fieldHelp,
   id,
   className = '',
   endAdornment,
@@ -21,12 +27,15 @@ export function Input({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor={inputId}
-        className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-      >
-        {label}
-      </label>
+      <div className="flex items-center gap-1.5">
+        <label
+          htmlFor={inputId}
+          className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          {label}
+        </label>
+        {fieldHelp ? <FieldHelpButton fieldHelp={fieldHelp} /> : null}
+      </div>
       <div className="relative">
         <input
           id={inputId}
@@ -43,6 +52,9 @@ export function Input({
           </div>
         ) : null}
       </div>
+      {description && !error ? (
+        <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">{description}</p>
+      ) : null}
       {hint && !error ? (
         <p className="text-xs text-zinc-500 dark:text-zinc-400">{hint}</p>
       ) : null}

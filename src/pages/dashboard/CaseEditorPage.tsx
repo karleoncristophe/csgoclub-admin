@@ -3,10 +3,12 @@ import { useFormik } from 'formik'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { CaseEconomicsPanel } from '@/components/cases/CaseEconomicsPanel'
+import { CaseEditorDevPresetBar } from '@/components/cases/editor/CaseEditorDevPresetBar'
 import { CaseEditorGeneralSection } from '@/components/cases/editor/CaseEditorGeneralSection'
 import { CaseEditorItemsTable } from '@/components/cases/editor/CaseEditorItemsTable'
 import { CaseEditorPricingSection } from '@/components/cases/editor/CaseEditorPricingSection'
 import { CaseEditorSkinSearchSection } from '@/components/cases/editor/CaseEditorSkinSearchSection'
+import { fetchCsgoNetDevPresetItems } from '@/components/cases/editor/caseDevPreset'
 import type { CaseFormState } from '@/components/cases/editor/caseEditor.types'
 import {
   collectFormErrors,
@@ -42,6 +44,7 @@ import {
   type CaseValueMode,
 } from '@/utils/caseEconomics'
 import { caseEditorInitialValues, caseEditorSchema } from '@/validators/caseEditorSchema'
+import { useAdminPreferences } from '@/theme/AdminPreferencesContext'
 
 export default function CaseEditorPage() {
   const { id } = useParams()
@@ -57,13 +60,20 @@ export default function CaseEditorPage() {
   const [updateCase, updateState] = useUpdateCaseMutation()
   const [fetchCatalogItem] = useLazyGetSkinsCatalogItemQuery()
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [devPresetLoading, setDevPresetLoading] = useState(false)
+  const { skinsCurrency: defaultSkinsCurrency } = useAdminPreferences()
 
   const initialValues = useMemo<CaseFormState>(
     () =>
       existingCase
         ? mapCaseToFormValues(existingCase)
-        : { ...caseEditorInitialValues, caseImage: null, items: [] },
-    [existingCase],
+        : {
+            ...caseEditorInitialValues,
+            caseImage: null,
+            items: [],
+            currency: defaultSkinsCurrency,
+          },
+    [existingCase, defaultSkinsCurrency],
   )
 
   const formik = useFormik<CaseFormState>({
@@ -274,6 +284,33 @@ export default function CaseEditorPage() {
     })
   }
 
+  const handleDevPresetApply = async () => {
+    setDevPresetLoading(true)
+    try {
+      const items = await fetchCsgoNetDevPresetItems({
+        fetchCatalogItem,
+        currency: SkinsCurrency.USD,
+        valueMode: 'with_tax',
+        targetMarginPercent: values.targetMarginPercent,
+      })
+
+      await setValues({
+        ...values,
+        name: 'Case Preset Dev',
+        slug: 'case-preset-dev',
+        slugManual: true,
+        currency: SkinsCurrency.USD,
+        valueMode: 'with_tax',
+        probabilityTargetPercent: 100,
+        items,
+        listPriceManual: false,
+        priceManual: false,
+      })
+    } finally {
+      setDevPresetLoading(false)
+    }
+  }
+
   if (isEdit && isLoadingCase) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -304,6 +341,11 @@ export default function CaseEditorPage() {
           disabled={formik.isSubmitting || saving}
           onCurrencyChange={handleCurrencyChange}
           onValueModeChange={handleValueModeChange}
+        />
+
+        <CaseEditorDevPresetBar
+          loading={devPresetLoading}
+          onApply={() => void handleDevPresetApply()}
         />
 
         <CaseEditorSkinSearchSection

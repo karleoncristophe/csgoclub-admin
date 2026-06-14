@@ -3,12 +3,14 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import type { LucideIcon } from 'lucide-react'
 import {
+  BookOpenText,
   Gem,
   LayoutDashboard,
   Layers,
   LogOut,
   Menu,
   Package,
+  Settings,
   Users,
 } from 'lucide-react'
 import { useGetMeQuery } from '@/redux/store/api/auth/api.auth'
@@ -31,6 +33,13 @@ const NAV_SECTIONS: readonly NavSection[] = [
       { href: '/dashboard/skins', label: 'Skins', Icon: Gem },
       { href: '/dashboard/cases', label: 'Caixas', Icon: Package },
       { href: '/dashboard/categorias', label: 'Categorias', Icon: Layers },
+      { href: '/dashboard/documentation', label: 'Documentação', Icon: BookOpenText },
+    ],
+  },
+  {
+    title: 'Conta',
+    items: [
+      { href: '/dashboard/settings', label: 'Configurações', Icon: Settings },
     ],
   },
 ]

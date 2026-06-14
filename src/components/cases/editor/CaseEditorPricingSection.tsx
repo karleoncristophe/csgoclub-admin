@@ -1,4 +1,6 @@
 import type { FormikProps } from 'formik'
+import { caseFieldProps } from '@/components/cases/editor/caseFieldHelp'
+import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import { Input } from '@/components/ui/Input'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
@@ -52,6 +54,7 @@ export function CaseEditorPricingSection({
           }}
           onBlur={handleBlur}
           error={fieldError(touched.targetMarginPercent, errors.targetMarginPercent)}
+          {...caseFieldProps('targetMarginPercent')}
         />
         <Input
           label="Meta soma chances (%)"
@@ -67,22 +70,22 @@ export function CaseEditorPricingSection({
             touched.probabilityTargetPercent,
             errors.probabilityTargetPercent,
           )}
+          {...caseFieldProps('probabilityTargetPercent')}
         />
         <div>
-          <Input
+          <CurrencyInput
             label="Preço de tabela"
             name="listPrice"
-            type="number"
-            min={0.01}
-            step="0.01"
-            value={values.listPrice || ''}
-            onChange={(e) => {
+            currency={currency}
+            value={values.listPrice}
+            onChange={(amount) => {
               void setFieldValue('listPriceManual', true)
-              void setFieldValue('listPrice', Number(e.target.value))
+              void setFieldValue('listPrice', amount)
               void setFieldValue('priceManual', false)
             }}
             onBlur={handleBlur}
             error={fieldError(touched.listPrice, errors.listPrice)}
+            {...caseFieldProps('listPrice')}
           />
           <button
             type="button"
@@ -106,21 +109,21 @@ export function CaseEditorPricingSection({
           }}
           onBlur={handleBlur}
           error={fieldError(touched.discountPercent, errors.discountPercent)}
+          {...caseFieldProps('discountPercent')}
         />
         <div>
-          <Input
+          <CurrencyInput
             label="Preço final (vitrine)"
             name="price"
-            type="number"
-            min={0.01}
-            step="0.01"
-            value={values.price || ''}
-            onChange={(e) => {
+            currency={currency}
+            value={values.price}
+            onChange={(amount) => {
               void setFieldValue('priceManual', true)
-              void setFieldValue('price', Number(e.target.value))
+              void setFieldValue('price', amount)
             }}
             onBlur={handleBlur}
             error={fieldError(touched.price, errors.price)}
+            {...caseFieldProps('price')}
           />
           <button
             type="button"

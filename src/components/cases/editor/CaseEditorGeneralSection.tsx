@@ -3,6 +3,8 @@ import {
   CaseImageUploader,
   type CaseImageValue,
 } from '@/components/cases/CaseImageUploader'
+import { caseFieldProps } from '@/components/cases/editor/caseFieldHelp'
+import { FieldHelpButton } from '@/components/ui/FieldHelpButton'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Surface } from '@/components/ui/Surface'
@@ -30,6 +32,8 @@ export function CaseEditorGeneralSection({
   onValueModeChange,
 }: CaseEditorGeneralSectionProps) {
   const { values, setFieldValue, handleChange, handleBlur, touched, errors } = formik
+  const activeHelp = caseFieldProps('active')
+  const imageHelp = caseFieldProps('caseImage')
 
   const handleNameChange = (nextName: string) => {
     void setFieldValue('name', nextName)
@@ -52,6 +56,7 @@ export function CaseEditorGeneralSection({
           onBlur={handleBlur}
           placeholder="Ex.: Neon Queen"
           error={fieldError(touched.name, errors.name)}
+          {...caseFieldProps('name')}
         />
         <Input
           label="Slug"
@@ -64,6 +69,7 @@ export function CaseEditorGeneralSection({
           onBlur={handleBlur}
           placeholder="neon-queen"
           error={fieldError(touched.slug, errors.slug)}
+          {...caseFieldProps('slug')}
         />
         <Select
           label="Moeda"
@@ -71,6 +77,7 @@ export function CaseEditorGeneralSection({
           value={values.currency}
           onChange={(e) => onCurrencyChange(e.target.value as SkinsCurrency)}
           onBlur={handleBlur}
+          {...caseFieldProps('currency')}
         >
           {SKINS_CURRENCY_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -84,6 +91,7 @@ export function CaseEditorGeneralSection({
           value={values.valueMode}
           onChange={(e) => onValueModeChange(e.target.value as CaseValueMode)}
           onBlur={handleBlur}
+          {...caseFieldProps('valueMode')}
         >
           <option value="with_tax">Preço com taxa de categoria</option>
           <option value="base">Preço base SkinsBack</option>
@@ -95,8 +103,20 @@ export function CaseEditorGeneralSection({
           onChange={handleChange}
           onBlur={handleBlur}
           placeholder="Opcional"
+          {...caseFieldProps('description')}
         />
         <div className="md:col-span-2 xl:col-span-3">
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <ThemeText as="span" tone="primary" className="text-sm font-medium">
+              Imagem da caixa
+            </ThemeText>
+            <FieldHelpButton fieldHelp={imageHelp.fieldHelp} />
+          </div>
+          {imageHelp.description ? (
+            <ThemeText as="p" tone="faint" className="mb-2 text-xs">
+              {imageHelp.description}
+            </ThemeText>
+          ) : null}
           <CaseImageUploader
             value={values.caseImage}
             onChange={(next: CaseImageValue) => {
@@ -120,9 +140,12 @@ export function CaseEditorGeneralSection({
             className="h-4 w-4 rounded border-zinc-300 text-brand-600"
           />
           <span>
-            <ThemeText as="span" tone="primary" className="text-sm font-medium">
-              Caixa ativa
-            </ThemeText>
+            <span className="flex items-center gap-1.5">
+              <ThemeText as="span" tone="primary" className="text-sm font-medium">
+                Caixa ativa
+              </ThemeText>
+              <FieldHelpButton fieldHelp={activeHelp.fieldHelp} />
+            </span>
             <ThemeText as="span" tone="faint" className="mt-0.5 block text-xs">
               Exibida no site com o preço final
             </ThemeText>

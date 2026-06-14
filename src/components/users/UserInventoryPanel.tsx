@@ -5,6 +5,7 @@ import {
   SKINS_CURRENCY_OPTIONS,
   SkinsCurrency,
 } from '@/constants/skinsCurrency'
+import { useAdminPreferences } from '@/theme/AdminPreferencesContext'
 import { Input } from '@/components/ui/Input'
 import { Pagination } from '@/components/ui/Pagination'
 import { Select } from '@/components/ui/Select'
@@ -29,13 +30,13 @@ const DEFAULT_PAGE_SIZE = 24
 
 export function UserInventoryPanel({ userId }: { userId: string }) {
   const productsAnchorRef = useRef<HTMLDivElement>(null)
+  const { skinsCurrency, setSkinsCurrency } = useAdminPreferences()
   const [searchInput, setSearchInput] = useState('')
   const [weaponTypeFilter, setWeaponTypeFilter] = useState('')
   const [rarityFilter, setRarityFilter] = useState('')
   const [tradableFilter, setTradableFilter] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_PAGE_SIZE)
-  const [currency, setCurrency] = useState<SkinsCurrency>(SkinsCurrency.BRL)
 
   const debouncedSearch = useDebounce(searchInput.trim(), 350)
   const safePage = Math.max(page, 1)
@@ -44,7 +45,7 @@ export function UserInventoryPanel({ userId }: { userId: string }) {
 
   const { data, isLoading, isFetching, isError, error } = useGetUserInventoryQuery({
     userId,
-    currency,
+    currency: skinsCurrency,
     search: debouncedSearch || undefined,
     weaponType: weaponTypeFilter || undefined,
     rarity: rarityFilter || undefined,
@@ -95,9 +96,9 @@ export function UserInventoryPanel({ userId }: { userId: string }) {
         <Select
           label="Moeda"
           name="currency"
-          value={currency}
+          value={skinsCurrency}
           onChange={(e) => {
-            setCurrency(e.target.value as SkinsCurrency)
+            setSkinsCurrency(e.target.value as SkinsCurrency)
             resetPage()
           }}
         >
@@ -224,7 +225,7 @@ export function UserInventoryPanel({ userId }: { userId: string }) {
             Faixa de preço
           </ThemeText>
           <ThemeText as="p" tone="primary" className="mt-1 text-sm font-semibold">
-            {formatSkinsPrice(priceRange.min, currency)} - {formatSkinsPrice(priceRange.max, currency)}
+            {formatSkinsPrice(priceRange.min, skinsCurrency)} - {formatSkinsPrice(priceRange.max, skinsCurrency)}
           </ThemeText>
         </Surface>
       </div>
@@ -329,7 +330,7 @@ export function UserInventoryPanel({ userId }: { userId: string }) {
           {items.map((skin) => (
             <Link
               key={skin.assetId}
-              to={`/dashboard/skins/item?name=${encodeURIComponent(skin.name)}&currency=${currency}`}
+              to={`/dashboard/skins/item?name=${encodeURIComponent(skin.name)}&currency=${skinsCurrency}`}
               className="group block rounded-xl transition hover:opacity-95"
             >
               <Surface variant="cardInset" className="!p-4">

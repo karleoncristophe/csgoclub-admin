@@ -1,5 +1,7 @@
 import { Trash2 } from 'lucide-react'
+import { caseFieldProps } from '@/components/cases/editor/caseFieldHelp'
 import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
+import { FieldLabelWithHelp } from '@/components/ui/FieldLabelWithHelp'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
@@ -81,15 +83,57 @@ export function CaseEditorItemsTable({
           <table className="w-full min-w-[1280px] text-left text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
-                <th className="px-3 py-2">Ativo</th>
+                <th className="px-3 py-2">
+                  <FieldLabelWithHelp
+                    label="Ativo"
+                    fieldHelp={caseFieldProps('itemEnabled').fieldHelp}
+                    className="text-xs uppercase tracking-wide text-zinc-500"
+                  />
+                </th>
                 <th className="px-3 py-2">Item</th>
                 <th className="px-3 py-2">Raridade</th>
-                <th className="px-3 py-2">Valor</th>
-                <th className="px-3 py-2">Drop %</th>
-                <th className="px-3 py-2">Tolerância</th>
-                <th className="px-3 py-2">Margem mín.</th>
-                <th className="px-3 py-2">VE item</th>
-                <th className="px-3 py-2">Elegível</th>
+                <th className="px-3 py-2">
+                  <FieldLabelWithHelp
+                    label="Valor"
+                    fieldHelp={caseFieldProps('itemValue').fieldHelp}
+                    className="text-xs uppercase tracking-wide text-zinc-500"
+                  />
+                </th>
+                <th className="px-3 py-2">
+                  <FieldLabelWithHelp
+                    label="Drop %"
+                    fieldHelp={caseFieldProps('dropPercent').fieldHelp}
+                    className="text-xs uppercase tracking-wide text-zinc-500"
+                  />
+                </th>
+                <th className="px-3 py-2">
+                  <FieldLabelWithHelp
+                    label="Tolerância"
+                    fieldHelp={caseFieldProps('probabilityTolerance').fieldHelp}
+                    className="text-xs uppercase tracking-wide text-zinc-500"
+                  />
+                </th>
+                <th className="px-3 py-2">
+                  <FieldLabelWithHelp
+                    label="Margem mín."
+                    fieldHelp={caseFieldProps('minMarginPercent').fieldHelp}
+                    className="text-xs uppercase tracking-wide text-zinc-500"
+                  />
+                </th>
+                <th className="px-3 py-2">
+                  <FieldLabelWithHelp
+                    label="VE item"
+                    fieldHelp={caseFieldProps('itemVe').fieldHelp}
+                    className="text-xs uppercase tracking-wide text-zinc-500"
+                  />
+                </th>
+                <th className="px-3 py-2">
+                  <FieldLabelWithHelp
+                    label="Elegível"
+                    fieldHelp={caseFieldProps('itemEligible').fieldHelp}
+                    className="text-xs uppercase tracking-wide text-zinc-500"
+                  />
+                </th>
                 <th className="px-3 py-2" />
               </tr>
             </thead>

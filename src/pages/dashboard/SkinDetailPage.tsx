@@ -1,4 +1,5 @@
 import { useState, type CSSProperties } from 'react'
+import { useAdminPreferences } from '@/theme/AdminPreferencesContext'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Expand } from 'lucide-react'
 import {
@@ -39,9 +40,10 @@ const backLinkClass =
 export default function SkinDetailPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { skinsCurrency } = useAdminPreferences()
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false)
   const skinName = searchParams.get('name')?.trim() ?? ''
-  const currency = normalizeSkinsCurrency(searchParams.get('currency'))
+  const currency = normalizeSkinsCurrency(searchParams.get('currency') ?? skinsCurrency)
 
   const handleGoBack = () => navigate(-1)
 

@@ -122,4 +122,5 @@ export const {
   useGetSkinsCatalogQuery,
   useLazyGetSkinsCatalogQuery,
   useGetSkinsCatalogItemQuery,
+  useLazyGetSkinsCatalogItemQuery,
 } = skinsApi

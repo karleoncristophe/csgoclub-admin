@@ -28,3 +28,14 @@ export const USERS = {
   BY_ID: (id: string) => `/admin/users/${id}`,
   INVENTORY: (id: string) => `/admin/users/${id}/inventory`,
 } as const
+
+export const UPLOAD = {
+  SINGLE: '/upload/single',
+  REPLACE: '/upload/replace',
+  DELETE: '/upload/file',
+} as const
+
+export const CASES = {
+  ROOT: '/admin/cases',
+  BY_ID: (id: string) => `/admin/cases/${id}`,
+} as const

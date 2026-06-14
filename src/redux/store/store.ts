@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { authApi } from '@/redux/store/api/auth/api.auth'
+import { casesApi } from '@/redux/store/api/cases/api.cases'
 import { skinsApi } from '@/redux/store/api/skins/api.skins'
 import { usersApi } from '@/redux/store/api/users/api.users'
 import { weaponCategoriesApi } from '@/redux/store/api/weapon-categories/api.weapon-categories'
@@ -12,6 +13,7 @@ export const store = configureStore({
     me: meReducer,
     [authApi.reducerPath]: authApi.reducer,
     [skinsApi.reducerPath]: skinsApi.reducer,
+    [casesApi.reducerPath]: casesApi.reducer,
     [usersApi.reducerPath]: usersApi.reducer,
     [weaponCategoriesApi.reducerPath]: weaponCategoriesApi.reducer,
   },
@@ -19,6 +21,7 @@ export const store = configureStore({
     getDefaultMiddleware().concat(
       authApi.middleware,
       skinsApi.middleware,
+      casesApi.middleware,
       usersApi.middleware,
       weaponCategoriesApi.middleware,
     ),

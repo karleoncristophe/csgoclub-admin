@@ -29,6 +29,12 @@ const UsersPage = lazy(
 const UserDetailPage = lazy(
   () => import('@/pages/dashboard/UserDetailPage'),
 )
+const CasesPage = lazy(
+  () => import('@/pages/dashboard/CasesPage'),
+)
+const CaseEditorPage = lazy(
+  () => import('@/pages/dashboard/CaseEditorPage'),
+)
 
 function AuthPageFallback() {
   return (
@@ -68,6 +74,9 @@ function ProtectedRoutes() {
         <Route path="categorias" element={<WeaponCategoriesPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="users/:id" element={<UserDetailPage />} />
+        <Route path="cases" element={<CasesPage />} />
+        <Route path="cases/new" element={<CaseEditorPage />} />
+        <Route path="cases/:id" element={<CaseEditorPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

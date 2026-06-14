@@ -23,6 +23,7 @@ export type AppUser = {
 
 export type UserAdminDetail = AppUser & {
   tradeConfigured: boolean
+  isTestAffiliate?: boolean
 }
 
 export type UserInventoryItem = {
@@ -118,6 +119,17 @@ export const usersApi = createApi({
       }),
       providesTags: (_result, _error, id) => [{ type: 'Users', id }],
     }),
+    updateUser: builder.mutation<
+      UserAdminDetail,
+      { id: string; isTestAffiliate?: boolean }
+    >({
+      query: ({ id, ...body }) => ({
+        url: USERS.BY_ID(id),
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Users', id }],
+    }),
     getUserInventory: builder.query<UserInventoryResponse, GetUserInventoryParams>({
       query: ({ userId, ...params }) => ({
         url: USERS.INVENTORY(userId),
@@ -142,5 +154,6 @@ export const usersApi = createApi({
 export const {
   useGetUsersQuery,
   useGetUserByIdQuery,
+  useUpdateUserMutation,
   useGetUserInventoryQuery,
 } = usersApi

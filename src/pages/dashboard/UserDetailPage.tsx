@@ -16,7 +16,7 @@ import { SectionTitle } from '@/components/ui/Title'
 import { StatusPill, TextBadge } from '@/components/StatusPill'
 import { UserInventoryPanel } from '@/components/users/UserInventoryPanel'
 import { labelUserAppRole } from '@/i18n/enumLabels'
-import { useGetUserByIdQuery } from '@/redux/store/api/users/api.users'
+import { useGetUserByIdQuery, useUpdateUserMutation } from '@/redux/store/api/users/api.users'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
 function formatDateTime(value?: string, style: 'short' | 'long' = 'short') {
@@ -137,6 +137,7 @@ export default function UserDetailPage() {
   const { data, isLoading, isError, error } = useGetUserByIdQuery(id, {
     skip: !id,
   })
+  const [updateUser, updateState] = useUpdateUserMutation()
 
   if (!id) {
     return (
@@ -292,6 +293,46 @@ export default function UserDetailPage() {
               <CopyableField label="Nome exibido" value={data.name} mono={false} />
               <CopyableField label="URL do perfil" value={data.profileUrl} />
             </div>
+          </Surface>
+
+          <Surface variant="card" className="!p-6">
+            <SectionTitle className="mb-2">Afiliado de teste</SectionTitle>
+            <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
+              Aberturas de caixa feitas por este usuário não entram em{' '}
+              <code className="text-xs">totalOpens</code> — ficam em{' '}
+              <code className="text-xs">totalTestOpens</code> para testes de afiliado.
+            </ThemeText>
+            <label className="flex items-start gap-3 rounded-2xl border border-zinc-200 px-4 py-4 dark:border-zinc-800">
+              <input
+                type="checkbox"
+                checked={Boolean(data.isTestAffiliate)}
+                disabled={updateState.isLoading}
+                onChange={async (e) => {
+                  try {
+                    await updateUser({
+                      id: data._id,
+                      isTestAffiliate: e.target.checked,
+                    }).unwrap()
+                  } catch {
+                    // mutation state
+                  }
+                }}
+                className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-brand-600"
+              />
+              <span>
+                <ThemeText as="span" tone="primary" className="text-sm font-medium">
+                  Marcar como afiliado de teste
+                </ThemeText>
+                <ThemeText as="span" tone="faint" className="mt-1 block text-xs">
+                  Ideal para parceiros que precisam abrir caixas sem afetar métricas reais.
+                </ThemeText>
+              </span>
+            </label>
+            {updateState.error ? (
+              <p className={`${surfaceClass('errorBanner')} mt-4`}>
+                {getErrorMessage(updateState.error)}
+              </p>
+            ) : null}
           </Surface>
 
           <UserInventoryPanel userId={data._id} />

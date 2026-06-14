@@ -8,6 +8,7 @@ import {
   Layers,
   LogOut,
   Menu,
+  Package,
   Users,
 } from 'lucide-react'
 import { useGetMeQuery } from '@/redux/store/api/auth/api.auth'
@@ -28,6 +29,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
       { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
       { href: '/dashboard/users', label: 'Usuários', Icon: Users },
       { href: '/dashboard/skins', label: 'Skins', Icon: Gem },
+      { href: '/dashboard/cases', label: 'Caixas', Icon: Package },
       { href: '/dashboard/categorias', label: 'Categorias', Icon: Layers },
     ],
   },

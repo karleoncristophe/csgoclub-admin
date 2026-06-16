@@ -12,20 +12,12 @@ type CaseEditorPricingSectionProps = {
   formik: FormikProps<CaseFormState>
   currency: SkinsCurrency
   totalEV: number
-  suggestedPrice: number
-  priceFromDiscount: number
-  onApplySuggestedPrice: () => void
-  onApplyDiscountPrice: () => void
 }
 
 export function CaseEditorPricingSection({
   formik,
   currency,
   totalEV,
-  suggestedPrice,
-  priceFromDiscount,
-  onApplySuggestedPrice,
-  onApplyDiscountPrice,
 }: CaseEditorPricingSectionProps) {
   const { values, setFieldValue, handleChange, handleBlur, touched, errors } = formik
 
@@ -35,8 +27,8 @@ export function CaseEditorPricingSection({
         Preço da caixa
       </ThemeText>
       <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-        Com base no VE total dos itens ({formatSkinsPrice(totalEV, currency)}), defina margem,
-        desconto e preço de abertura da caixa.
+        Com base no VE total dos itens ({formatSkinsPrice(totalEV, currency)}), a margem define o
+        preço de tabela e o desconto ajusta o valor final na vitrine.
       </ThemeText>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Input
@@ -72,29 +64,16 @@ export function CaseEditorPricingSection({
           )}
           {...caseFieldProps('probabilityTargetPercent')}
         />
-        <div>
-          <CurrencyInput
-            label="Preço de tabela"
-            name="listPrice"
-            currency={currency}
-            value={values.listPrice}
-            onChange={(amount) => {
-              void setFieldValue('listPriceManual', true)
-              void setFieldValue('listPrice', amount)
-              void setFieldValue('priceManual', false)
-            }}
-            onBlur={handleBlur}
-            error={fieldError(touched.listPrice, errors.listPrice)}
-            {...caseFieldProps('listPrice')}
-          />
-          <button
-            type="button"
-            onClick={onApplySuggestedPrice}
-            className="mt-2 text-xs font-medium text-brand-700 hover:underline dark:text-brand-400"
-          >
-            Usar sugerido ({formatSkinsPrice(suggestedPrice, currency)})
-          </button>
-        </div>
+        <CurrencyInput
+          label="Preço de tabela"
+          name="listPrice"
+          currency={currency}
+          value={values.listPrice}
+          onChange={() => {}}
+          disabled
+          hint="Calculado: VE + margem alvo"
+          {...caseFieldProps('listPrice')}
+        />
         <Input
           label="Desconto no preço final (%)"
           name="discountPercent"
@@ -111,28 +90,17 @@ export function CaseEditorPricingSection({
           error={fieldError(touched.discountPercent, errors.discountPercent)}
           {...caseFieldProps('discountPercent')}
         />
-        <div>
-          <CurrencyInput
-            label="Preço final (vitrine)"
-            name="price"
-            currency={currency}
-            value={values.price}
-            onChange={(amount) => {
-              void setFieldValue('priceManual', true)
-              void setFieldValue('price', amount)
-            }}
-            onBlur={handleBlur}
-            error={fieldError(touched.price, errors.price)}
-            {...caseFieldProps('price')}
-          />
-          <button
-            type="button"
-            onClick={onApplyDiscountPrice}
-            className="mt-2 text-xs font-medium text-brand-700 hover:underline dark:text-brand-400"
-          >
-            Aplicar desconto ({formatSkinsPrice(priceFromDiscount, currency)})
-          </button>
-        </div>
+        <CurrencyInput
+          label="Preço final (vitrine)"
+          name="price"
+          currency={currency}
+          value={values.price}
+          onChange={() => {}}
+          disabled
+          hint="Tabela com desconto aplicado"
+          error={fieldError(touched.price, errors.price)}
+          {...caseFieldProps('price')}
+        />
       </div>
     </Surface>
   )

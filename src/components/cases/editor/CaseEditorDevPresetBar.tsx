@@ -6,11 +6,13 @@ import { CSGO_NET_DEV_PRESET_ITEMS } from './caseDevPreset'
 
 type CaseEditorDevPresetBarProps = {
   loading?: boolean
+  error?: string | null
   onApply: () => void
 }
 
 export function CaseEditorDevPresetBar({
   loading = false,
+  error = null,
   onApply,
 }: CaseEditorDevPresetBarProps) {
   if (!import.meta.env.DEV) return null
@@ -25,9 +27,15 @@ export function CaseEditorDevPresetBar({
           </ThemeText>
         </div>
         <ThemeText as="p" tone="secondary" className="text-xs">
-          Clique para preencher nome, moeda USD e os 6 itens com drop % e preços exatos.
+          Valores e Drop % idênticos ao csgo.net (USD); catálogo só para imagem e raridade.
         </ThemeText>
       </div>
+
+      {error ? (
+        <Surface variant="errorBanner" className="mb-3 !p-3 text-xs">
+          {error}
+        </Surface>
+      ) : null}
 
       <button
         type="button"
@@ -37,7 +45,7 @@ export function CaseEditorDevPresetBar({
       >
         <div className="mb-3 flex items-center justify-between gap-2">
           <ThemeText as="span" tone="primary" className="text-xs font-medium text-zinc-300">
-            {loading ? 'Carregando skins do catálogo...' : 'Aplicar preset completo'}
+            {loading ? 'Buscando imagens no catálogo...' : 'Aplicar preset completo'}
           </ThemeText>
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
@@ -67,10 +75,10 @@ export function CaseEditorDevPresetBar({
               </ThemeText>
               <div className="mt-2 flex items-center justify-between gap-2">
                 <ThemeText as="span" tone="secondary" className="text-[11px] text-zinc-400">
-                  {item.probability}%
+                  Drop {item.probability}%
                 </ThemeText>
-                <ThemeText as="span" tone="primary" className="text-xs font-semibold text-zinc-200">
-                  {formatSkinsPrice(item.price, SkinsCurrency.USD)}
+                <ThemeText as="span" tone="faint" className="text-[10px] text-zinc-500">
+                  {formatSkinsPrice(item.priceUsd, SkinsCurrency.USD)}
                 </ThemeText>
               </div>
             </div>

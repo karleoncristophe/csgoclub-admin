@@ -2,6 +2,9 @@ export type CaseValueMode = 'base' | 'with_tax'
 
 export const DEFAULT_ITEM_PROBABILITY_TOLERANCE = 0.0001
 
+/** Skins baratíssimas (ex.: filler csgo.net ~$0,007) ainda precisam ser > 0. */
+export const MIN_CASE_ITEM_PRICE = 0.0001
+
 export type CaseEconomyLedger = {
   totalRevenue: number
   totalPayout: number
@@ -204,9 +207,9 @@ export function hasZeroPricedItems(
     .some(
       (item) =>
         !Number.isFinite(item.basePrice) ||
-        item.basePrice <= 0 ||
+        item.basePrice < MIN_CASE_ITEM_PRICE ||
         !Number.isFinite(item.priceWithTax) ||
-        item.priceWithTax <= 0,
+        item.priceWithTax < MIN_CASE_ITEM_PRICE,
     )
 }
 

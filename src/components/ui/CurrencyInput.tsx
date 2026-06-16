@@ -76,7 +76,7 @@ export function CurrencyInput({
           setFocused(false)
           onBlur?.()
         }}
-        className={`h-11 w-full rounded-xl border bg-white px-3.5 text-zinc-900 shadow-sm transition-colors placeholder:text-zinc-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 ${
+        className={`h-11 w-full rounded-xl border bg-white px-3.5 text-zinc-900 shadow-sm transition-colors placeholder:text-zinc-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:disabled:bg-zinc-950/60 dark:disabled:text-zinc-500 ${
           error ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15' : 'border-zinc-200'
         }`}
       />

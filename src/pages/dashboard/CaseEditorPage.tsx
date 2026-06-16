@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFormik } from 'formik'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
@@ -13,6 +13,8 @@ import type { CaseFormState } from '@/components/cases/editor/caseEditor.types'
 import {
   collectFormErrors,
   mapCaseToFormValues,
+  toCaseDropItemsPayload,
+  touchAllCaseFormFields,
 } from '@/components/cases/editor/caseEditor.utils'
 import { isPendingCaseImage } from '@/components/cases/CaseImageUploader'
 import { Button } from '@/components/ui/Button'
@@ -61,6 +63,9 @@ export default function CaseEditorPage() {
   const [fetchCatalogItem] = useLazyGetSkinsCatalogItemQuery()
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [devPresetLoading, setDevPresetLoading] = useState(false)
+  const [devPresetError, setDevPresetError] = useState<string | null>(null)
+  const [validationAttempt, setValidationAttempt] = useState(0)
+  const errorBannerRef = useRef<HTMLDivElement>(null)
   const { skinsCurrency: defaultSkinsCurrency } = useAdminPreferences()
 
   const initialValues = useMemo<CaseFormState>(
@@ -103,18 +108,15 @@ export default function CaseEditorPage() {
 
         const payload = {
           name: values.name.trim(),
-          slug: values.slug.trim(),
           description: values.description.trim() || undefined,
           imageUrl,
           currency: values.currency as SkinsCurrency,
           valueMode: values.valueMode as CaseValueMode,
-          listPrice: roundPrice(values.listPrice),
-          price: roundPrice(values.price),
           targetMarginPercent: values.targetMarginPercent,
           probabilityTargetPercent: values.probabilityTargetPercent,
           probabilityTolerance: DEFAULT_ITEM_PROBABILITY_TOLERANCE,
           discountPercent: values.discountPercent,
-          items: values.items,
+          items: toCaseDropItemsPayload(values.items),
           active: values.active,
         }
 
@@ -191,18 +193,18 @@ export default function CaseEditorPage() {
   )
 
   useEffect(() => {
-    if (values.listPriceManual || suggestedPrice <= 0) return
+    if (suggestedPrice <= 0) return
     if (values.listPrice !== suggestedPrice) {
       void setFieldValue('listPrice', suggestedPrice, false)
     }
-  }, [suggestedPrice, values.listPriceManual, values.listPrice, setFieldValue])
+  }, [suggestedPrice, values.listPrice, setFieldValue])
 
   useEffect(() => {
-    if (values.priceManual || priceFromDiscount <= 0) return
+    if (priceFromDiscount <= 0) return
     if (values.price !== priceFromDiscount) {
       void setFieldValue('price', priceFromDiscount, false)
     }
-  }, [priceFromDiscount, values.priceManual, values.price, setFieldValue])
+  }, [priceFromDiscount, values.price, setFieldValue])
 
   const addedSkinNames = useMemo(
     () => new Set(values.items.map((item) => item.skinName)),
@@ -265,50 +267,49 @@ export default function CaseEditorPage() {
 
   const handleItemsChange = (items: CaseDropItem[]) => {
     void setFieldValue('items', items, false)
-  }
-
-  const handleApplySuggestedPrice = () => {
-    void setValues({
-      ...values,
-      listPrice: suggestedPrice,
-      listPriceManual: false,
-      priceManual: false,
-    })
-  }
-
-  const handleApplyDiscountPrice = () => {
-    void setValues({
-      ...values,
-      price: priceFromDiscount,
-      priceManual: true,
-    })
+    void setFieldValue('listPriceManual', false, false)
+    void setFieldValue('priceManual', false, false)
   }
 
   const handleDevPresetApply = async () => {
     setDevPresetLoading(true)
+    setDevPresetError(null)
     try {
       const items = await fetchCsgoNetDevPresetItems({
         fetchCatalogItem,
-        currency: SkinsCurrency.USD,
-        valueMode: 'with_tax',
+        valueMode: values.valueMode as CaseValueMode,
         targetMarginPercent: values.targetMarginPercent,
       })
 
       await setValues({
         ...values,
-        name: 'Case Preset Dev',
-        slug: 'case-preset-dev',
-        slugManual: true,
         currency: SkinsCurrency.USD,
-        valueMode: 'with_tax',
+        name: 'Case Preset Dev',
         probabilityTargetPercent: 100,
         items,
         listPriceManual: false,
         priceManual: false,
       })
+    } catch (err) {
+      setDevPresetError(getErrorMessage(err))
     } finally {
       setDevPresetLoading(false)
     }
+  }
+
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setValidationAttempt((count) => count + 1)
+    const errors = await formik.validateForm()
+
+    if (Object.keys(errors).length > 0) {
+      void formik.setTouched(touchAllCaseFormFields(formik.values))
+      void formik.setErrors(errors)
+      errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
+
+    void formik.submitForm()
   }
 
   if (isEdit && isLoadingCase) {
@@ -335,7 +336,7 @@ export default function CaseEditorPage() {
         {isEdit ? 'Editar caixa' : 'Nova caixa'}
       </PageTitle>
 
-      <form onSubmit={formik.handleSubmit} className="space-y-6" noValidate>
+      <form onSubmit={handleFormSubmit} className="space-y-6" noValidate>
         <CaseEditorGeneralSection
           formik={formik}
           disabled={formik.isSubmitting || saving}
@@ -345,6 +346,7 @@ export default function CaseEditorPage() {
 
         <CaseEditorDevPresetBar
           loading={devPresetLoading}
+          error={devPresetError}
           onApply={() => void handleDevPresetApply()}
         />
 
@@ -369,10 +371,6 @@ export default function CaseEditorPage() {
           formik={formik}
           currency={values.currency as SkinsCurrency}
           totalEV={totalEV}
-          suggestedPrice={suggestedPrice}
-          priceFromDiscount={priceFromDiscount}
-          onApplySuggestedPrice={handleApplySuggestedPrice}
-          onApplyDiscountPrice={handleApplyDiscountPrice}
         />
 
         <CaseEconomicsPanel
@@ -385,18 +383,28 @@ export default function CaseEditorPage() {
           ledger={economyLedger}
         />
 
-        {formik.submitCount > 0 && formErrors.length > 0 ? (
-          <Surface variant="errorBanner" className="!p-4">
-            <ThemeText as="p" tone="primary" className="mb-2 text-sm font-medium">
-              Corrija antes de salvar:
-            </ThemeText>
-            <ul className="list-disc space-y-1 pl-5 text-sm">
-              {formErrors.map((error) => (
-                <li key={error}>{error}</li>
-              ))}
-            </ul>
-          </Surface>
-        ) : null}
+        <div ref={errorBannerRef}>
+          {validationAttempt > 0 && formErrors.length > 0 ? (
+            <Surface variant="errorBanner" className="!p-4">
+              <ThemeText as="p" tone="primary" className="mb-2 text-sm font-medium">
+                Corrija antes de salvar:
+              </ThemeText>
+              <ul className="list-disc space-y-1 pl-5 text-sm">
+                {formErrors.map((error) => (
+                  <li key={error}>{error}</li>
+                ))}
+              </ul>
+            </Surface>
+          ) : validationAttempt > 0 &&
+            Object.keys(formik.errors).length > 0 &&
+            formErrors.length === 0 ? (
+            <Surface variant="errorBanner" className="!p-4">
+              <ThemeText as="p" tone="primary" className="text-sm">
+                Existem campos inválidos no formulário. Revise nome, itens e preços.
+              </ThemeText>
+            </Surface>
+          ) : null}
+        </div>
 
         {uploadError ? (
           <Surface variant="errorBanner">{uploadError}</Surface>

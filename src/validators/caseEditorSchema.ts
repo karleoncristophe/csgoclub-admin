@@ -5,6 +5,7 @@ import {
   computeTotalExpectedValue,
   countEligibleDropItems,
   isProbabilitySumValid,
+  MIN_CASE_ITEM_PRICE,
   type CaseValueMode,
 } from '@/utils/caseEconomics'
 
@@ -15,10 +16,14 @@ export const caseDropItemSchema = Yup.object({
     name: Yup.string().optional(),
     color: Yup.string().optional(),
   }).optional(),
-  basePrice: Yup.number().min(0.01, 'Preço base inválido').required(),
+  basePrice: Yup.number()
+    .min(MIN_CASE_ITEM_PRICE, 'Preço base inválido')
+    .required(),
   taxPercent: Yup.number().min(0).required(),
-  priceWithTax: Yup.number().min(0.01, 'Preço com taxa inválido').required(),
-  price: Yup.number().min(0.01).required(),
+  priceWithTax: Yup.number()
+    .min(MIN_CASE_ITEM_PRICE, 'Preço com taxa inválido')
+    .required(),
+  price: Yup.number().min(MIN_CASE_ITEM_PRICE).required(),
   probability: Yup.number().min(0).max(100).required(),
   probabilityTolerance: Yup.number().min(0).max(5).required(),
   minMarginPercent: Yup.number().min(0).max(99.99).required(),
@@ -27,14 +32,6 @@ export const caseDropItemSchema = Yup.object({
 
 export const caseEditorSchema = Yup.object({
   name: Yup.string().trim().required('Informe o nome da caixa'),
-  slug: Yup.string()
-    .trim()
-    .required('Informe o slug da caixa')
-    .matches(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      'Slug deve conter apenas letras minúsculas, números e hífens',
-    ),
-  slugManual: Yup.boolean(),
   description: Yup.string().trim(),
   imageUrl: Yup.string()
     .trim()
@@ -118,7 +115,8 @@ export const caseEditorSchema = Yup.object({
       const invalid = items.find(
         (item) =>
           item.enabled !== false &&
-          (item.basePrice <= 0 || item.priceWithTax <= 0),
+          (item.basePrice < MIN_CASE_ITEM_PRICE ||
+            item.priceWithTax < MIN_CASE_ITEM_PRICE),
       )
       if (!invalid) return true
       return this.createError({
@@ -175,8 +173,6 @@ export type CaseEditorFormValues = Yup.InferType<typeof caseEditorSchema>
 
 export const caseEditorInitialValues: CaseEditorFormValues = {
   name: '',
-  slug: '',
-  slugManual: false,
   description: '',
   imageUrl: '',
   currency: SkinsCurrency.BRL,

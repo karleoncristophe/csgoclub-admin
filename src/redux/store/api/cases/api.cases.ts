@@ -30,6 +30,8 @@ export type CaseDropItem = {
   expectedValue?: number
 }
 
+export type CaseDropItemPayload = Omit<CaseDropItem, 'expectedValue'>
+
 export type LootCase = {
   _id: string
   name: string
@@ -59,18 +61,15 @@ export type LootCase = {
 
 export type CreateCasePayload = {
   name: string
-  slug: string
   description?: string
   imageUrl?: string
   currency: SkinsCurrency
   valueMode: CaseValueMode
-  listPrice: number
-  price: number
   targetMarginPercent?: number
   probabilityTargetPercent?: number
   probabilityTolerance?: number
   discountPercent?: number
-  items: CaseDropItem[]
+  items: CaseDropItemPayload[]
   active?: boolean
 }
 

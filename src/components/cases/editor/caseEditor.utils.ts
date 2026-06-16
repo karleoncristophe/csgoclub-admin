@@ -1,4 +1,4 @@
-import type { CaseDropItem, LootCase } from '@/redux/store/api/cases/api.cases'
+import type { CaseDropItem, CaseDropItemPayload, LootCase } from '@/redux/store/api/cases/api.cases'
 import {
   DEFAULT_ITEM_PROBABILITY_TOLERANCE,
   roundPrice,
@@ -8,8 +8,6 @@ import type { CaseFormState } from './caseEditor.types'
 export function mapCaseToFormValues(lootCase: LootCase): CaseFormState {
   return {
     name: lootCase.name,
-    slug: lootCase.slug,
-    slugManual: true,
     description: lootCase.description ?? '',
     imageUrl: lootCase.imageUrl ?? '',
     caseImage: lootCase.imageUrl ?? null,
@@ -19,10 +17,10 @@ export function mapCaseToFormValues(lootCase: LootCase): CaseFormState {
     targetMarginPercent: lootCase.targetMarginPercent,
     probabilityTargetPercent: lootCase.probabilityTargetPercent ?? 100,
     discountPercent: lootCase.discountPercent ?? 0,
-    listPrice: lootCase.listPrice ?? lootCase.price,
-    price: lootCase.price,
-    listPriceManual: true,
-    priceManual: true,
+    listPrice: lootCase.listPrice ?? lootCase.suggestedPrice ?? 0,
+    price: lootCase.price ?? 0,
+    listPriceManual: false,
+    priceManual: false,
     items: lootCase.items.map((item): CaseDropItem => ({
       ...item,
       minMarginPercent: item.minMarginPercent ?? lootCase.targetMarginPercent,
@@ -54,18 +52,50 @@ export function fieldError(
   return touched && error ? error : undefined
 }
 
-export function collectFormErrors(errors: Record<string, unknown>): string[] {
-  const messages: string[] = []
-  for (const value of Object.values(errors)) {
-    if (typeof value === 'string') {
-      messages.push(value)
-    } else if (Array.isArray(value)) {
-      for (const item of value) {
-        if (typeof item === 'string') messages.push(item)
-      }
-    }
+export function collectFormErrors(errors: unknown): string[] {
+  if (!errors) return []
+
+  if (typeof errors === 'string') {
+    return [errors]
   }
-  return messages
+
+  if (Array.isArray(errors)) {
+    return errors.flatMap((item) => collectFormErrors(item))
+  }
+
+  if (typeof errors === 'object') {
+    return Object.values(errors as Record<string, unknown>).flatMap((value) =>
+      collectFormErrors(value),
+    )
+  }
+
+  return []
+}
+
+export function touchAllCaseFormFields(
+  values: CaseFormState,
+): Record<string, unknown> {
+  return {
+    name: true,
+    description: true,
+    currency: true,
+    valueMode: true,
+    active: true,
+    targetMarginPercent: true,
+    probabilityTargetPercent: true,
+    discountPercent: true,
+    listPrice: true,
+    price: true,
+    items: values.items.map(() => ({
+      skinName: true,
+      probability: true,
+      probabilityTolerance: true,
+      minMarginPercent: true,
+      basePrice: true,
+      priceWithTax: true,
+      price: true,
+    })),
+  }
 }
 
 export function updateCaseDropItem(
@@ -76,4 +106,16 @@ export function updateCaseDropItem(
   return items.map((item) =>
     item.skinName === skinName ? patchCaseDropItem(item, patch) : item,
   )
+}
+
+/** Campos só do formulário — não enviar na API. */
+export function toCaseDropItemPayload(item: CaseDropItem): CaseDropItemPayload {
+  const { expectedValue: _expectedValue, ...payload } = item
+  return payload
+}
+
+export function toCaseDropItemsPayload(
+  items: CaseDropItem[],
+): CaseDropItemPayload[] {
+  return items.map(toCaseDropItemPayload)
 }

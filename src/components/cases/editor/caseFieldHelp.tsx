@@ -23,7 +23,7 @@ export const CASE_FIELD_HELP = {
       <>
         <p>É o título da caixa para o jogador. Ex.: <strong>Neon Queen</strong>, <strong>Caixa AK</strong>.</p>
         <HelpSection title="Dica">
-          <p>Use um nome curto e fácil de lembrar. Se você não editar o slug, ele é gerado automaticamente a partir do nome.</p>
+          <p>Use um nome curto e fácil de lembrar. A URL da caixa (slug) é gerada automaticamente no servidor a partir do nome.</p>
         </HelpSection>
       </>
     ),
@@ -214,13 +214,10 @@ export const CASE_FIELD_HELP = {
   },
   listPrice: {
     title: 'Preço de tabela',
-    description: 'Preço “de catálogo” antes do desconto na vitrine.',
+    description: 'Calculado automaticamente: VE + margem alvo.',
     details: (
       <>
-        <p>Valor de referência. O jogador pode ver o desconto em cima deste preço no <strong>Preço final</strong>.</p>
-        <HelpSection title="Usar sugerido">
-          <p>Botão abaixo recalcula com base no VE e na margem alvo — útil para não errar na matemática.</p>
-        </HelpSection>
+        <p>Valor de referência antes do desconto. Não é salvo no servidor — recalcula sempre que itens ou margem mudam.</p>
       </>
     ),
   },
@@ -236,13 +233,10 @@ export const CASE_FIELD_HELP = {
   },
   price: {
     title: 'Preço final (vitrine)',
-    description: 'O que o jogador realmente paga para abrir a caixa.',
+    description: 'Calculado: tabela com desconto aplicado.',
     details: (
       <>
-        <p>É o valor que entra no motor de drop e no ledger. Precisa ser ≥ VE para não ter margem negativa no design.</p>
-        <HelpSection title="Aplicar desconto">
-          <p>Botão abaixo aplica tabela − desconto automaticamente.</p>
-        </HelpSection>
+        <p>É o que o jogador pagaria para abrir agora. Não é salvo na caixa — só é gravado na compra/abertura.</p>
         <HelpSection title="Preço baixo = só skins baratas">
           <p>Com preço muito baixo, só itens baratos ficam elegíveis — os caros aparecem na vitrine mas não caem.</p>
         </HelpSection>

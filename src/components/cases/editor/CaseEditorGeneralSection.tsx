@@ -14,7 +14,6 @@ import {
   SkinsCurrency,
 } from '@/constants/skinsCurrency'
 import type { CaseValueMode } from '@/utils/caseEconomics'
-import { slugifyCaseName } from '@/utils/caseEconomics'
 import type { CaseFormState } from './caseEditor.types'
 import { fieldError } from './caseEditor.utils'
 
@@ -35,13 +34,6 @@ export function CaseEditorGeneralSection({
   const activeHelp = caseFieldProps('active')
   const imageHelp = caseFieldProps('caseImage')
 
-  const handleNameChange = (nextName: string) => {
-    void setFieldValue('name', nextName)
-    if (!values.slugManual) {
-      void setFieldValue('slug', slugifyCaseName(nextName), false)
-    }
-  }
-
   return (
     <Surface variant="card" className="!p-6">
       <ThemeText as="h2" tone="primary" className="mb-4 text-base font-semibold">
@@ -52,24 +44,11 @@ export function CaseEditorGeneralSection({
           label="Nome da caixa"
           name="name"
           value={values.name}
-          onChange={(e) => handleNameChange(e.target.value)}
+          onChange={handleChange}
           onBlur={handleBlur}
           placeholder="Ex.: Neon Queen"
           error={fieldError(touched.name, errors.name)}
           {...caseFieldProps('name')}
-        />
-        <Input
-          label="Slug"
-          name="slug"
-          value={values.slug}
-          onChange={(e) => {
-            void setFieldValue('slugManual', true)
-            void setFieldValue('slug', e.target.value)
-          }}
-          onBlur={handleBlur}
-          placeholder="neon-queen"
-          error={fieldError(touched.slug, errors.slug)}
-          {...caseFieldProps('slug')}
         />
         <Select
           label="Moeda"

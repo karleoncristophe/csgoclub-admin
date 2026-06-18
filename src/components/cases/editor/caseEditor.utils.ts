@@ -21,6 +21,7 @@ export function mapCaseToFormValues(lootCase: LootCase): CaseFormState {
     price: lootCase.price ?? 0,
     listPriceManual: false,
     priceManual: false,
+    sharedCaseIds: lootCase.sharedCaseIds ?? [],
     items: lootCase.items.map((item): CaseDropItem => ({
       ...item,
       minMarginPercent: item.minMarginPercent ?? lootCase.targetMarginPercent,

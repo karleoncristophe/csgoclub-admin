@@ -38,4 +38,5 @@ export const UPLOAD = {
 export const CASES = {
   ROOT: '/admin/cases',
   BY_ID: (id: string) => `/admin/cases/${id}`,
+  SIMULATE_OPENS: (id: string) => `/admin/cases/${id}/simulate-opens`,
 } as const

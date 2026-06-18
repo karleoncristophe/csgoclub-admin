@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Play, Plus, Trash2 } from 'lucide-react'
+import { CaseDevSimulatorPanel } from '@/components/cases/CaseDevSimulatorPanel'
+import { CaseListNameCell } from '@/components/cases/CaseListImage'
 import { IconButton } from '@/components/ui/IconButton'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { Surface } from '@/components/ui/Surface'
@@ -23,6 +25,13 @@ export default function CasesPage() {
   const [deleteCase, deleteState] = useDeleteCaseMutation()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [simulatorCaseId, setSimulatorCaseId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!simulatorCaseId && data[0]?._id) {
+      setSimulatorCaseId(data[0]._id)
+    }
+  }, [data, simulatorCaseId])
 
   const handleDelete = async (lootCase: LootCase) => {
     const hasRealOpens = lootCase.totalOpens > 0
@@ -53,6 +62,14 @@ export default function CasesPage() {
     } finally {
       setDeletingId(null)
     }
+  }
+
+  const scrollToSimulator = (caseId: string) => {
+    setSimulatorCaseId(caseId)
+    document.getElementById('case-dev-simulator')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
   }
 
   return (
@@ -98,7 +115,7 @@ export default function CasesPage() {
             <table className={listTable.table}>
               <thead>
                 <tr className={listTable.theadRow}>
-                  <th className={listTable.th}>Nome</th>
+                  <th className={listTable.th}>Caixa</th>
                   <th className={listTable.th}>Preço</th>
                   <th className={listTable.th}>VE</th>
                   <th className={listTable.th}>Margem</th>
@@ -112,12 +129,11 @@ export default function CasesPage() {
                 {data.map((lootCase) => (
                   <tr key={lootCase._id} className={listTable.tr}>
                     <td className={listTable.td}>
-                      <ThemeText tone="primary" className="font-medium">
-                        {lootCase.name}
-                      </ThemeText>
-                      <ThemeText tone="faint" className="text-xs">
-                        {lootCase.slug}
-                      </ThemeText>
+                      <CaseListNameCell
+                        name={lootCase.name}
+                        slug={lootCase.slug}
+                        imageUrl={lootCase.imageUrl}
+                      />
                     </td>
                     <td className={listTable.td}>
                       <ThemeText tone="primary" className="text-sm font-medium">
@@ -151,6 +167,14 @@ export default function CasesPage() {
                     </td>
                     <td className={listTable.td}>
                       <div className="flex items-center justify-end gap-1">
+                        {import.meta.env.DEV ? (
+                          <IconButton
+                            label="Simular aberturas (dev)"
+                            onClick={() => scrollToSimulator(lootCase._id)}
+                          >
+                            <Play className="h-4 w-4" aria-hidden />
+                          </IconButton>
+                        ) : null}
                         <IconButton
                           label="Editar caixa"
                           onClick={() => navigate(`/dashboard/cases/${lootCase._id}`)}
@@ -178,6 +202,12 @@ export default function CasesPage() {
           </div>
         ) : null}
       </Surface>
+
+      {import.meta.env.DEV && data.length > 0 ? (
+        <div id="case-dev-simulator">
+          <CaseDevSimulatorPanel cases={data} initialCaseId={simulatorCaseId} />
+        </div>
+      ) : null}
     </div>
   )
 }

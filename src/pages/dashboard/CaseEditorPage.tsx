@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { CaseEconomicsPanel } from '@/components/cases/CaseEconomicsPanel'
 import { CaseEditorDevPresetBar } from '@/components/cases/editor/CaseEditorDevPresetBar'
+import { CaseEditorEconomyPoolSection } from '@/components/cases/editor/CaseEditorEconomyPoolSection'
 import { CaseEditorGeneralSection } from '@/components/cases/editor/CaseEditorGeneralSection'
 import { CaseEditorItemsTable } from '@/components/cases/editor/CaseEditorItemsTable'
 import { CaseEditorPricingSection } from '@/components/cases/editor/CaseEditorPricingSection'
@@ -25,6 +26,7 @@ import { SkinsCurrency } from '@/constants/skinsCurrency'
 import {
   useCreateCaseMutation,
   useGetCaseByIdQuery,
+  useGetCasesQuery,
   useUpdateCaseMutation,
   type CaseDropItem,
 } from '@/redux/store/api/cases/api.cases'
@@ -57,6 +59,7 @@ export default function CaseEditorPage() {
     id ?? '',
     { skip: !id },
   )
+  const { data: allCases = [] } = useGetCasesQuery()
 
   const [createCase, createState] = useCreateCaseMutation()
   const [updateCase, updateState] = useUpdateCaseMutation()
@@ -77,6 +80,7 @@ export default function CaseEditorPage() {
             caseImage: null,
             items: [],
             currency: defaultSkinsCurrency,
+            sharedCaseIds: [],
           },
     [existingCase, defaultSkinsCurrency],
   )
@@ -117,6 +121,7 @@ export default function CaseEditorPage() {
           probabilityTolerance: DEFAULT_ITEM_PROBABILITY_TOLERANCE,
           discountPercent: values.discountPercent,
           items: toCaseDropItemsPayload(values.items),
+          sharedCaseIds: values.sharedCaseIds,
           active: values.active,
         }
 
@@ -372,6 +377,20 @@ export default function CaseEditorPage() {
           totalEV={totalEV}
         />
 
+        <CaseEditorEconomyPoolSection
+          currency={values.currency as SkinsCurrency}
+          currentCaseId={id}
+          sharedCaseIds={values.sharedCaseIds ?? []}
+          availableCases={allCases.map((lootCase) => ({
+            _id: lootCase._id,
+            name: lootCase.name,
+          }))}
+          economyLedger={economyLedger}
+          onSharedCaseIdsChange={(sharedCaseIds) => {
+            void setFieldValue('sharedCaseIds', sharedCaseIds, false)
+          }}
+        />
+
         <CaseEconomicsPanel
           items={economicsItems}
           currency={values.currency as SkinsCurrency}
@@ -380,6 +399,7 @@ export default function CaseEditorPage() {
           listPrice={values.listPrice}
           finalPrice={values.price}
           ledger={economyLedger}
+          sharedLedger={(values.sharedCaseIds?.length ?? 0) > 0}
         />
 
         <div ref={errorBannerRef}>

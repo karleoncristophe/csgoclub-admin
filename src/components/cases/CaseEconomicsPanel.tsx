@@ -28,6 +28,7 @@ type CaseEconomicsPanelProps = {
   listPrice: number
   finalPrice: number
   ledger?: CaseEconomyLedger
+  sharedLedger?: boolean
 }
 
 export function CaseEconomicsPanel({
@@ -38,6 +39,7 @@ export function CaseEconomicsPanel({
   listPrice,
   finalPrice,
   ledger = { totalRevenue: 0, totalPayout: 0, totalRealOpens: 0 },
+  sharedLedger = false,
 }: CaseEconomicsPanelProps) {
   const enabledItems = getEnabledDropItems(items)
   const aggregatedTolerance = computeAggregatedProbabilityTolerance(items)
@@ -92,7 +94,8 @@ export function CaseEconomicsPanel({
           Economia da caixa (tempo real)
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mb-4 text-xs">
-          Motor de drop com margem instantânea por item e margem acumulada no ledger da caixa.
+          Motor de drop com margem instantânea por item e margem acumulada no ledger
+          {sharedLedger ? ' compartilhado entre caixas' : ' desta caixa'}.
         </ThemeText>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

@@ -56,22 +56,13 @@ export function CaseEditorItemsTable({
     })
   }
 
-  const handleProbabilityToleranceChange = (skinName: string, rawValue: string) => {
-    const probabilityTolerance = Number(rawValue.replace(',', '.'))
-    updateItem(skinName, {
-      probabilityTolerance: Number.isFinite(probabilityTolerance)
-        ? Math.min(5, Math.max(0, probabilityTolerance))
-        : 0,
-    })
-  }
-
   return (
     <Surface variant="card" className="!p-6">
       <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
         Itens da caixa ({items.length})
       </ThemeText>
       <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-        Configure drop %, tolerância e margem mín. de cada item na linha correspondente.
+        Configure o drop % e a margem mín. de cada item na linha correspondente.
       </ThemeText>
 
       {items.length === 0 ? (
@@ -80,7 +71,7 @@ export function CaseEditorItemsTable({
         </ThemeText>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1280px] text-left text-sm">
+          <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
                 <th className="px-3 py-2">
@@ -103,13 +94,6 @@ export function CaseEditorItemsTable({
                   <FieldLabelWithHelp
                     label="Drop %"
                     fieldHelp={caseFieldProps('dropPercent').fieldHelp}
-                    className="text-xs uppercase tracking-wide text-zinc-500"
-                  />
-                </th>
-                <th className="px-3 py-2">
-                  <FieldLabelWithHelp
-                    label="Tolerância"
-                    fieldHelp={caseFieldProps('probabilityTolerance').fieldHelp}
                     className="text-xs uppercase tracking-wide text-zinc-500"
                   />
                 </th>
@@ -211,20 +195,6 @@ export function CaseEditorItemsTable({
                         value={item.probability}
                         onChange={(e) =>
                           handleProbabilityChange(item.skinName, e.target.value)
-                        }
-                        disabled={item.enabled === false}
-                        className="w-24 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900"
-                      />
-                    </td>
-                    <td className="px-3 py-3">
-                      <input
-                        type="number"
-                        min={0}
-                        max={5}
-                        step="0.0001"
-                        value={item.probabilityTolerance}
-                        onChange={(e) =>
-                          handleProbabilityToleranceChange(item.skinName, e.target.value)
                         }
                         disabled={item.enabled === false}
                         className="w-24 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900"

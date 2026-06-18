@@ -64,6 +64,17 @@ export const weaponCategoriesApi = createApi({
         dispatch(skinsApi.util.invalidateTags(['SkinsCatalog']))
       },
     }),
+    deleteWeaponCategory: builder.mutation<{ success: true }, string>({
+      query: (id) => ({
+        url: WEAPON_CATEGORIES.BY_ID(id),
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['WeaponCategories'],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        await queryFulfilled
+        dispatch(skinsApi.util.invalidateTags(['SkinsCatalog']))
+      },
+    }),
   }),
 })
 
@@ -71,4 +82,5 @@ export const {
   useGetWeaponCategoriesQuery,
   useCreateWeaponCategoryMutation,
   useUpdateWeaponCategoryMutation,
+  useDeleteWeaponCategoryMutation,
 } = weaponCategoriesApi

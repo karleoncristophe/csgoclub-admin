@@ -24,8 +24,7 @@ export function mapCaseToFormValues(lootCase: LootCase): CaseFormState {
     items: lootCase.items.map((item): CaseDropItem => ({
       ...item,
       minMarginPercent: item.minMarginPercent ?? lootCase.targetMarginPercent,
-      probabilityTolerance:
-        item.probabilityTolerance ?? DEFAULT_ITEM_PROBABILITY_TOLERANCE,
+      probabilityTolerance: DEFAULT_ITEM_PROBABILITY_TOLERANCE,
       enabled: item.enabled ?? true,
       expectedValue:
         item.expectedValue ??
@@ -111,7 +110,10 @@ export function updateCaseDropItem(
 /** Campos só do formulário — não enviar na API. */
 export function toCaseDropItemPayload(item: CaseDropItem): CaseDropItemPayload {
   const { expectedValue: _expectedValue, ...payload } = item
-  return payload
+  return {
+    ...payload,
+    probabilityTolerance: DEFAULT_ITEM_PROBABILITY_TOLERANCE,
+  }
 }
 
 export function toCaseDropItemsPayload(

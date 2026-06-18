@@ -1,16 +1,59 @@
-import { Link } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { IconButton } from '@/components/ui/IconButton'
+import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import { TextBadge } from '@/components/StatusPill'
 import { listTable } from '@/components/ui/listTable'
 import { formatSkinsPrice } from '@/constants/skinsCurrency'
-import { useGetCasesQuery } from '@/redux/store/api/cases/api.cases'
+import {
+  useDeleteCaseMutation,
+  useGetCasesQuery,
+  type LootCase,
+} from '@/redux/store/api/cases/api.cases'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
 export default function CasesPage() {
+  const navigate = useNavigate()
+  const { confirm } = useConfirm()
   const { data = [], isLoading, isError, error } = useGetCasesQuery()
+  const [deleteCase, deleteState] = useDeleteCaseMutation()
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const handleDelete = async (lootCase: LootCase) => {
+    const hasRealOpens = lootCase.totalOpens > 0
+    setActionError(null)
+
+    const confirmed = await confirm({
+      title: 'Excluir caixa',
+      description: hasRealOpens
+        ? 'Esta caixa já possui aberturas reais e não pode ser removida do sistema.'
+        : 'A caixa será removida permanentemente do catálogo. Esta ação não pode ser desfeita.',
+      subjectLabel: 'Caixa',
+      subjectName: lootCase.name,
+      confirmLabel: 'Excluir',
+      confirmVariant: 'danger',
+      confirmDisabled: hasRealOpens,
+      warning: hasRealOpens
+        ? 'Somente caixas sem aberturas reais podem ser excluídas.'
+        : 'Itens, chances e configurações desta caixa serão perdidos.',
+    })
+
+    if (!confirmed) return
+
+    setDeletingId(lootCase._id)
+    try {
+      await deleteCase(lootCase._id).unwrap()
+    } catch (err) {
+      setActionError(getErrorMessage(err))
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -38,6 +81,12 @@ export default function CasesPage() {
           <Surface variant="errorBanner">{getErrorMessage(error)}</Surface>
         ) : null}
 
+        {actionError ? (
+          <Surface variant="errorBanner" className="mb-4">
+            {actionError}
+          </Surface>
+        ) : null}
+
         {!isLoading && data.length === 0 ? (
           <ThemeText tone="secondary" className="text-sm">
             Nenhuma caixa criada ainda.
@@ -48,7 +97,7 @@ export default function CasesPage() {
           <div className="overflow-x-auto">
             <table className={listTable.table}>
               <thead>
-                <tr className={listTable.headRow}>
+                <tr className={listTable.theadRow}>
                   <th className={listTable.th}>Nome</th>
                   <th className={listTable.th}>Preço</th>
                   <th className={listTable.th}>VE</th>
@@ -61,7 +110,7 @@ export default function CasesPage() {
               </thead>
               <tbody>
                 {data.map((lootCase) => (
-                  <tr key={lootCase._id} className={listTable.bodyRow}>
+                  <tr key={lootCase._id} className={listTable.tr}>
                     <td className={listTable.td}>
                       <ThemeText tone="primary" className="font-medium">
                         {lootCase.name}
@@ -101,12 +150,26 @@ export default function CasesPage() {
                       </TextBadge>
                     </td>
                     <td className={listTable.td}>
-                      <Link
-                        to={`/dashboard/cases/${lootCase._id}`}
-                        className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-400"
-                      >
-                        Editar
-                      </Link>
+                      <div className="flex items-center justify-end gap-1">
+                        <IconButton
+                          label="Editar caixa"
+                          onClick={() => navigate(`/dashboard/cases/${lootCase._id}`)}
+                        >
+                          <Pencil className="h-4 w-4" aria-hidden />
+                        </IconButton>
+                        <IconButton
+                          label={
+                            lootCase.totalOpens > 0
+                              ? 'Não é possível excluir caixas com aberturas reais'
+                              : 'Excluir caixa'
+                          }
+                          variant="danger"
+                          disabled={deletingId === lootCase._id && deleteState.isLoading}
+                          onClick={() => handleDelete(lootCase)}
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden />
+                        </IconButton>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -174,8 +174,7 @@ export function CaseEconomicsPanel({
           </div>
           <div className="sm:col-span-2 lg:col-span-4">
             <ThemeText tone="label" className="text-xs uppercase">
-              Soma das chances habilitadas (meta: {config.probabilityTargetPercent}% ±{' '}
-              {aggregatedTolerance.toFixed(4)}% soma das tolerâncias)
+              Soma das chances habilitadas (meta: {config.probabilityTargetPercent}%)
             </ThemeText>
             <ThemeText
               tone="primary"
@@ -191,7 +190,7 @@ export function CaseEconomicsPanel({
               </ThemeText>
             ) : (
               <ThemeText tone="faint" className="text-xs">
-                Dentro da tolerância configurada
+                Soma válida
               </ThemeText>
             )}
           </div>

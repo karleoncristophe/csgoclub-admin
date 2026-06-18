@@ -100,6 +100,13 @@ export const casesApi = createApi({
       }),
       invalidatesTags: (_result, _error, { id }) => ['Cases', { type: 'Case', id }],
     }),
+    deleteCase: builder.mutation<{ success: true }, string>({
+      query: (id) => ({
+        url: CASES.BY_ID(id),
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Cases'],
+    }),
   }),
 })
 
@@ -108,4 +115,5 @@ export const {
   useGetCaseByIdQuery,
   useCreateCaseMutation,
   useUpdateCaseMutation,
+  useDeleteCaseMutation,
 } = casesApi

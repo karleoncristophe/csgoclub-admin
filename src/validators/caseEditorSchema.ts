@@ -107,7 +107,7 @@ export const caseEditorSchema = Yup.object({
       return this.createError({
         message: `Soma atual: ${sum.toFixed(4)}% — ${
           delta > 0 ? 'falta' : 'sobra'
-        } ${Math.abs(delta).toFixed(4)}% (meta: ${probabilityTargetPercent}% ± ${aggregatedTolerance.toFixed(4)}% soma das tolerâncias dos itens)`,
+        } ${Math.abs(delta).toFixed(4)}% (meta: ${probabilityTargetPercent}%)`,
       })
     })
     .test('item-prices', 'Itens sem preço válido no catálogo', function (items) {

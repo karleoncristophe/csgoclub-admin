@@ -1,13 +1,16 @@
 import { useMemo, useState } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { useConfirm } from '@/components/ui/ConfirmModalContext'
+import { IconButton } from '@/components/ui/IconButton'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import { listTable } from '@/components/ui/listTable'
 import {
   useCreateWeaponCategoryMutation,
+  useDeleteWeaponCategoryMutation,
   useGetWeaponCategoriesQuery,
   useUpdateWeaponCategoryMutation,
   type WeaponCategory,
@@ -22,26 +25,49 @@ function categoryDisplayName(name: string) {
   return name
 }
 
+function isProtectedCategory(category: WeaponCategory) {
+  return category.name === FALLBACK_WEAPON_CATEGORY
+}
+
 function clampTax(value: number) {
   if (!Number.isFinite(value)) return 0
   return Math.min(1000, Math.max(0, value))
 }
 
+function normalizeCategoryName(name: string) {
+  return name.trim()
+}
+
 export default function WeaponCategoriesPage() {
+  const { confirm } = useConfirm()
   const { data = [], isLoading, isError, error } = useGetWeaponCategoriesQuery()
   const [createCategory, createState] = useCreateWeaponCategoryMutation()
   const [updateCategory, updateState] = useUpdateWeaponCategoryMutation()
+  const [deleteCategory, deleteState] = useDeleteWeaponCategoryMutation()
 
   const [createName, setCreateName] = useState('')
   const [createTax, setCreateTax] = useState('0')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editTax, setEditTax] = useState('0')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const availableNames = useMemo(() => {
-    const existing = new Set(data.map((item) => item.name))
-    return WEAPON_TYPE_OPTIONS.filter((name) => !existing.has(name))
-  }, [data])
+  const existingNames = useMemo(
+    () => new Set(data.map((item) => item.name.trim().toLowerCase())),
+    [data],
+  )
+
+  const createNameNormalized = normalizeCategoryName(createName)
+  const createNameTaken = createNameNormalized
+    ? existingNames.has(createNameNormalized.toLowerCase())
+    : false
+
+  const nameSuggestions = useMemo(() => {
+    const suggested = [...WEAPON_TYPE_OPTIONS, 'Charm', 'Sticker', 'Agent']
+    return [...new Set(suggested)].filter(
+      (name) => !existingNames.has(name.toLowerCase()),
+    )
+  }, [existingNames])
 
   const startEdit = (category: WeaponCategory) => {
     setEditingId(category._id)
@@ -57,11 +83,11 @@ export default function WeaponCategoriesPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!createName.trim()) return
+    if (!createNameNormalized || createNameTaken) return
 
     try {
       await createCategory({
-        name: createName.trim(),
+        name: createNameNormalized,
         taxPercent: clampTax(Number(createTax)),
       }).unwrap()
       setCreateName('')
@@ -75,12 +101,42 @@ export default function WeaponCategoriesPage() {
     try {
       await updateCategory({
         id,
-        name: editName.trim(),
+        name: normalizeCategoryName(editName),
         taxPercent: clampTax(Number(editTax)),
       }).unwrap()
       cancelEdit()
     } catch {
       // error handled by mutation state
+    }
+  }
+
+  const handleDelete = async (category: WeaponCategory) => {
+    if (isProtectedCategory(category)) return
+
+    const label = categoryDisplayName(category.name)
+    const confirmed = await confirm({
+      title: 'Excluir categoria',
+      description: 'A categoria será removida e as skins associadas passarão a usar a taxa padrão All.',
+      subjectLabel: 'Categoria',
+      subjectName: label,
+      confirmLabel: 'Excluir',
+      confirmVariant: 'danger',
+      warning: 'Esta ação não pode ser desfeita.',
+    })
+
+    if (!confirmed) return
+
+    if (editingId === category._id) {
+      cancelEdit()
+    }
+
+    setDeletingId(category._id)
+    try {
+      await deleteCategory(category._id).unwrap()
+    } catch {
+      // error handled by mutation state
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -91,27 +147,37 @@ export default function WeaponCategoriesPage() {
       </PageTitle>
 
       <Surface variant="card" className="!p-6">
-        <ThemeText as="h2" tone="primary" className="mb-4 text-base font-semibold">
+        <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
           Nova categoria
+        </ThemeText>
+        <ThemeText as="p" tone="secondary" className="mb-4 text-xs">
+          Informe um nome livre (ex.: Charm, Sticker) ou um tipo de arma ainda não cadastrado.
         </ThemeText>
 
         <form
           onSubmit={handleCreate}
-          className="mb-6 grid gap-4 md:grid-cols-[1fr_160px_auto] md:items-end"
+          className="mb-2 grid gap-4 md:grid-cols-[1fr_160px_auto] md:items-end"
         >
-          <Select
-            label="Tipo de arma"
-            name="createName"
-            value={createName}
-            onChange={(e) => setCreateName(e.target.value)}
-          >
-            <option value="">Selecione...</option>
-            {availableNames.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </Select>
+          <div>
+            <Input
+              label="Nome da categoria"
+              name="createName"
+              list="weapon-category-suggestions"
+              placeholder="Ex.: Charm, Rifle..."
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+            />
+            <datalist id="weapon-category-suggestions">
+              {nameSuggestions.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+            {createNameTaken ? (
+              <ThemeText as="p" tone="secondary" className="mt-1 text-xs text-red-500">
+                Já existe uma categoria com este nome.
+              </ThemeText>
+            ) : null}
+          </div>
 
           <Input
             label="Taxa (%)"
@@ -123,7 +189,11 @@ export default function WeaponCategoriesPage() {
             onChange={(e) => setCreateTax(e.target.value)}
           />
 
-          <Button type="submit" isLoading={createState.isLoading} disabled={!createName}>
+          <Button
+            type="submit"
+            isLoading={createState.isLoading}
+            disabled={!createNameNormalized || createNameTaken}
+          >
             Criar
           </Button>
         </form>
@@ -164,6 +234,8 @@ export default function WeaponCategoriesPage() {
                 ) : (
                   data.map((category) => {
                     const isEditing = editingId === category._id
+                    const isDeleting = deletingId === category._id
+                    const protectedCategory = isProtectedCategory(category)
 
                     return (
                       <tr key={category._id} className={listTable.tr}>
@@ -173,6 +245,7 @@ export default function WeaponCategoriesPage() {
                               name={`edit-name-${category._id}`}
                               value={editName}
                               onChange={(e) => setEditName(e.target.value)}
+                              disabled={protectedCategory}
                             />
                           ) : (
                             categoryDisplayName(category.name)
@@ -207,9 +280,24 @@ export default function WeaponCategoriesPage() {
                               </Button>
                             </div>
                           ) : (
-                            <Button size="sm" variant="secondary" onClick={() => startEdit(category)}>
-                              Editar
-                            </Button>
+                            <div className="flex flex-wrap items-center justify-end gap-1">
+                              <IconButton
+                                label="Editar categoria"
+                                onClick={() => startEdit(category)}
+                              >
+                                <Pencil className="h-4 w-4" aria-hidden />
+                              </IconButton>
+                              {!protectedCategory ? (
+                                <IconButton
+                                  label="Excluir categoria"
+                                  variant="danger"
+                                  disabled={isDeleting && deleteState.isLoading}
+                                  onClick={() => handleDelete(category)}
+                                >
+                                  <Trash2 className="h-4 w-4" aria-hidden />
+                                </IconButton>
+                              ) : null}
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -224,6 +312,12 @@ export default function WeaponCategoriesPage() {
         {updateState.isError ? (
           <p className={`mt-4 ${surfaceClass('errorBanner')}`}>
             {getErrorMessage(updateState.error)}
+          </p>
+        ) : null}
+
+        {deleteState.isError ? (
+          <p className={`mt-4 ${surfaceClass('errorBanner')}`}>
+            {getErrorMessage(deleteState.error)}
           </p>
         ) : null}
       </Surface>

@@ -241,7 +241,6 @@ export default function CaseEditorPage() {
               item.minMarginPercent,
             ),
             minMarginPercent: item.minMarginPercent,
-            probabilityTolerance: item.probabilityTolerance,
             enabled: item.enabled,
           }
         } catch {

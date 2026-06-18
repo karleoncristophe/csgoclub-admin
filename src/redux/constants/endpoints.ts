@@ -39,4 +39,5 @@ export const CASES = {
   ROOT: '/admin/cases',
   BY_ID: (id: string) => `/admin/cases/${id}`,
   SIMULATE_OPENS: (id: string) => `/admin/cases/${id}/simulate-opens`,
+  DUPLICATE: (id: string) => `/admin/cases/${id}/duplicate`,
 } as const

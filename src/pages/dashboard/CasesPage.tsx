@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Pencil, Play, Plus, Trash2 } from 'lucide-react'
+import { Copy, Pencil, Play, Plus, Trash2 } from 'lucide-react'
 import { CaseDevSimulatorPanel } from '@/components/cases/CaseDevSimulatorPanel'
 import { CaseListNameCell } from '@/components/cases/CaseListImage'
 import { IconButton } from '@/components/ui/IconButton'
@@ -13,6 +13,7 @@ import { listTable } from '@/components/ui/listTable'
 import { formatSkinsPrice } from '@/constants/skinsCurrency'
 import {
   useDeleteCaseMutation,
+  useDuplicateCaseMutation,
   useGetCasesQuery,
   type LootCase,
 } from '@/redux/store/api/cases/api.cases'
@@ -23,7 +24,9 @@ export default function CasesPage() {
   const { confirm } = useConfirm()
   const { data = [], isLoading, isError, error } = useGetCasesQuery()
   const [deleteCase, deleteState] = useDeleteCaseMutation()
+  const [duplicateCase, duplicateState] = useDuplicateCaseMutation()
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [simulatorCaseId, setSimulatorCaseId] = useState<string | null>(null)
 
@@ -70,6 +73,18 @@ export default function CasesPage() {
       behavior: 'smooth',
       block: 'start',
     })
+  }
+
+  const handleDuplicate = async (lootCase: LootCase) => {
+    setActionError(null)
+    setDuplicatingId(lootCase._id)
+    try {
+      await duplicateCase(lootCase._id).unwrap()
+    } catch (err) {
+      setActionError(getErrorMessage(err))
+    } finally {
+      setDuplicatingId(null)
+    }
   }
 
   return (
@@ -175,6 +190,15 @@ export default function CasesPage() {
                             <Play className="h-4 w-4" aria-hidden />
                           </IconButton>
                         ) : null}
+                        <IconButton
+                          label="Duplicar caixa"
+                          disabled={
+                            duplicatingId === lootCase._id && duplicateState.isLoading
+                          }
+                          onClick={() => void handleDuplicate(lootCase)}
+                        >
+                          <Copy className="h-4 w-4" aria-hidden />
+                        </IconButton>
                         <IconButton
                           label="Editar caixa"
                           onClick={() => navigate(`/dashboard/cases/${lootCase._id}`)}

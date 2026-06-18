@@ -155,6 +155,13 @@ export const casesApi = createApi({
         body: { count },
       }),
     }),
+    duplicateCase: builder.mutation<LootCase, string>({
+      query: (id) => ({
+        url: CASES.DUPLICATE(id),
+        method: 'POST',
+      }),
+      invalidatesTags: ['Cases'],
+    }),
   }),
 })
 
@@ -165,4 +172,5 @@ export const {
   useUpdateCaseMutation,
   useDeleteCaseMutation,
   useSimulateCaseOpensMutation,
+  useDuplicateCaseMutation,
 } = casesApi

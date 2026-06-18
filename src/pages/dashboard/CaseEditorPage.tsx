@@ -384,6 +384,10 @@ export default function CaseEditorPage() {
           availableCases={allCases.map((lootCase) => ({
             _id: lootCase._id,
             name: lootCase.name,
+            slug: lootCase.slug,
+            imageUrl: lootCase.imageUrl,
+            active: lootCase.active,
+            price: lootCase.price,
           }))}
           economyLedger={economyLedger}
           onSharedCaseIdsChange={(sharedCaseIds) => {

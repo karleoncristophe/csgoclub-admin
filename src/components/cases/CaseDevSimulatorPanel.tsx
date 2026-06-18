@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FlaskConical, Loader2, Play } from 'lucide-react'
+import { Autocomplete } from '@/components/ui/Autocomplete'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { formatSkinsPrice } from '@/constants/skinsCurrency'
@@ -47,6 +47,16 @@ export function CaseDevSimulatorPanel({
     [cases, selectedCaseId],
   )
 
+  const caseOptions = useMemo(
+    () =>
+      cases.map((lootCase) => ({
+        value: lootCase._id,
+        label: lootCase.name,
+        description: lootCase.slug,
+      })),
+    [cases],
+  )
+
   const handleSimulate = async () => {
     if (!selectedCaseId) return
 
@@ -83,21 +93,18 @@ export function CaseDevSimulatorPanel({
       </div>
 
       <div className="mb-4 grid gap-4 md:grid-cols-[1fr_140px_auto] md:items-end">
-        <Select
+        <Autocomplete
           label="Caixa"
           name="simulatorCaseId"
           value={selectedCaseId}
-          onChange={(event) => {
-            setSelectedCaseId(event.target.value)
+          options={caseOptions}
+          maxVisible={10}
+          placeholder="Buscar caixa por nome ou slug..."
+          onChange={(nextCaseId) => {
+            setSelectedCaseId(nextCaseId)
             setResult(null)
           }}
-        >
-          {cases.map((lootCase) => (
-            <option key={lootCase._id} value={lootCase._id}>
-              {lootCase.name}
-            </option>
-          ))}
-        </Select>
+        />
 
         <Input
           label="Quantidade"

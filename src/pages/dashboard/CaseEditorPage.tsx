@@ -4,12 +4,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { CaseEconomicsPanel } from '@/components/cases/CaseEconomicsPanel'
 import { CaseEditorDevPresetBar } from '@/components/cases/editor/CaseEditorDevPresetBar'
+import { CaseEditorInfluencerDemoPresetBar } from '@/components/cases/editor/CaseEditorInfluencerDemoPresetBar'
 import { CaseEditorEconomyPoolSection } from '@/components/cases/editor/CaseEditorEconomyPoolSection'
 import { CaseEditorGeneralSection } from '@/components/cases/editor/CaseEditorGeneralSection'
 import { CaseEditorItemsTable } from '@/components/cases/editor/CaseEditorItemsTable'
 import { CaseEditorPricingSection } from '@/components/cases/editor/CaseEditorPricingSection'
 import { CaseEditorSkinSearchSection } from '@/components/cases/editor/CaseEditorSkinSearchSection'
 import { fetchCsgoNetDevPresetItems } from '@/components/cases/editor/caseDevPreset'
+import { fetchInfluencerDemoPresetItems } from '@/components/cases/editor/caseInfluencerDemoPreset'
 import type { CaseFormState } from '@/components/cases/editor/caseEditor.types'
 import {
   collectFormErrors,
@@ -67,6 +69,8 @@ export default function CaseEditorPage() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [devPresetLoading, setDevPresetLoading] = useState(false)
   const [devPresetError, setDevPresetError] = useState<string | null>(null)
+  const [influencerPresetLoading, setInfluencerPresetLoading] = useState(false)
+  const [influencerPresetError, setInfluencerPresetError] = useState<string | null>(null)
   const [validationAttempt, setValidationAttempt] = useState(0)
   const errorBannerRef = useRef<HTMLDivElement>(null)
   const { skinsCurrency: defaultSkinsCurrency } = useAdminPreferences()
@@ -301,6 +305,32 @@ export default function CaseEditorPage() {
     }
   }
 
+  const handleInfluencerDemoPresetApply = async () => {
+    setInfluencerPresetLoading(true)
+    setInfluencerPresetError(null)
+    try {
+      const items = await fetchInfluencerDemoPresetItems({
+        fetchCatalogItem,
+        valueMode: values.valueMode as CaseValueMode,
+        targetMarginPercent: values.targetMarginPercent,
+      })
+
+      await setValues({
+        ...values,
+        currency: SkinsCurrency.USD,
+        name: 'Caixa Demo Influencer',
+        probabilityTargetPercent: 100,
+        items,
+        listPriceManual: false,
+        priceManual: false,
+      })
+    } catch (err) {
+      setInfluencerPresetError(getErrorMessage(err))
+    } finally {
+      setInfluencerPresetLoading(false)
+    }
+  }
+
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setValidationAttempt((count) => count + 1)
@@ -352,6 +382,12 @@ export default function CaseEditorPage() {
           loading={devPresetLoading}
           error={devPresetError}
           onApply={() => void handleDevPresetApply()}
+        />
+
+        <CaseEditorInfluencerDemoPresetBar
+          loading={influencerPresetLoading}
+          error={influencerPresetError}
+          onApply={() => void handleInfluencerDemoPresetApply()}
         />
 
         <CaseEditorSkinSearchSection

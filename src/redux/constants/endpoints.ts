@@ -27,6 +27,11 @@ export const USERS = {
   LIST: '/admin/users',
   BY_ID: (id: string) => `/admin/users/${id}`,
   INVENTORY: (id: string) => `/admin/users/${id}/inventory`,
+  SITE_INVENTORY: (id: string) => `/admin/users/${id}/site-inventory`,
+  OPEN_TEST_CASE: (userId: string, caseId: string) =>
+    `/admin/users/${userId}/cases/${caseId}/open`,
+  RESOLVE_TEST_CASE_OPEN: (userId: string, openId: string) =>
+    `/admin/users/${userId}/case-opens/${openId}/disposition`,
 } as const
 
 export const UPLOAD = {

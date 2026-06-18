@@ -87,6 +87,7 @@ export type LootCase = {
   probabilitySum: number
   items: CaseDropItem[]
   economyLedger?: CaseEconomyLedger
+  testEconomyLedger?: CaseEconomyLedger
   economyPoolId?: string
   sharedCaseIds?: string[]
   active: boolean

@@ -255,7 +255,16 @@ export default function UsersPage() {
                       </td>
                       <td className={listTable.tdMuted}>{user.steamId}</td>
                       <td className={listTable.td}>
-                        <TextBadge>{labelUserAppRole(user.role)}</TextBadge>
+                        <div className="flex flex-wrap gap-1.5">
+                          <TextBadge>{labelUserAppRole(user.role)}</TextBadge>
+                          {user.userType === 'influencer' || user.isTestAffiliate ? (
+                            <TextBadge>
+                              <span className="text-amber-700 dark:text-amber-300">
+                                Influencer
+                              </span>
+                            </TextBadge>
+                          ) : null}
+                        </div>
                       </td>
                       <td className={listTable.td}>
                         <StatusPill active={user.active} deleted={user.deleted} />

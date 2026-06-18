@@ -14,6 +14,8 @@ export type AppUser = {
   deleted?: boolean
   active?: boolean
   role?: 'ADMIN' | 'USER'
+  userType?: 'standard' | 'influencer'
+  isTestAffiliate?: boolean
   lastLoginAt?: string
   tradeUrl?: string
   tradePartner?: string
@@ -24,6 +26,132 @@ export type AppUser = {
 export type UserAdminDetail = AppUser & {
   tradeConfigured: boolean
   isTestAffiliate?: boolean
+  userType: 'standard' | 'influencer'
+  balance: number
+  bonusBalance: number
+  totalSpendable: number
+  withdrawableBalance: number
+}
+
+export type UserCaseOpenBulkResult = {
+  caseId: string
+  caseName: string
+  count: number
+  disposition: 'keep' | 'convert'
+  openPrice: number
+  totalPaid: number
+  totalWonValue: number
+  creditedAmount?: number
+  inventoryItemsCreated: number
+  items: Array<{
+    skinName: string
+    image?: string
+    value: number
+    disposition: 'kept' | 'converted'
+    dropResolutionMethod: 'direct' | 'reroll' | 'fallback'
+    wasRerolled: boolean
+  }>
+  balances: {
+    balance: number
+    bonusBalance: number
+    totalSpendable: number
+    withdrawableBalance: number
+  }
+  testLedgerAfter: {
+    totalRevenue: number
+    totalPayout: number
+    totalRealOpens: number
+  }
+  dropSummary: {
+    directCount: number
+    rerollCount: number
+    fallbackCount: number
+    marginPercent: number
+  }
+}
+
+export type CaseOpenRecord = {
+  _id: string
+  caseId: string
+  userId: string
+  wonSkinName: string
+  pricePaid: number
+  itemValue: number
+  currency: string
+  isTestOpen: boolean
+  disposition: 'pending' | 'kept' | 'converted'
+  wonItemImage?: string
+  wonItemRarityName?: string
+  wonItemRarityColor?: string
+  convertedAmount?: number
+  createdAt?: string
+}
+
+export type UserCaseOpenResult = {
+  open: CaseOpenRecord
+  wonItem: {
+    skinName: string
+    image?: string
+    price: number
+    rarity?: { name?: string; color?: string }
+  }
+  balances: {
+    balance: number
+    bonusBalance: number
+    totalSpendable: number
+    withdrawableBalance: number
+  }
+}
+
+export type ResolveCaseOpenResult = {
+  open: CaseOpenRecord
+  inventoryItem?: SiteInventoryItem
+  creditedAmount?: number
+  balances: UserCaseOpenResult['balances']
+}
+
+export type SiteInventoryItem = {
+  _id: string
+  userId: string
+  caseOpenId: string
+  caseId: string
+  skinName: string
+  image?: string
+  rarityName?: string
+  rarityColor?: string
+  value: number
+  currency: string
+  status: 'active' | 'converted'
+  source: 'case_open'
+  convertedAt?: string
+  convertedAmount?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+export type SiteInventorySummary = {
+  activeCount: number
+  activeTotalValue: number
+  convertedCount: number
+  convertedTotalValue: number
+  filteredTotalValue: number
+  currency: string
+}
+
+export type SiteInventoryResponse = {
+  data: SiteInventoryItem[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  summary: SiteInventorySummary
+}
+
+export type GetSiteInventoryParams = {
+  userId: string
+  page?: number
+  limit?: number
+  status?: 'active' | 'converted'
 }
 
 export type UserInventoryItem = {
@@ -121,7 +249,12 @@ export const usersApi = createApi({
     }),
     updateUser: builder.mutation<
       UserAdminDetail,
-      { id: string; isTestAffiliate?: boolean }
+      {
+        id: string
+        userType?: 'standard' | 'influencer'
+        isTestAffiliate?: boolean
+        addBonusBalance?: number
+      }
     >({
       query: ({ id, ...body }) => ({
         url: USERS.BY_ID(id),
@@ -148,6 +281,57 @@ export const usersApi = createApi({
         { type: 'Users', id: `${userId}-inventory` },
       ],
     }),
+    getUserSiteInventory: builder.query<SiteInventoryResponse, GetSiteInventoryParams>({
+      query: ({ userId, ...params }) => ({
+        url: USERS.SITE_INVENTORY(userId),
+        method: 'GET',
+        params: {
+          ...(params.page != null ? { page: params.page } : {}),
+          ...(params.limit != null ? { limit: params.limit } : {}),
+          ...(params.status ? { status: params.status } : {}),
+        },
+      }),
+      providesTags: (_result, _error, { userId }) => [
+        { type: 'Users', id: `${userId}-site-inventory` },
+      ],
+    }),
+    openUserTestCase: builder.mutation<
+      UserCaseOpenBulkResult,
+      {
+        userId: string
+        caseId: string
+        count?: number
+        disposition?: 'keep' | 'convert'
+      }
+    >({
+      query: ({ userId, caseId, count, disposition }) => ({
+        url: USERS.OPEN_TEST_CASE(userId, caseId),
+        method: 'POST',
+        body: {
+          ...(count != null ? { count } : {}),
+          ...(disposition ? { disposition } : {}),
+        },
+      }),
+      invalidatesTags: (_result, _error, { userId }) => [
+        { type: 'Users', id: userId },
+        { type: 'Users', id: `${userId}-site-inventory` },
+        'Cases',
+      ],
+    }),
+    resolveUserTestCaseOpen: builder.mutation<
+      ResolveCaseOpenResult,
+      { userId: string; openId: string; action: 'keep' | 'convert' }
+    >({
+      query: ({ userId, openId, action }) => ({
+        url: USERS.RESOLVE_TEST_CASE_OPEN(userId, openId),
+        method: 'POST',
+        body: { action },
+      }),
+      invalidatesTags: (_result, _error, { userId }) => [
+        { type: 'Users', id: userId },
+        { type: 'Users', id: `${userId}-site-inventory` },
+      ],
+    }),
   }),
 })
 
@@ -156,4 +340,7 @@ export const {
   useGetUserByIdQuery,
   useUpdateUserMutation,
   useGetUserInventoryQuery,
+  useGetUserSiteInventoryQuery,
+  useOpenUserTestCaseMutation,
+  useResolveUserTestCaseOpenMutation,
 } = usersApi

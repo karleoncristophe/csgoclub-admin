@@ -12,7 +12,58 @@ import {
   type SiteInventoryGroupedItem,
 } from '@/redux/store/api/users/api.users'
 import { getErrorMessage } from '@/utils/getErrorMessage'
-import { userStatCardClass } from './userPanelClasses'
+import { userStatCardSpaciousClass } from './userPanelClasses'
+
+function InventoryStatCard({
+  label,
+  value,
+  hint,
+  variant = 'default',
+}: {
+  label: string
+  value: string
+  hint: string
+  variant?: keyof typeof userStatCardSpaciousClass
+}) {
+  return (
+    <div className={userStatCardSpaciousClass[variant]}>
+      <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
+        {label}
+      </ThemeText>
+      <ThemeText
+        as="p"
+        tone="primary"
+        className={`mt-2 text-xl font-bold sm:text-2xl ${
+          variant === 'brand'
+            ? 'dark:text-brand-100'
+            : variant === 'amber'
+              ? 'dark:text-amber-100'
+              : variant === 'rose'
+                ? 'dark:text-rose-100'
+                : ''
+        }`}
+      >
+        {value}
+      </ThemeText>
+      <ThemeText as="p" tone="faint" className="mt-2 text-xs leading-relaxed">
+        {hint}
+      </ThemeText>
+    </div>
+  )
+}
+
+function SpendCurrencyChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-zinc-200/80 bg-white/80 px-3 py-2 dark:border-zinc-700/80 dark:bg-zinc-950/50">
+      <ThemeText as="p" tone="label" className="text-[10px] uppercase tracking-wide">
+        {label}
+      </ThemeText>
+      <ThemeText as="p" tone="secondary" className="mt-1 text-sm font-semibold">
+        {value}
+      </ThemeText>
+    </div>
+  )
+}
 
 function formatMoney(value: number, currency = 'USD') {
   return new Intl.NumberFormat('pt-BR', {
@@ -27,11 +78,11 @@ function formatSpendBreakdown(spend: {
   spentBrl: number
   spentEur: number
 }) {
-  return [
-    formatMoney(spend.spentUsd, 'USD'),
-    formatMoney(spend.spentBrl, 'BRL'),
-    formatMoney(spend.spentEur, 'EUR'),
-  ].join(' · ')
+  return {
+    usd: formatMoney(spend.spentUsd, 'USD'),
+    brl: formatMoney(spend.spentBrl, 'BRL'),
+    eur: formatMoney(spend.spentEur, 'EUR'),
+  }
 }
 
 function groupedItemKey(item: SiteInventoryGroupedItem) {
@@ -118,20 +169,20 @@ export function UserSiteInventoryPanel({
   }
 
   return (
-    <Surface variant="card" className="!p-6">
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+    <Surface variant="card" className="!p-6 sm:!p-8">
+      <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="max-w-2xl">
           <SectionTitle className="flex items-center gap-2">
             <Package className="h-5 w-5 text-brand-600 dark:text-brand-400" />
             Inventário do site
           </SectionTitle>
-          <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
+          <ThemeText as="p" tone="secondary" className="mt-2 text-sm leading-relaxed">
             Itens ganhos em aberturas de caixa na plataforma. Não entram no saldo até serem
             convertidos.
           </ThemeText>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
           {canConvertAll ? (
             <Button
               type="button"
@@ -154,7 +205,7 @@ export function UserSiteInventoryPanel({
               setStatus(event.target.value as 'active' | 'converted' | '')
               setPage(1)
             }}
-            className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+            className="h-10 min-w-[9.5rem] rounded-xl border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
           >
             <option value="active">Ativos</option>
             <option value="converted">Convertidos</option>
@@ -164,91 +215,77 @@ export function UserSiteInventoryPanel({
       </div>
 
       {successMessage ? (
-        <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
+        <p className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
           {successMessage}
         </p>
       ) : null}
 
       {convertState.isError ? (
-        <p className={`${surfaceClass('errorBanner')} mb-4`}>
+        <p className={`${surfaceClass('errorBanner')} mb-6`}>
           {getErrorMessage(convertState.error)}
         </p>
       ) : null}
 
       {!isLoading && !isError && data?.summary ? (
-        <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          <div className={userStatCardClass.brand}>
-            <ThemeText as="p" tone="label" className="text-[11px] uppercase">
-              Valor no inventário
-            </ThemeText>
-            <ThemeText
-              as="p"
-              tone="primary"
-              className="mt-1 text-xl font-bold dark:text-brand-100"
-            >
-              {formatMoney(data.summary.activeTotalValue, displayCurrency)}
-            </ThemeText>
-            <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-              {data.summary.activeCount} item(ns) ativos — não sacável até converter
-            </ThemeText>
+        <div className="mb-8 space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <InventoryStatCard
+              variant="brand"
+              label="Valor no inventário"
+              value={formatMoney(data.summary.activeTotalValue, displayCurrency)}
+              hint={`${data.summary.activeCount} item(ns) ativos — não sacável até converter`}
+            />
+            <InventoryStatCard
+              label="Itens ativos"
+              value={String(data.summary.activeCount)}
+              hint="Guardados na plataforma"
+            />
+            <InventoryStatCard
+              label="Já convertidos"
+              value={formatMoney(data.summary.convertedTotalValue, displayCurrency)}
+              hint={`${data.summary.convertedCount} item(ns) viraram saldo`}
+            />
+            <InventoryStatCard
+              variant="amber"
+              label="Filtro atual"
+              value={formatMoney(data.summary.filteredTotalValue, displayCurrency)}
+              hint={
+                isGrouped
+                  ? `${total} skin(s) únicas · ${totalItems} itens`
+                  : `${total} item(ns) nesta listagem`
+              }
+            />
           </div>
-          <div className={userStatCardClass.default}>
-            <ThemeText as="p" tone="label" className="text-[11px] uppercase">
-              Itens ativos
-            </ThemeText>
-            <ThemeText as="p" tone="primary" className="mt-1 text-xl font-bold">
-              {data.summary.activeCount}
-            </ThemeText>
-            <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-              Guardados na plataforma
-            </ThemeText>
-          </div>
-          <div className={userStatCardClass.default}>
-            <ThemeText as="p" tone="label" className="text-[11px] uppercase">
-              Já convertidos
-            </ThemeText>
-            <ThemeText as="p" tone="primary" className="mt-1 text-xl font-bold">
-              {formatMoney(data.summary.convertedTotalValue, displayCurrency)}
-            </ThemeText>
-            <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-              {data.summary.convertedCount} item(ns) viraram saldo
-            </ThemeText>
-          </div>
-          <div className={userStatCardClass.amber}>
-            <ThemeText as="p" tone="label" className="text-[11px] uppercase">
-              Filtro atual
-            </ThemeText>
-            <ThemeText
-              as="p"
-              tone="primary"
-              className="mt-1 text-xl font-bold dark:text-amber-100"
-            >
-              {formatMoney(data.summary.filteredTotalValue, displayCurrency)}
-            </ThemeText>
-            <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-              {isGrouped
-                ? `${total} skin(s) únicas · ${totalItems} itens`
-                : `${total} item(ns) nesta listagem`}
-            </ThemeText>
-          </div>
+
           {data.spend ? (
-            <div className={`${userStatCardClass.default} dark:border-rose-500/30 dark:bg-rose-500/10`}>
-              <ThemeText as="p" tone="label" className="text-[11px] uppercase">
-                Total gasto em caixas
-              </ThemeText>
-              <ThemeText
-                as="p"
-                tone="primary"
-                className="mt-1 text-xl font-bold dark:text-rose-100"
-              >
-                {formatMoney(data.spend.totalSpent, data.spend.currency)}
-              </ThemeText>
-              <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-                {data.spend.totalOpens} abertura(s)
-              </ThemeText>
-              <ThemeText as="p" tone="faint" className="mt-1 text-[11px] leading-5">
-                {formatSpendBreakdown(data.spend)}
-              </ThemeText>
+            <div className={userStatCardSpaciousClass.rose}>
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
+                    Total gasto em caixas
+                  </ThemeText>
+                  <ThemeText
+                    as="p"
+                    tone="primary"
+                    className="mt-2 text-2xl font-bold dark:text-rose-100"
+                  >
+                    {formatMoney(data.spend.totalSpent, data.spend.currency)}
+                  </ThemeText>
+                  <ThemeText as="p" tone="faint" className="mt-2 text-sm">
+                    {data.spend.totalOpens.toLocaleString('pt-BR')} abertura(s) registradas
+                  </ThemeText>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {Object.entries(formatSpendBreakdown(data.spend)).map(([code, value]) => (
+                    <SpendCurrencyChip
+                      key={code}
+                      label={code.toUpperCase()}
+                      value={value}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           ) : null}
         </div>
@@ -273,7 +310,7 @@ export function UserSiteInventoryPanel({
 
       {data && data.data.length > 0 ? (
         <>
-          <ThemeText as="p" tone="faint" className="mb-3 text-xs">
+          <ThemeText as="p" tone="faint" className="mb-4 text-xs">
             {isGrouped
               ? `Exibindo ${pageStart}–${pageEnd} de ${total} skin(s) · ${totalItems} itens`
               : `Exibindo ${pageStart}–${pageEnd} de ${total} item(ns)`}
@@ -281,7 +318,7 @@ export function UserSiteInventoryPanel({
 
           <div
             ref={productsAnchorRef}
-            className="scroll-mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+            className="scroll-mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
           >
             {(data.data as SiteInventoryGroupedItem[]).map((item) => {
               const stackBadge = formatStackBadge(item.count)
@@ -289,7 +326,7 @@ export function UserSiteInventoryPanel({
               return (
                 <div
                   key={groupedItemKey(item)}
-                  className={`flex gap-3 p-3 ${userStatCardClass.default}`}
+                  className={`flex gap-4 p-4 ${userStatCardSpaciousClass.default}`}
                 >
                   <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900">
                     {item.image ? (
@@ -307,15 +344,15 @@ export function UserSiteInventoryPanel({
                     <ThemeText as="p" tone="primary" className="line-clamp-2 text-sm font-medium">
                       {item.skinName}
                     </ThemeText>
-                    <ThemeText as="p" tone="secondary" className="mt-1 text-sm font-semibold">
+                    <ThemeText as="p" tone="secondary" className="mt-2 text-sm font-semibold">
                       {formatMoney(item.totalValue, item.currency)}
                     </ThemeText>
                     {item.count > 1 ? (
-                      <ThemeText as="p" tone="faint" className="text-xs">
+                      <ThemeText as="p" tone="faint" className="mt-1 text-xs">
                         {item.count} un. × {formatMoney(item.value, item.currency)}
                       </ThemeText>
                     ) : null}
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       <span
                         className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                           item.status === 'active'

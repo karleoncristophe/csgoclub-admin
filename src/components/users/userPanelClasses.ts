@@ -8,6 +8,18 @@ export const userStatCardClass = {
     'rounded-xl border border-amber-200/80 bg-amber-50/50 px-3 py-2.5 dark:border-amber-500/30 dark:bg-amber-500/10 dark:ring-1 dark:ring-inset dark:ring-amber-500/15',
 } as const
 
+/** Variante com mais respiro — painéis de inventário / resumo expandido. */
+export const userStatCardSpaciousClass = {
+  default:
+    'rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-700/80 dark:bg-zinc-900/60',
+  brand:
+    'rounded-2xl border border-brand-200/80 bg-brand-50/50 p-4 dark:border-brand-400/35 dark:bg-brand-500/10 dark:ring-1 dark:ring-inset dark:ring-brand-400/15',
+  amber:
+    'rounded-2xl border border-amber-200/80 bg-amber-50/50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10 dark:ring-1 dark:ring-inset dark:ring-amber-500/15',
+  rose:
+    'rounded-2xl border border-rose-200/80 bg-rose-50/40 p-4 dark:border-rose-500/30 dark:bg-rose-500/10 dark:ring-1 dark:ring-inset dark:ring-rose-500/15',
+} as const
+
 export const userBalanceTileClass = {
   default:
     'rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-700/80 dark:bg-zinc-900/60',

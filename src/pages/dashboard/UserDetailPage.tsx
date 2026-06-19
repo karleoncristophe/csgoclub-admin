@@ -314,7 +314,12 @@ export default function UserDetailPage() {
             />
           ) : null}
 
-          <UserSiteInventoryPanel userId={data._id} />
+          <UserSiteInventoryPanel
+            userId={data._id}
+            isInfluencer={isInfluencer}
+            walletCurrency={data.walletCurrency}
+            onConverted={() => refetch()}
+          />
 
           <UserInventoryPanel userId={data._id} />
         </>

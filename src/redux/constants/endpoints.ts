@@ -28,6 +28,8 @@ export const USERS = {
   BY_ID: (id: string) => `/admin/users/${id}`,
   INVENTORY: (id: string) => `/admin/users/${id}/inventory`,
   SITE_INVENTORY: (id: string) => `/admin/users/${id}/site-inventory`,
+  CONVERT_ALL_SITE_INVENTORY: (id: string) =>
+    `/admin/users/${id}/site-inventory/convert-all`,
   OPEN_TEST_CASE: (userId: string, caseId: string) =>
     `/admin/users/${userId}/cases/${caseId}/open`,
   RESOLVE_TEST_CASE_OPEN: (userId: string, openId: string) =>

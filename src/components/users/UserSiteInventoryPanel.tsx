@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { Package } from 'lucide-react'
+import { Loader2, Package, Wallet } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { Pagination } from '@/components/ui/Pagination'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
-import { useGetUserSiteInventoryQuery, type SiteInventoryGroupedItem } from '@/redux/store/api/users/api.users'
+import {
+  useConvertAllUserSiteInventoryMutation,
+  useGetUserSiteInventoryQuery,
+  type SiteInventoryGroupedItem,
+} from '@/redux/store/api/users/api.users'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { userStatCardClass } from './userPanelClasses'
 
@@ -14,6 +20,18 @@ function formatMoney(value: number, currency = 'USD') {
     currency,
     minimumFractionDigits: 2,
   }).format(value)
+}
+
+function formatSpendBreakdown(spend: {
+  spentUsd: number
+  spentBrl: number
+  spentEur: number
+}) {
+  return [
+    formatMoney(spend.spentUsd, 'USD'),
+    formatMoney(spend.spentBrl, 'BRL'),
+    formatMoney(spend.spentEur, 'EUR'),
+  ].join(' · ')
 }
 
 function groupedItemKey(item: SiteInventoryGroupedItem) {
@@ -27,22 +45,34 @@ function formatStackBadge(count: number) {
 
 type UserSiteInventoryPanelProps = {
   userId: string
+  isInfluencer: boolean
+  walletCurrency?: string
+  onConverted?: () => void
 }
 
-export function UserSiteInventoryPanel({ userId }: UserSiteInventoryPanelProps) {
+export function UserSiteInventoryPanel({
+  userId,
+  isInfluencer,
+  walletCurrency = 'USD',
+  onConverted,
+}: UserSiteInventoryPanelProps) {
+  const { confirm } = useConfirm()
   const productsAnchorRef = useRef<HTMLDivElement>(null)
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState<'active' | 'converted' | ''>('active')
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const pageSize = 12
   const safePage = Math.max(page, 1)
 
   const { data, isLoading, isFetching, isError, error } = useGetUserSiteInventoryQuery({
-    userId,
-    page: safePage,
-    limit: pageSize,
-    grouped: true,
-    ...(status ? { status } : {}),
-  })
+      userId,
+      page: safePage,
+      limit: pageSize,
+      grouped: true,
+      ...(status ? { status } : {}),
+    })
+
+  const [convertAll, convertState] = useConvertAllUserSiteInventoryMutation()
 
   const isGrouped = data?.grouped ?? true
   const total = data?.total ?? 0
@@ -51,12 +81,41 @@ export function UserSiteInventoryPanel({ userId }: UserSiteInventoryPanelProps) 
   const currentPage = Math.min(safePage, totalPages)
   const pageStart = total === 0 ? 0 : (currentPage - 1) * pageSize + 1
   const pageEnd = Math.min(currentPage * pageSize, total)
+  const activeCount = data?.summary.activeCount ?? 0
+  const activeTotalValue = data?.summary.activeTotalValue ?? 0
+  const displayCurrency = data?.summary.currency ?? walletCurrency
+  const canConvertAll = activeCount > 0
 
   useEffect(() => {
     if (page > totalPages) {
       setPage(totalPages)
     }
   }, [page, totalPages])
+
+  const handleConvertAll = async () => {
+    setSuccessMessage(null)
+
+    const balanceLabel = isInfluencer ? 'saldo bônus (não sacável)' : 'saldo real'
+    const accepted = await confirm({
+      title: 'Converter inventário em saldo?',
+      description: `Todos os ${activeCount} item(ns) ativos (${formatMoney(activeTotalValue, displayCurrency)}) serão convertidos em ${balanceLabel}, na moeda ${displayCurrency} da carteira do usuário. Esta ação não pode ser desfeita.`,
+      confirmLabel: 'Converter tudo',
+      cancelLabel: 'Cancelar',
+    })
+
+    if (!accepted) return
+
+    try {
+      const result = await convertAll({ userId }).unwrap()
+      setSuccessMessage(
+        `${result.convertedCount} item(ns) convertidos — ${formatMoney(result.creditedAmount, displayCurrency)} creditados.`,
+      )
+      setPage(1)
+      onConverted?.()
+    } catch {
+      // erro exibido via convertState.error
+    }
+  }
 
   return (
     <Surface variant="card" className="!p-6">
@@ -72,7 +131,23 @@ export function UserSiteInventoryPanel({ userId }: UserSiteInventoryPanelProps) 
           </ThemeText>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {canConvertAll ? (
+            <Button
+              type="button"
+              size="sm"
+              className="gap-2"
+              disabled={convertState.isLoading}
+              onClick={() => void handleConvertAll()}
+            >
+              {convertState.isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Wallet className="h-4 w-4" />
+              )}
+              Converter tudo em saldo
+            </Button>
+          ) : null}
           <select
             value={status}
             onChange={(event) => {
@@ -88,8 +163,20 @@ export function UserSiteInventoryPanel({ userId }: UserSiteInventoryPanelProps) 
         </div>
       </div>
 
+      {successMessage ? (
+        <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
+          {successMessage}
+        </p>
+      ) : null}
+
+      {convertState.isError ? (
+        <p className={`${surfaceClass('errorBanner')} mb-4`}>
+          {getErrorMessage(convertState.error)}
+        </p>
+      ) : null}
+
       {!isLoading && !isError && data?.summary ? (
-        <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <div className={userStatCardClass.brand}>
             <ThemeText as="p" tone="label" className="text-[11px] uppercase">
               Valor no inventário
@@ -99,7 +186,7 @@ export function UserSiteInventoryPanel({ userId }: UserSiteInventoryPanelProps) 
               tone="primary"
               className="mt-1 text-xl font-bold dark:text-brand-100"
             >
-              {formatMoney(data.summary.activeTotalValue, data.summary.currency)}
+              {formatMoney(data.summary.activeTotalValue, displayCurrency)}
             </ThemeText>
             <ThemeText as="p" tone="faint" className="mt-1 text-xs">
               {data.summary.activeCount} item(ns) ativos — não sacável até converter
@@ -121,7 +208,7 @@ export function UserSiteInventoryPanel({ userId }: UserSiteInventoryPanelProps) 
               Já convertidos
             </ThemeText>
             <ThemeText as="p" tone="primary" className="mt-1 text-xl font-bold">
-              {formatMoney(data.summary.convertedTotalValue, data.summary.currency)}
+              {formatMoney(data.summary.convertedTotalValue, displayCurrency)}
             </ThemeText>
             <ThemeText as="p" tone="faint" className="mt-1 text-xs">
               {data.summary.convertedCount} item(ns) viraram saldo
@@ -136,7 +223,7 @@ export function UserSiteInventoryPanel({ userId }: UserSiteInventoryPanelProps) 
               tone="primary"
               className="mt-1 text-xl font-bold dark:text-amber-100"
             >
-              {formatMoney(data.summary.filteredTotalValue, data.summary.currency)}
+              {formatMoney(data.summary.filteredTotalValue, displayCurrency)}
             </ThemeText>
             <ThemeText as="p" tone="faint" className="mt-1 text-xs">
               {isGrouped
@@ -144,6 +231,26 @@ export function UserSiteInventoryPanel({ userId }: UserSiteInventoryPanelProps) 
                 : `${total} item(ns) nesta listagem`}
             </ThemeText>
           </div>
+          {data.spend ? (
+            <div className={`${userStatCardClass.default} dark:border-rose-500/30 dark:bg-rose-500/10`}>
+              <ThemeText as="p" tone="label" className="text-[11px] uppercase">
+                Total gasto em caixas
+              </ThemeText>
+              <ThemeText
+                as="p"
+                tone="primary"
+                className="mt-1 text-xl font-bold dark:text-rose-100"
+              >
+                {formatMoney(data.spend.totalSpent, data.spend.currency)}
+              </ThemeText>
+              <ThemeText as="p" tone="faint" className="mt-1 text-xs">
+                {data.spend.totalOpens} abertura(s)
+              </ThemeText>
+              <ThemeText as="p" tone="faint" className="mt-1 text-[11px] leading-5">
+                {formatSpendBreakdown(data.spend)}
+              </ThemeText>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

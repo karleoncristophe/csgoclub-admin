@@ -160,6 +160,15 @@ export type SiteInventorySummary = {
   currency: string
 }
 
+export type SiteInventorySpendSummary = {
+  totalOpens: number
+  spentUsd: number
+  spentBrl: number
+  spentEur: number
+  currency: string
+  totalSpent: number
+}
+
 export type SiteInventoryResponse = {
   data: SiteInventoryItem[] | SiteInventoryGroupedItem[]
   grouped: boolean
@@ -169,6 +178,18 @@ export type SiteInventoryResponse = {
   limit: number
   totalPages: number
   summary: SiteInventorySummary
+  spend: SiteInventorySpendSummary
+}
+
+export type ConvertSiteInventoryResult = {
+  convertedCount: number
+  creditedAmount: number
+  balances: {
+    balance: number
+    bonusBalance: number
+    totalSpendable: number
+    withdrawableBalance: number
+  }
 }
 
 export type GetSiteInventoryParams = {
@@ -358,6 +379,66 @@ export const usersApi = createApi({
         { type: 'Users', id: `${userId}-site-inventory` },
       ],
     }),
+    convertAllUserSiteInventory: builder.mutation<
+      ConvertSiteInventoryResult,
+      { userId: string }
+    >({
+      query: ({ userId }) => ({
+        url: USERS.CONVERT_ALL_SITE_INVENTORY(userId),
+        method: 'POST',
+      }),
+      invalidatesTags: (_result, _error, { userId }) => [
+        { type: 'Users', id: userId },
+        { type: 'Users', id: `${userId}-site-inventory` },
+      ],
+      async onQueryStarted({ userId }, { dispatch, queryFulfilled, getState }) {
+        const patchResults: Array<{ undo: () => void }> = []
+        const cachedArgs = usersApi.util.selectCachedArgsForQuery(
+          getState(),
+          'getUserSiteInventory',
+        ) as GetSiteInventoryParams[]
+
+        for (const args of cachedArgs) {
+          if (args.userId !== userId || args.status === 'converted') continue
+
+          const patch = dispatch(
+            usersApi.util.updateQueryData('getUserSiteInventory', args, (draft) => {
+              const movedValue = draft.summary.activeTotalValue
+              const movedCount = draft.summary.activeCount
+
+              draft.summary.activeCount = 0
+              draft.summary.activeTotalValue = 0
+              draft.summary.convertedCount += movedCount
+              draft.summary.convertedTotalValue += movedValue
+
+              if (args.status === 'active') {
+                draft.data = []
+                draft.total = 0
+                draft.totalItems = 0
+                draft.totalPages = 1
+                draft.summary.filteredTotalValue = 0
+                return
+              }
+
+              draft.data = (draft.data as SiteInventoryGroupedItem[]).filter(
+                (item) => item.status !== 'active',
+              )
+              draft.total = draft.data.length
+              draft.totalItems = draft.summary.convertedCount
+              draft.totalPages = Math.max(1, Math.ceil(draft.total / (args.limit ?? 20)))
+              draft.summary.filteredTotalValue = draft.summary.convertedTotalValue
+            }),
+          )
+          patchResults.push(patch)
+        }
+
+        try {
+          await queryFulfilled
+        } catch {
+          patchResults.forEach((patch) => patch.undo())
+        }
+      },
+    }),
   }),
 })
 
@@ -369,4 +450,5 @@ export const {
   useGetUserSiteInventoryQuery,
   useOpenUserTestCaseMutation,
   useResolveUserTestCaseOpenMutation,
+  useConvertAllUserSiteInventoryMutation,
 } = usersApi

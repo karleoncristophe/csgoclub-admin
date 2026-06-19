@@ -47,3 +47,7 @@ export const CASES = {
   BY_ID: (id: string) => `/admin/cases/${id}`,
   DUPLICATE: (id: string) => `/admin/cases/${id}/duplicate`,
 } as const
+
+export const METRICS = {
+  DASHBOARD: '/admin/metrics/dashboard',
+} as const

@@ -13,7 +13,7 @@ export function DocumentationHero({
   return (
     <header className="mb-10 text-center">
       <div className="mb-6 flex justify-center">
-        <div className="rounded-full bg-brand-50 p-5 ring-1 ring-brand-200/60 dark:bg-brand-950/50 dark:ring-brand-800/50">
+        <div className="rounded-full bg-brand-50 p-5 ring-1 ring-brand-200/60 dark:bg-brand-500/15 dark:ring-brand-400/25">
           <BookOpenText className="h-14 w-14 text-brand-700 dark:text-brand-300" />
         </div>
       </div>
@@ -41,7 +41,7 @@ export function DocumentationHero({
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Buscar por palavra-chave..."
-          className="h-12 w-full rounded-2xl border border-zinc-200 bg-white pl-12 pr-4 text-zinc-900 shadow-sm transition-colors placeholder:text-zinc-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+          className="h-12 w-full rounded-2xl border border-zinc-200 bg-white pl-12 pr-4 text-zinc-900 shadow-sm transition-colors placeholder:text-zinc-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 dark:border-zinc-600 dark:bg-zinc-900/90 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-brand-400 dark:focus:ring-brand-400/20"
         />
       </div>
     </header>

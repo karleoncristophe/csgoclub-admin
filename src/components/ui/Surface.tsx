@@ -43,21 +43,21 @@ const variants = {
   dateRangeTrigger:
     'flex w-full max-w-md items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600 dark:hover:bg-zinc-800',
   docSection:
-    'scroll-mt-24 rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm shadow-zinc-900/5 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/20',
+    'scroll-mt-24 rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm shadow-zinc-900/5 dark:border-zinc-700/80 dark:bg-zinc-900/90 dark:shadow-black/30',
   docNavAside:
-    'rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/20',
+    'rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5 dark:border-zinc-700/80 dark:bg-zinc-900/90 dark:shadow-black/30',
   docNavLink:
-    'block rounded-2xl px-3 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100',
+    'block rounded-2xl px-3 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100',
   docSummaryCard:
-    'rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/20',
+    'rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5 dark:border-zinc-700/80 dark:bg-zinc-900/90 dark:shadow-black/30',
   docIconWrap:
-    'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300',
+    'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200/60 dark:bg-brand-500/15 dark:text-brand-300 dark:ring-brand-400/25',
   docInset:
-    'rounded-2xl border border-zinc-200 bg-zinc-50/70 p-5 dark:border-zinc-800 dark:bg-zinc-900/50',
+    'rounded-2xl border border-zinc-200 bg-zinc-50/70 p-5 dark:border-zinc-700/80 dark:bg-zinc-950/60',
   docEnumBox:
-    'rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900',
+    'rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-700/80 dark:bg-zinc-900/90 dark:shadow-sm dark:shadow-black/25',
   docEnumDetail:
-    'mt-4 space-y-2 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/50',
+    'mt-4 space-y-2 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-700/80 dark:bg-zinc-950/60',
   policyCard:
     'overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm shadow-zinc-900/5 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/20',
   policyHeader:

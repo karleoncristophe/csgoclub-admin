@@ -40,7 +40,11 @@ function AccordionItem({
   return (
     <Surface
       variant="docEnumBox"
-      className={`overflow-hidden transition-shadow ${open ? 'ring-2 ring-brand-500/20' : ''}`}
+      className={`overflow-hidden transition-shadow ${
+        open
+          ? 'ring-2 ring-brand-500/20 dark:ring-brand-400/35'
+          : 'hover:border-zinc-300 dark:hover:border-zinc-600'
+      }`}
     >
       <button
         type="button"
@@ -53,7 +57,7 @@ function AccordionItem({
           <Highlight text={item.question} query={searchQuery} />
         </ThemeText>
         <ChevronDown
-          className={`mt-0.5 h-5 w-5 shrink-0 text-zinc-400 transition-transform ${
+          className={`mt-0.5 h-5 w-5 shrink-0 text-zinc-400 transition-transform dark:text-zinc-500 ${
             open ? 'rotate-180' : ''
           }`}
           aria-hidden
@@ -61,7 +65,7 @@ function AccordionItem({
       </button>
 
       {open ? (
-        <div id={panelId} className="border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
+        <div id={panelId} className="border-t border-zinc-200 px-5 py-4 dark:border-zinc-700/80">
           <div className="space-y-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
             {item.answer.split('\n\n').map((paragraph, index) => (
               <p key={`${item.id}-p-${index}`}>

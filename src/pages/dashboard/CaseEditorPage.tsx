@@ -10,7 +10,7 @@ import { CaseEditorGeneralSection } from '@/components/cases/editor/CaseEditorGe
 import { CaseEditorItemsTable } from '@/components/cases/editor/CaseEditorItemsTable'
 import { CaseEditorPricingSection } from '@/components/cases/editor/CaseEditorPricingSection'
 import { CaseEditorSkinSearchSection } from '@/components/cases/editor/CaseEditorSkinSearchSection'
-import { fetchCsgoNetDevPresetItems } from '@/components/cases/editor/caseDevPreset'
+import { fetchFairDevPresetItems } from '@/components/cases/editor/caseDevPreset'
 import { fetchInfluencerDemoPresetItems } from '@/components/cases/editor/caseInfluencerDemoPreset'
 import type { CaseFormState } from '@/components/cases/editor/caseEditor.types'
 import {
@@ -45,6 +45,7 @@ import {
   computeTotalExpectedValue,
   DEFAULT_ITEM_PROBABILITY_TOLERANCE,
   remapCaseItemsForValueMode,
+  resolveFairCaseListPrice,
   roundPrice,
   type CaseEconomicsConfig,
   type CaseValueMode,
@@ -202,18 +203,20 @@ export default function CaseEditorPage() {
   )
 
   useEffect(() => {
+    if (values.listPriceManual) return
     if (suggestedPrice <= 0) return
     if (values.listPrice !== suggestedPrice) {
       void setFieldValue('listPrice', suggestedPrice, false)
     }
-  }, [suggestedPrice, values.listPrice, setFieldValue])
+  }, [suggestedPrice, values.listPrice, values.listPriceManual, setFieldValue])
 
   useEffect(() => {
+    if (values.priceManual) return
     if (priceFromDiscount <= 0) return
     if (values.price !== priceFromDiscount) {
       void setFieldValue('price', priceFromDiscount, false)
     }
-  }, [priceFromDiscount, values.price, setFieldValue])
+  }, [priceFromDiscount, values.price, values.priceManual, setFieldValue])
 
   const addedSkinNames = useMemo(
     () => new Set(values.items.map((item) => item.skinName)),
@@ -283,11 +286,20 @@ export default function CaseEditorPage() {
     setDevPresetLoading(true)
     setDevPresetError(null)
     try {
-      const items = await fetchCsgoNetDevPresetItems({
+      const valueMode = values.valueMode as CaseValueMode
+      const items = await fetchFairDevPresetItems({
         fetchCatalogItem,
-        valueMode: values.valueMode as CaseValueMode,
+        valueMode,
         targetMarginPercent: values.targetMarginPercent,
       })
+      const listPrice = resolveFairCaseListPrice({
+        items,
+        valueMode,
+        targetMarginPercent: values.targetMarginPercent,
+      })
+      const price = roundPrice(
+        computePriceAfterDiscount(listPrice, values.discountPercent),
+      )
 
       await setValues({
         ...values,
@@ -295,8 +307,10 @@ export default function CaseEditorPage() {
         name: 'Case Preset Dev',
         probabilityTargetPercent: 100,
         items,
-        listPriceManual: false,
-        priceManual: false,
+        listPrice,
+        price,
+        listPriceManual: true,
+        priceManual: true,
       })
     } catch (err) {
       setDevPresetError(getErrorMessage(err))
@@ -381,6 +395,8 @@ export default function CaseEditorPage() {
         <CaseEditorDevPresetBar
           loading={devPresetLoading}
           error={devPresetError}
+          targetMarginPercent={values.targetMarginPercent}
+          discountPercent={values.discountPercent}
           onApply={() => void handleDevPresetApply()}
         />
 

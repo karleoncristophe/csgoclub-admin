@@ -15,41 +15,6 @@ export type CaseEconomyLedger = {
   totalRealOpens: number
 }
 
-export type SimulatedCaseOpen = {
-  index: number
-  wonSkinName: string
-  itemValue: number
-  pricePaid: number
-  dropResolutionMethod: 'direct' | 'reroll' | 'fallback'
-  wasRerolled: boolean
-  originalRolledSkinName?: string
-  rerollAttempts: number
-  marginAtDropInstantPercent: number
-  marginAtDropCumulativePercent: number
-  requiredMarginPercent: number
-  instantMarginOk: boolean
-  cumulativeMarginOk: boolean
-  ledgerAfter: CaseEconomyLedger
-}
-
-export type CaseOpenSimulationResult = {
-  caseId: string
-  caseName: string
-  count: number
-  openPrice: number
-  initialLedger: CaseEconomyLedger
-  finalLedger: CaseEconomyLedger
-  opens: SimulatedCaseOpen[]
-  summary: {
-    totalRevenue: number
-    totalPayout: number
-    profit: number
-    marginPercent: number
-    rerollCount: number
-    fallbackCount: number
-  }
-}
-
 export type CaseDropItem = {
   skinName: string
   image?: string
@@ -146,16 +111,6 @@ export const casesApi = createApi({
       }),
       invalidatesTags: ['Cases'],
     }),
-    simulateCaseOpens: builder.mutation<
-      CaseOpenSimulationResult,
-      { id: string; count: number }
-    >({
-      query: ({ id, count }) => ({
-        url: CASES.SIMULATE_OPENS(id),
-        method: 'POST',
-        body: { count },
-      }),
-    }),
     duplicateCase: builder.mutation<LootCase, string>({
       query: (id) => ({
         url: CASES.DUPLICATE(id),
@@ -172,6 +127,5 @@ export const {
   useCreateCaseMutation,
   useUpdateCaseMutation,
   useDeleteCaseMutation,
-  useSimulateCaseOpensMutation,
   useDuplicateCaseMutation,
 } = casesApi

@@ -31,6 +31,7 @@ export type DropEligibilityResult = {
   instant: boolean
   cumulative: boolean
   eligible: boolean
+  instantApplicable: boolean
   instantMarginPercent: number
   cumulativeMarginPercent: number
   requiredMarginPercent: number
@@ -145,13 +146,16 @@ export function evaluateDropEligibility(input: {
     input.openPrice,
     itemValue,
   )
-  const instant = instantMarginPercent >= requiredMarginPercent
+  const instantApplicable = itemValue <= input.openPrice
+  const instant =
+    !instantApplicable || instantMarginPercent >= requiredMarginPercent
   const cumulative = cumulativeMarginPercent >= input.caseTargetMarginPercent
 
   return {
     instant,
     cumulative,
     eligible: instant && cumulative,
+    instantApplicable,
     instantMarginPercent: roundEconomics(instantMarginPercent, 4),
     cumulativeMarginPercent: roundEconomics(cumulativeMarginPercent, 4),
     requiredMarginPercent,
@@ -173,6 +177,51 @@ export function roundEconomics(value: number, decimals = 4): number {
 
 export function roundPrice(value: number): number {
   return Math.round(value * 100) / 100
+}
+
+export function computeMinOpenPriceForPool(
+  items: CaseEconomicsItem[],
+  valueMode: CaseValueMode,
+  targetMarginPercent: number,
+): number {
+  const enabled = getEnabledDropItems(items)
+  if (enabled.length === 0) return 0
+
+  const maxValue = Math.max(
+    ...enabled.map((item) => resolveItemEconomicsValue(item, valueMode)),
+  )
+  const margin = targetMarginPercent / 100
+  const divisor = 1 - margin
+  if (divisor <= 0) return roundPrice(maxValue)
+  return roundPrice(maxValue / divisor)
+}
+
+export function resolveFairCaseListPrice(input: {
+  items: CaseEconomicsItem[]
+  valueMode: CaseValueMode
+  targetMarginPercent: number
+}): number {
+  const expectedValue = computeTotalExpectedValue(input.items, input.valueMode)
+  const evBasedPrice = computeSuggestedSalePrice(
+    expectedValue,
+    input.targetMarginPercent,
+  )
+  const eligibilityFloor = computeMinOpenPriceForPool(
+    input.items,
+    input.valueMode,
+    input.targetMarginPercent,
+  )
+  return roundPrice(Math.max(evBasedPrice, eligibilityFloor))
+}
+
+export function describeDropEligibility(eligibility: DropEligibilityResult): string {
+  if (eligibility.eligible) return 'Sim'
+  if (!eligibility.instantApplicable) {
+    return 'Não (ledger)'
+  }
+  if (!eligibility.instant && !eligibility.cumulative) return 'Não'
+  if (!eligibility.instant) return 'Não (instant.)'
+  return 'Não (acum.)'
 }
 
 export function computeAggregatedProbabilityTolerance(

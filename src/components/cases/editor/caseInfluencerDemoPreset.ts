@@ -12,7 +12,8 @@ import { buildCaseDropItemFromPreset } from './caseDevPreset'
 /**
  * Pool balanceado para demo de influencer: VE ~US$ 5,9 → caixa ~US$ 8,4.
  * Todos os tiers ficam abaixo de 70% do preço (margem instantânea 30%), então
- * raros podem cair de verdade — diferente do preset csgo.net (Zeus 99,5%).
+ * Todos os tiers ficam elegíveis no preço da caixa — diferente do modelo csgo.net
+ * (filler 99,5% + vitrine cara bloqueada pela margem instantânea).
  */
 export const INFLUENCER_DEMO_PRESET_ITEMS: DevPresetItemSeed[] = [
   {

@@ -31,6 +31,7 @@ export type UserAdminDetail = AppUser & {
   bonusBalance: number
   totalSpendable: number
   withdrawableBalance: number
+  walletCurrency: SkinsCurrency
 }
 
 export type UserCaseOpenBulkResult = {
@@ -47,6 +48,8 @@ export type UserCaseOpenBulkResult = {
     skinName: string
     image?: string
     value: number
+    walletValue: number
+    walletCurrency: string
     disposition: 'kept' | 'converted'
     dropResolutionMethod: 'direct' | 'reroll' | 'fallback'
     wasRerolled: boolean
@@ -78,6 +81,9 @@ export type CaseOpenRecord = {
   pricePaid: number
   itemValue: number
   currency: string
+  valueUsd?: number
+  valueBrl?: number
+  valueEur?: number
   isTestOpen: boolean
   disposition: 'pending' | 'kept' | 'converted'
   wonItemImage?: string
@@ -110,6 +116,19 @@ export type ResolveCaseOpenResult = {
   balances: UserCaseOpenResult['balances']
 }
 
+export type SiteInventoryGroupedItem = {
+  skinName: string
+  image?: string
+  rarityName?: string
+  rarityColor?: string
+  value: number
+  currency: string
+  status: 'active' | 'converted'
+  count: number
+  totalValue: number
+  latestCreatedAt?: string
+}
+
 export type SiteInventoryItem = {
   _id: string
   userId: string
@@ -121,6 +140,9 @@ export type SiteInventoryItem = {
   rarityColor?: string
   value: number
   currency: string
+  valueUsd?: number
+  valueBrl?: number
+  valueEur?: number
   status: 'active' | 'converted'
   source: 'case_open'
   convertedAt?: string
@@ -139,8 +161,10 @@ export type SiteInventorySummary = {
 }
 
 export type SiteInventoryResponse = {
-  data: SiteInventoryItem[]
+  data: SiteInventoryItem[] | SiteInventoryGroupedItem[]
+  grouped: boolean
   total: number
+  totalItems: number
   page: number
   limit: number
   totalPages: number
@@ -152,6 +176,7 @@ export type GetSiteInventoryParams = {
   page?: number
   limit?: number
   status?: 'active' | 'converted'
+  grouped?: boolean
 }
 
 export type UserInventoryItem = {
@@ -289,6 +314,7 @@ export const usersApi = createApi({
           ...(params.page != null ? { page: params.page } : {}),
           ...(params.limit != null ? { limit: params.limit } : {}),
           ...(params.status ? { status: params.status } : {}),
+          ...(params.grouped != null ? { grouped: params.grouped } : {}),
         },
       }),
       providesTags: (_result, _error, { userId }) => [

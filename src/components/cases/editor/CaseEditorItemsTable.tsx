@@ -10,6 +10,7 @@ import {
   evaluateDropEligibility,
   resolveItemEconomicsValue,
   roundPrice,
+  describeDropEligibility,
   type CaseEconomyLedger,
   type CaseValueMode,
 } from '@/utils/caseEconomics'
@@ -229,9 +230,13 @@ export function CaseEditorItemsTable({
                       ) : (
                         <span
                           className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
-                          title={`Instant: ${eligibility.instantMarginPercent.toFixed(2)}% (mín ${eligibility.requiredMarginPercent}%) · Acum: ${eligibility.cumulativeMarginPercent.toFixed(2)}%`}
+                          title={
+                            eligibility.instantApplicable
+                              ? `Instant: ${eligibility.instantMarginPercent.toFixed(2)}% (mín ${eligibility.requiredMarginPercent}%) · Acum: ${eligibility.cumulativeMarginPercent.toFixed(2)}%`
+                              : `Financiado pelo ledger · Acum: ${eligibility.cumulativeMarginPercent.toFixed(2)}% (mín ${eligibility.requiredMarginPercent}%)`
+                          }
                         >
-                          Não
+                          {describeDropEligibility(eligibility)}
                         </span>
                       )}
                     </td>

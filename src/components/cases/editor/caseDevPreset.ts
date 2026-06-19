@@ -8,8 +8,8 @@ import {
 } from '@/utils/caseEconomics'
 
 /**
- * Snapshot csgo.net (período a80e360d…) — valores e chances exatos em USD.
- * Catálogo só traz imagem/rarity; economia usa `priceUsd` do preset.
+ * Pool de dev/produção: perfil de vitrine comum (muito filler, raro com chance real).
+ * Todos os itens ficam elegíveis — o preço da caixa usa o piso do item mais caro.
  */
 export type DevPresetItemSeed = {
   skinName: string
@@ -22,62 +22,87 @@ export type DevPresetItemSeed = {
   rarityColor?: string
 }
 
-/** Ordem: maior chance → menor (como no painel csgo.net). */
-export const CSGO_NET_DEV_PRESET_ITEMS: DevPresetItemSeed[] = [
+/** Ordem: maior chance → menor. Chances somam 100%. */
+export const FAIR_DEV_PRESET_ITEMS: DevPresetItemSeed[] = [
   {
-    skinName: 'Zeus x27 | Swamp DDPAT',
-    catalogName: 'Zeus x27 | Swamp DDPAT (Factory New)',
-    weaponLabel: 'Zeus x27',
-    skinLabel: 'Swamp DDPAT',
-    probability: 99.5046,
-    priceUsd: 0.007,
+    skinName: 'MP9 | Capillary (Field-Tested)',
+    weaponLabel: 'MP9',
+    skinLabel: 'Capillary',
+    wear: 'FT',
+    probability: 32,
+    priceUsd: 5.8,
     rarityColor: '#5e98d9',
   },
   {
-    skinName: 'Desert Eagle | Kumicho Dragon (Field-Tested)',
-    weaponLabel: 'Desert Eagle',
-    skinLabel: 'Kumicho Dragon',
-    wear: 'FT',
-    probability: 0.3336,
-    priceUsd: 21.06,
-    rarityColor: '#d32ce6',
-  },
-  {
-    skinName: 'Charm | Quick Silver',
-    weaponLabel: 'Charm',
-    skinLabel: 'Quick Silver',
-    probability: 0.0931,
-    priceUsd: 33.15,
-    rarityColor: '#eb4b4b',
-  },
-  {
-    skinName: 'M4A1-S | Party Animal (Field-Tested)',
-    weaponLabel: 'M4A1-S',
-    skinLabel: 'Party Animal',
-    wear: 'FT',
-    probability: 0.0273,
-    priceUsd: 55.98,
-    rarityColor: '#d32ce6',
-  },
-  {
-    skinName: 'Glock-18 | Fully Tuned (Well-Worn)',
+    skinName: 'Glock-18 | Moonrise (Field-Tested)',
     weaponLabel: 'Glock-18',
-    skinLabel: 'Fully Tuned',
-    wear: 'WW',
-    probability: 0.0241,
-    priceUsd: 59.92,
-    rarityColor: '#eb4b4b',
+    skinLabel: 'Moonrise',
+    wear: 'FT',
+    probability: 25,
+    priceUsd: 6.4,
+    rarityColor: '#8847ff',
   },
   {
-    skinName: 'SSG 08 | Turbo Peek (Factory New)',
-    weaponLabel: 'SSG 08',
-    skinLabel: 'Turbo Peek',
-    wear: 'FN',
-    probability: 0.0173,
-    priceUsd: 74.45,
-    rarityColor: '#eb4b4b',
+    skinName: 'AK-47 | Safari Mesh (Field-Tested)',
+    weaponLabel: 'AK-47',
+    skinLabel: 'Safari Mesh',
+    wear: 'FT',
+    probability: 20,
+    priceUsd: 7,
+    rarityColor: '#b0c3d9',
+  },
+  {
+    skinName: 'M4A4 | Poly Mag (Field-Tested)',
+    weaponLabel: 'M4A4',
+    skinLabel: 'Poly Mag',
+    wear: 'FT',
+    probability: 12,
+    priceUsd: 7.8,
+    rarityColor: '#5e98d9',
+  },
+  {
+    skinName: 'AWP | Capillary (Field-Tested)',
+    weaponLabel: 'AWP',
+    skinLabel: 'Capillary',
+    wear: 'FT',
+    probability: 8,
+    priceUsd: 8.6,
+    rarityColor: '#4b69ff',
+  },
+  {
+    skinName: 'Desert Eagle | Corinthian (Field-Tested)',
+    weaponLabel: 'Desert Eagle',
+    skinLabel: 'Corinthian',
+    wear: 'FT',
+    probability: 3,
+    priceUsd: 9.5,
+    rarityColor: '#8847ff',
   },
 ]
+
+/** @deprecated Use FAIR_DEV_PRESET_ITEMS */
+export const CSGO_NET_DEV_PRESET_ITEMS = FAIR_DEV_PRESET_ITEMS
+
+export function estimateFairDevPresetPricing(
+  targetMarginPercent: number,
+  discountPercent = 0,
+): { expectedValue: number; listPrice: number; finalPrice: number } {
+  const expectedValue = roundPrice(
+    FAIR_DEV_PRESET_ITEMS.reduce(
+      (sum, item) => sum + item.priceUsd * (item.probability / 100),
+      0,
+    ),
+  )
+  const margin = targetMarginPercent / 100
+  const divisor = 1 - margin
+  const evPrice = divisor > 0 ? expectedValue / divisor : expectedValue
+  const maxItem = Math.max(...FAIR_DEV_PRESET_ITEMS.map((item) => item.priceUsd))
+  const eligibilityFloor = divisor > 0 ? maxItem / divisor : maxItem
+  const listPrice = roundPrice(Math.max(evPrice, eligibilityFloor))
+  const finalPrice = roundPrice(listPrice * (1 - Math.min(100, Math.max(0, discountPercent)) / 100))
+
+  return { expectedValue, listPrice, finalPrice }
+}
 
 export function buildCaseDropItemFromPreset(
   seed: DevPresetItemSeed,
@@ -114,13 +139,13 @@ type FetchCatalogItemFn = (params: {
   currency?: SkinsCurrency
 }) => { unwrap: () => Promise<SkinsCatalogItem> }
 
-export async function fetchCsgoNetDevPresetItems(input: {
+export async function fetchFairDevPresetItems(input: {
   fetchCatalogItem: FetchCatalogItemFn
   valueMode: CaseValueMode
   targetMarginPercent: number
 }): Promise<CaseDropItem[]> {
   return Promise.all(
-    CSGO_NET_DEV_PRESET_ITEMS.map(async (seed) => {
+    FAIR_DEV_PRESET_ITEMS.map(async (seed) => {
       const queryName = seed.catalogName ?? seed.skinName
       try {
         const catalog = await input
@@ -143,3 +168,6 @@ export async function fetchCsgoNetDevPresetItems(input: {
     }),
   )
 }
+
+/** @deprecated Use fetchFairDevPresetItems */
+export const fetchCsgoNetDevPresetItems = fetchFairDevPresetItems

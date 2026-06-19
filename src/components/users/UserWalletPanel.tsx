@@ -13,10 +13,10 @@ import {
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { userBalanceTileClass } from './userPanelClasses'
 
-function formatMoney(value: number) {
+function formatMoney(value: number, currency = 'USD') {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'USD',
+    currency,
     minimumFractionDigits: 2,
   }).format(value)
 }
@@ -89,23 +89,23 @@ export function UserWalletPanel({ user }: UserWalletPanelProps) {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <BalanceTile
           label="Saldo real"
-          value={formatMoney(user.balance)}
+          value={formatMoney(user.balance, user.walletCurrency)}
           hint="Sacável"
         />
         <BalanceTile
           label="Saldo bônus"
-          value={formatMoney(user.bonusBalance)}
+          value={formatMoney(user.bonusBalance, user.walletCurrency)}
           hint="Não sacável (influencer)"
           accent
         />
         <BalanceTile
           label="Total para caixas"
-          value={formatMoney(user.totalSpendable)}
+          value={formatMoney(user.totalSpendable, user.walletCurrency)}
           hint="Real + bônus"
         />
         <BalanceTile
           label="Sacável"
-          value={formatMoney(user.withdrawableBalance)}
+          value={formatMoney(user.withdrawableBalance, user.walletCurrency)}
           hint="Apenas saldo real"
         />
       </div>

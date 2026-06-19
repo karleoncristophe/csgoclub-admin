@@ -164,9 +164,10 @@ export const CASE_FIELD_HELP = {
     details: (
       <>
         <p><strong>Sim</strong> — pode sair no sorteio (respeitando o Drop %).</p>
-        <p><strong>Não</strong> — bloqueado por margem; chance real de receber = <strong>zero</strong> até subir o preço ou ajustar margens.</p>
+        <p><strong>Não (ledger)</strong> — item acima do preço da caixa; aguarda margem acumulada no ledger.</p>
+        <p><strong>Não (instant.) / Não (acum.)</strong> — bloqueado pela regra correspondente.</p>
         <HelpSection title="Como o sistema decide">
-          <p>Checa margem da abertura atual e margem acumulada do ledger da caixa. Item caro em caixa barata quase sempre fica Não.</p>
+          <p>Itens até o preço da caixa: margem instantânea + acumulada. Itens mais caros: só ledger acumulado (pool compartilhado soma receita/payout).</p>
         </HelpSection>
       </>
     ),

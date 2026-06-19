@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Copy, Pencil, Play, Plus, Trash2 } from 'lucide-react'
-import { CaseDevSimulatorPanel } from '@/components/cases/CaseDevSimulatorPanel'
+import { Copy, Pencil, Plus, Trash2 } from 'lucide-react'
 import { CaseListNameCell } from '@/components/cases/CaseListImage'
 import { IconButton } from '@/components/ui/IconButton'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
@@ -28,13 +27,6 @@ export default function CasesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [simulatorCaseId, setSimulatorCaseId] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!simulatorCaseId && data[0]?._id) {
-      setSimulatorCaseId(data[0]._id)
-    }
-  }, [data, simulatorCaseId])
 
   const handleDelete = async (lootCase: LootCase) => {
     const hasRealOpens = lootCase.totalOpens > 0
@@ -65,14 +57,6 @@ export default function CasesPage() {
     } finally {
       setDeletingId(null)
     }
-  }
-
-  const scrollToSimulator = (caseId: string) => {
-    setSimulatorCaseId(caseId)
-    document.getElementById('case-dev-simulator')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    })
   }
 
   const handleDuplicate = async (lootCase: LootCase) => {
@@ -182,14 +166,6 @@ export default function CasesPage() {
                     </td>
                     <td className={listTable.td}>
                       <div className="flex items-center justify-end gap-1">
-                        {import.meta.env.DEV ? (
-                          <IconButton
-                            label="Simular aberturas (dev)"
-                            onClick={() => scrollToSimulator(lootCase._id)}
-                          >
-                            <Play className="h-4 w-4" aria-hidden />
-                          </IconButton>
-                        ) : null}
                         <IconButton
                           label="Duplicar caixa"
                           disabled={
@@ -226,12 +202,6 @@ export default function CasesPage() {
           </div>
         ) : null}
       </Surface>
-
-      {import.meta.env.DEV && data.length > 0 ? (
-        <div id="case-dev-simulator">
-          <CaseDevSimulatorPanel cases={data} initialCaseId={simulatorCaseId} />
-        </div>
-      ) : null}
     </div>
   )
 }

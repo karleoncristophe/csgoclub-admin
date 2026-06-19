@@ -4,7 +4,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
-import { useGetUserSiteInventoryQuery } from '@/redux/store/api/users/api.users'
+import { useGetUserSiteInventoryQuery, type SiteInventoryGroupedItem } from '@/redux/store/api/users/api.users'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { userStatCardClass } from './userPanelClasses'
 
@@ -14,6 +14,15 @@ function formatMoney(value: number, currency = 'USD') {
     currency,
     minimumFractionDigits: 2,
   }).format(value)
+}
+
+function groupedItemKey(item: SiteInventoryGroupedItem) {
+  return `${item.skinName}|${item.value}|${item.status}|${item.currency}`
+}
+
+function formatStackBadge(count: number) {
+  if (count <= 1) return null
+  return `+${count - 1}`
 }
 
 type UserSiteInventoryPanelProps = {
@@ -31,10 +40,13 @@ export function UserSiteInventoryPanel({ userId }: UserSiteInventoryPanelProps) 
     userId,
     page: safePage,
     limit: pageSize,
+    grouped: true,
     ...(status ? { status } : {}),
   })
 
+  const isGrouped = data?.grouped ?? true
   const total = data?.total ?? 0
+  const totalItems = data?.totalItems ?? total
   const totalPages = Math.max(1, data?.totalPages ?? 1)
   const currentPage = Math.min(safePage, totalPages)
   const pageStart = total === 0 ? 0 : (currentPage - 1) * pageSize + 1
@@ -127,7 +139,9 @@ export function UserSiteInventoryPanel({ userId }: UserSiteInventoryPanelProps) 
               {formatMoney(data.summary.filteredTotalValue, data.summary.currency)}
             </ThemeText>
             <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-              {total} item(ns) nesta listagem
+              {isGrouped
+                ? `${total} skin(s) únicas · ${totalItems} itens`
+                : `${total} item(ns) nesta listagem`}
             </ThemeText>
           </div>
         </div>
@@ -153,54 +167,70 @@ export function UserSiteInventoryPanel({ userId }: UserSiteInventoryPanelProps) 
       {data && data.data.length > 0 ? (
         <>
           <ThemeText as="p" tone="faint" className="mb-3 text-xs">
-            Exibindo {pageStart}–{pageEnd} de {total} item(ns)
+            {isGrouped
+              ? `Exibindo ${pageStart}–${pageEnd} de ${total} skin(s) · ${totalItems} itens`
+              : `Exibindo ${pageStart}–${pageEnd} de ${total} item(ns)`}
           </ThemeText>
 
           <div
             ref={productsAnchorRef}
             className="scroll-mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
           >
-            {data.data.map((item) => (
-              <div
-                key={item._id}
-                className={`flex gap-3 p-3 ${userStatCardClass.default}`}
-              >
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900">
-                  {item.image ? (
-                    <img src={item.image} alt="" className="h-full w-full object-contain" />
-                  ) : (
-                    <Package className="h-6 w-6 text-zinc-400" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <ThemeText as="p" tone="primary" className="line-clamp-2 text-sm font-medium">
-                    {item.skinName}
-                  </ThemeText>
-                  <ThemeText as="p" tone="secondary" className="mt-1 text-sm font-semibold">
-                    {formatMoney(item.value, item.currency)}
-                  </ThemeText>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                        item.status === 'active'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
-                          : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
-                      }`}
-                    >
-                      {item.status === 'active' ? 'No inventário' : 'Convertido'}
-                    </span>
-                    {item.rarityName ? (
-                      <span
-                        className="text-[11px] font-medium"
-                        style={{ color: item.rarityColor ?? undefined }}
-                      >
-                        {item.rarityName}
+            {(data.data as SiteInventoryGroupedItem[]).map((item) => {
+              const stackBadge = formatStackBadge(item.count)
+
+              return (
+                <div
+                  key={groupedItemKey(item)}
+                  className={`flex gap-3 p-3 ${userStatCardClass.default}`}
+                >
+                  <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900">
+                    {item.image ? (
+                      <img src={item.image} alt="" className="h-full w-full object-contain" />
+                    ) : (
+                      <Package className="h-6 w-6 text-zinc-400" />
+                    )}
+                    {stackBadge ? (
+                      <span className="absolute right-1 top-1 rounded-md bg-zinc-900/90 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900">
+                        {stackBadge}
                       </span>
                     ) : null}
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <ThemeText as="p" tone="primary" className="line-clamp-2 text-sm font-medium">
+                      {item.skinName}
+                    </ThemeText>
+                    <ThemeText as="p" tone="secondary" className="mt-1 text-sm font-semibold">
+                      {formatMoney(item.totalValue, item.currency)}
+                    </ThemeText>
+                    {item.count > 1 ? (
+                      <ThemeText as="p" tone="faint" className="text-xs">
+                        {item.count} un. × {formatMoney(item.value, item.currency)}
+                      </ThemeText>
+                    ) : null}
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          item.status === 'active'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                            : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+                        }`}
+                      >
+                        {item.status === 'active' ? 'No inventário' : 'Convertido'}
+                      </span>
+                      {item.rarityName ? (
+                        <span
+                          className="text-[11px] font-medium"
+                          style={{ color: item.rarityColor ?? undefined }}
+                        >
+                          {item.rarityName}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <Pagination

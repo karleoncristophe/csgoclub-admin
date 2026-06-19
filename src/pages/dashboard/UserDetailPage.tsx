@@ -307,7 +307,12 @@ export default function UserDetailPage() {
 
           <UserEditPanel user={data} onUpdated={() => refetch()} />
 
-          {isInfluencer ? <UserInfluencerCaseOpenPanel userId={data._id} /> : null}
+          {isInfluencer ? (
+            <UserInfluencerCaseOpenPanel
+              userId={data._id}
+              walletCurrency={data.walletCurrency}
+            />
+          ) : null}
 
           <UserSiteInventoryPanel userId={data._id} />
 

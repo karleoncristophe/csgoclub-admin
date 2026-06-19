@@ -8,6 +8,7 @@ import {
   computeSuggestedSalePrice,
   computeTotalExpectedValue,
   computeAggregatedProbabilityTolerance,
+  computeMinOpenPriceForPool,
   countEligibleDropItems,
   getEnabledDropItems,
   getProbabilityDelta,
@@ -78,6 +79,10 @@ export function CaseEconomicsPanel({
     valueMode,
   })
   const blockedDropCount = Math.max(0, enabledItems.length - eligibleDropCount)
+  const minPriceForFullPool = roundPrice(
+    computeMinOpenPriceForPool(items, valueMode, config.targetMarginPercent),
+  )
+  const needsLedgerFunding = finalPrice > 0 && minPriceForFullPool > finalPrice
 
   const cumulativeMarginPercent =
     ledger.totalRevenue > 0
@@ -94,8 +99,9 @@ export function CaseEconomicsPanel({
           Economia da caixa (tempo real)
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mb-4 text-xs">
-          Motor de drop com margem instantânea por item e margem acumulada no ledger
-          {sharedLedger ? ' compartilhado entre caixas' : ' desta caixa'}.
+          Margem instantânea para itens até o preço da caixa; itens mais caros dependem do
+          ledger acumulado{sharedLedger ? ' compartilhado' : ''}. Após um drop caro a margem
+          cai e volta a subir com novas aberturas.
         </ThemeText>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -134,7 +140,23 @@ export function CaseEconomicsPanel({
               {eligibleDropCount} / {enabledItems.length}
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
-              {blockedDropCount} bloqueado(s) por margem
+              {blockedDropCount} bloqueado(s) agora · ledger{' '}
+              {cumulativeMarginPercent != null
+                ? `${cumulativeMarginPercent.toFixed(2)}%`
+                : 'zerado'}
+            </ThemeText>
+          </div>
+          <div>
+            <ThemeText tone="label" className="text-xs uppercase">
+              Piso vitrine (pool completo)
+            </ThemeText>
+            <ThemeText tone="primary" className="mt-1 text-lg font-semibold">
+              {formatSkinsPrice(minPriceForFullPool, currency)}
+            </ThemeText>
+            <ThemeText tone="faint" className="text-xs">
+              {needsLedgerFunding
+                ? 'Itens caros liberam via ledger no preço atual'
+                : 'Todos elegíveis no preço atual'}
             </ThemeText>
           </div>
           <div>
@@ -215,8 +237,8 @@ export function CaseEconomicsPanel({
             tone="secondary"
             className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200"
           >
-            Nenhum item pode cair com margem instantânea e acumulada no preço atual. Aumente o
-            preço da caixa ou reduza margem mín. dos itens caros.
+            Nenhum item pode cair agora. Itens baratos precisam de margem instantânea; itens
+            acima do preço da caixa precisam de ledger acumulado saudável.
           </ThemeText>
         ) : null}
       </Surface>

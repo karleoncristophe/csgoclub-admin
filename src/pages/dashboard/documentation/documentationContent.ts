@@ -111,15 +111,15 @@ export const DOC_SECTIONS: DocSection[] = [
     paragraphs: [
       'O motor não é “sorteio puro”. Ele combina as chances que você definiu com regras de lucro para a casa não entregar skins caras quando o preço da caixa não permite.',
       'Passo 1 — Sorteio ponderado: o sistema rola um número usando os Drop % dos itens ativos (como uma roleta onde cada fatia tem o tamanho da chance).',
-      'Passo 2 — Checagem de margem instantânea: se o item sorteado custa mais do que a margem mín. desse item permite, ele é rejeitado. Ex.: caixa $0,21 e skin $72 → margem negativa → não entrega.',
-      'Passo 3 — Checagem de margem acumulada: o sistema olha o ledger da caixa (total que já entrou de aberturas vs. total que já saiu em skins). Se entregar essa skin quebraria a margem global da caixa, também bloqueia.',
+      'Passo 2 — Checagem de margem instantânea: só para itens com valor até o preço da caixa. Se o item sorteado custa mais que a abertura, a checagem passa para o ledger acumulado.',
+      'Passo 3 — Checagem de margem acumulada: o sistema olha o ledger (receita das aberturas − payout em skins). Itens caros só saem quando o histórico + esta abertura mantém a margem alvo. Após um drop caro a margem cai e sobe de novo com novas aberturas.',
       'Passo 4 — Re-roll: se o item sorteado falhou, o motor tenta de novo (até cerca de 50 vezes) com as mesmas regras.',
       'Passo 5 — Fallback: se nada elegível sai no re-roll, entrega o item barato elegível (o “filler” da caixa).',
       'Por isso na tabela aparece Elegível Sim/Não: isso NÃO é a chance de drop. É se o item pode ser entregue agora. Drop % = chance no design; Elegível = pode sair na prática.',
     ],
     bullets: [
-      'Item com Elegível Não → chance real de receber = zero%, mesmo com 0,013% na tabela.',
-      'Pool elegível 1/6 = só 1 item pode sair; os outros 5 estão na vitrine mas bloqueados por margem.',
+      'Item com Elegível Não (ledger) → item acima do preço da caixa aguardando margem acumulada.',
+      'Pool elegível 2/6 = só 2 itens podem sair agora; os outros aguardam ledger ou preço maior.',
       'Ledger acumulado: receita total das aberturas reais − payout total em skins.',
       'Cada abertura gera auditoria: se houve re-roll, item original sorteado, método de resolução, margens.',
     ],
@@ -130,15 +130,15 @@ export const DOC_SECTIONS: DocSection[] = [
         details: [
           {
             value: 'Instantânea',
-            meaning: '(preço caixa − valor skin) ÷ preço caixa — só essa abertura.',
+            meaning: 'Só itens até o preço da caixa. (preço − valor) ÷ preço ≥ margem mín.',
           },
           {
             value: 'Acumulada',
-            meaning: '(receita ledger + preço caixa − payout ledger − valor skin) ÷ (receita + preço) — histórico + esta abertura.',
+            meaning: 'Itens acima do preço da caixa usam só o ledger: (receita + abertura − payout − valor) ÷ (receita + abertura).',
           },
           {
             value: 'Elegível',
-            meaning: 'Só Sim se passa na margem mín. do item E na margem alvo acumulada da caixa.',
+            meaning: 'Sim se passa na regra aplicável (instantânea ou ledger) e na margem acumulada global.',
           },
         ],
       },
@@ -160,7 +160,7 @@ export const DOC_SECTIONS: DocSection[] = [
     bullets: [
       'Use “Usar sugerido” para preço de tabela baseado no VE + margem alvo.',
       'Use “Aplicar desconto” para calcular o preço final a partir da tabela.',
-      'Em dev, existe preset de teste com 6 skins do csgo.net para montar caixa rápido.',
+      'Em dev, existe preset de caixa justa (6 skins, todos elegíveis) para montar vitrine de produção rápido.',
       'Cada caixa guarda sua própria moeda — independente da moeda padrão do admin.',
     ],
   },

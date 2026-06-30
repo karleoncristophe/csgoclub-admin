@@ -13,6 +13,7 @@ import {
   SKINS_CURRENCY_OPTIONS,
   SkinsCurrency,
 } from '@/constants/skinsCurrency'
+import { useGetCaseVitrinesQuery } from '@/redux/store/api/case-vitrines/api.case-vitrines'
 import type { CaseValueMode } from '@/utils/caseEconomics'
 import type { CaseFormState } from './caseEditor.types'
 import { fieldError } from './caseEditor.utils'
@@ -31,6 +32,7 @@ export function CaseEditorGeneralSection({
   onValueModeChange,
 }: CaseEditorGeneralSectionProps) {
   const { values, setFieldValue, handleChange, handleBlur, touched, errors } = formik
+  const { data: vitrines = [] } = useGetCaseVitrinesQuery()
   const activeHelp = caseFieldProps('active')
   const imageHelp = caseFieldProps('caseImage')
 
@@ -74,6 +76,21 @@ export function CaseEditorGeneralSection({
         >
           <option value="with_tax">Preço com taxa de categoria</option>
           <option value="base">Preço base SkinsBack</option>
+        </Select>
+        <Select
+          label="Vitrine no site"
+          name="vitrineId"
+          value={values.vitrineId ?? ''}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          disabled={disabled}
+        >
+          <option value="">Sem vitrine</option>
+          {vitrines.map((vitrine) => (
+            <option key={vitrine._id} value={vitrine._id}>
+              {vitrine.name}
+            </option>
+          ))}
         </Select>
         <Input
           label="Descrição"

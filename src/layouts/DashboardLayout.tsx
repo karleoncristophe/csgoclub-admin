@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   BookOpenText,
   Gem,
+  LayoutGrid,
   LayoutDashboard,
   Layers,
   LogOut,
@@ -32,6 +33,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
       { href: '/dashboard/users', label: 'Usuários', Icon: Users },
       { href: '/dashboard/skins', label: 'Skins', Icon: Gem },
       { href: '/dashboard/cases', label: 'Caixas', Icon: Package },
+      { href: '/dashboard/vitrines', label: 'Vitrines', Icon: LayoutGrid },
       { href: '/dashboard/categorias', label: 'Categorias', Icon: Layers },
       { href: '/dashboard/documentation', label: 'Documentação', Icon: BookOpenText },
     ],

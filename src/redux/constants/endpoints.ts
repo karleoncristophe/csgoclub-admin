@@ -48,6 +48,12 @@ export const CASES = {
   DUPLICATE: (id: string) => `/admin/cases/${id}/duplicate`,
 } as const
 
+export const CASE_VITRINES = {
+  ROOT: '/case-vitrines',
+  BY_ID: (id: string) => `/case-vitrines/${id}`,
+  CATALOG: '/case-vitrines/catalog',
+} as const
+
 export const METRICS = {
   DASHBOARD: '/admin/metrics/dashboard',
 } as const

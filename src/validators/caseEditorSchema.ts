@@ -73,6 +73,7 @@ export const caseEditorSchema = Yup.object({
   listPriceManual: Yup.boolean(),
   priceManual: Yup.boolean(),
   sharedCaseIds: Yup.array().of(Yup.string().required()),
+  vitrineId: Yup.string().nullable().optional(),
   items: Yup.array()
     .of(caseDropItemSchema)
     .min(1, 'Adicione pelo menos um item à caixa')
@@ -187,5 +188,6 @@ export const caseEditorInitialValues: CaseEditorFormValues = {
   listPriceManual: false,
   priceManual: false,
   sharedCaseIds: [],
+  vitrineId: '',
   items: [],
 }

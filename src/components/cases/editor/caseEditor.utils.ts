@@ -22,6 +22,7 @@ export function mapCaseToFormValues(lootCase: LootCase): CaseFormState {
     listPriceManual: false,
     priceManual: false,
     sharedCaseIds: lootCase.sharedCaseIds ?? [],
+    vitrineId: lootCase.vitrineId ? String(lootCase.vitrineId) : '',
     items: lootCase.items.map((item): CaseDropItem => ({
       ...item,
       minMarginPercent: item.minMarginPercent ?? lootCase.targetMarginPercent,
@@ -80,6 +81,7 @@ export function touchAllCaseFormFields(
     description: true,
     currency: true,
     valueMode: true,
+    vitrineId: true,
     active: true,
     targetMarginPercent: true,
     probabilityTargetPercent: true,

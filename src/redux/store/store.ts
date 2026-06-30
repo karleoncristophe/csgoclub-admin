@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { authApi } from '@/redux/store/api/auth/api.auth'
 import { casesApi } from '@/redux/store/api/cases/api.cases'
+import { caseVitrinesApi } from '@/redux/store/api/case-vitrines/api.case-vitrines'
 import { metricsApi } from '@/redux/store/api/metrics/api.metrics'
 import { skinsApi } from '@/redux/store/api/skins/api.skins'
 import { usersApi } from '@/redux/store/api/users/api.users'
@@ -15,6 +16,7 @@ export const store = configureStore({
     [authApi.reducerPath]: authApi.reducer,
     [skinsApi.reducerPath]: skinsApi.reducer,
     [casesApi.reducerPath]: casesApi.reducer,
+    [caseVitrinesApi.reducerPath]: caseVitrinesApi.reducer,
     [metricsApi.reducerPath]: metricsApi.reducer,
     [usersApi.reducerPath]: usersApi.reducer,
     [weaponCategoriesApi.reducerPath]: weaponCategoriesApi.reducer,
@@ -24,6 +26,7 @@ export const store = configureStore({
       authApi.middleware,
       skinsApi.middleware,
       casesApi.middleware,
+      caseVitrinesApi.middleware,
       metricsApi.middleware,
       usersApi.middleware,
       weaponCategoriesApi.middleware,

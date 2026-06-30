@@ -86,6 +86,7 @@ export default function CaseEditorPage() {
             items: [],
             currency: defaultSkinsCurrency,
             sharedCaseIds: [],
+            vitrineId: '',
           },
     [existingCase, defaultSkinsCurrency],
   )
@@ -127,6 +128,7 @@ export default function CaseEditorPage() {
           discountPercent: values.discountPercent,
           items: toCaseDropItemsPayload(values.items),
           sharedCaseIds: values.sharedCaseIds,
+          vitrineId: values.vitrineId?.trim() ? values.vitrineId : null,
           active: values.active,
         }
 

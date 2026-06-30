@@ -2,6 +2,7 @@ import { createApi } from '@reduxjs/toolkit/query/react'
 import { SkinsCurrency } from '@/constants/skinsCurrency'
 import { CASES } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
+import { caseVitrinesApi } from '@/redux/store/api/case-vitrines/api.case-vitrines'
 import type { CaseValueMode } from '@/utils/caseEconomics'
 
 export type CaseDropItemRarity = {
@@ -55,6 +56,7 @@ export type LootCase = {
   testEconomyLedger?: CaseEconomyLedger
   economyPoolId?: string
   sharedCaseIds?: string[]
+  vitrineId?: string
   active: boolean
   totalOpens: number
   totalTestOpens: number
@@ -74,6 +76,7 @@ export type CreateCasePayload = {
   discountPercent?: number
   items: CaseDropItemPayload[]
   sharedCaseIds?: string[]
+  vitrineId?: string | null
   active?: boolean
 }
 
@@ -95,6 +98,10 @@ export const casesApi = createApi({
     createCase: builder.mutation<LootCase, CreateCasePayload>({
       query: (body) => ({ url: CASES.ROOT, method: 'POST', body }),
       invalidatesTags: ['Cases'],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        await queryFulfilled
+        dispatch(caseVitrinesApi.util.invalidateTags(['CaseVitrines']))
+      },
     }),
     updateCase: builder.mutation<LootCase, { id: string; body: UpdateCasePayload }>({
       query: ({ id, body }) => ({
@@ -103,6 +110,10 @@ export const casesApi = createApi({
         body,
       }),
       invalidatesTags: (_result, _error, { id }) => ['Cases', { type: 'Case', id }],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        await queryFulfilled
+        dispatch(caseVitrinesApi.util.invalidateTags(['CaseVitrines']))
+      },
     }),
     deleteCase: builder.mutation<{ success: true }, string>({
       query: (id) => ({

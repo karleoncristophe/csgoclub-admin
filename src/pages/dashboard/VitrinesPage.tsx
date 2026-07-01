@@ -11,7 +11,7 @@ import { TextBadge } from '@/components/StatusPill'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import { listTable } from '@/components/ui/listTable'
-import { useGetCasesQuery } from '@/redux/store/api/cases/api.cases'
+import { useGetCasesQuery, type LootCase } from '@/redux/store/api/cases/api.cases'
 import {
   useCreateCaseVitrineMutation,
   useDeleteCaseVitrineMutation,
@@ -23,6 +23,21 @@ import { getErrorMessage } from '@/utils/getErrorMessage'
 
 function normalizeName(name: string) {
   return name.trim()
+}
+
+function buildCaseOptions(cases: LootCase[], currentVitrineId?: string | null) {
+  return [...cases]
+    .filter((lootCase) => {
+      if (!lootCase.vitrineId) return true
+      if (!currentVitrineId) return false
+      return String(lootCase.vitrineId) === currentVitrineId
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+    .map((lootCase) => ({
+      value: lootCase._id,
+      label: lootCase.name,
+      description: lootCase.active ? undefined : 'Inativa',
+    }))
 }
 
 export default function VitrinesPage() {
@@ -56,18 +71,6 @@ export default function VitrinesPage() {
   const createNameTaken = createNameNormalized
     ? existingNames.has(createNameNormalized.toLowerCase())
     : false
-
-  const caseOptions = useMemo(
-    () =>
-      [...cases]
-        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
-        .map((lootCase) => ({
-          value: lootCase._id,
-          label: lootCase.name,
-          description: lootCase.active ? undefined : 'Inativa',
-        })),
-    [cases],
-  )
 
   const resetCreateForm = () => {
     setCreateName('')
@@ -160,22 +163,34 @@ export default function VitrinesPage() {
     selectedIds: string[],
     onChange: (ids: string[]) => void,
     disabled: boolean,
-  ) => (
-    <SearchableMultiSelect
-      label="Caixas nesta vitrine"
-      placeholder="Buscar caixa pelo nome…"
-      hint="Digite para filtrar e clique para adicionar. Você pode vincular quantas caixas quiser."
-      options={caseOptions}
-      value={selectedIds}
-      onChange={onChange}
-      disabled={disabled}
-      emptyMessage={
-        cases.length === 0
-          ? 'Nenhuma caixa cadastrada ainda.'
-          : 'Nenhuma caixa encontrada para esta busca.'
-      }
-    />
-  )
+    currentVitrineId?: string | null,
+  ) => {
+    const options = buildCaseOptions(cases, currentVitrineId)
+    const assignedElsewhereCount = cases.filter(
+      (lootCase) =>
+        lootCase.vitrineId &&
+        String(lootCase.vitrineId) !== String(currentVitrineId ?? ''),
+    ).length
+
+    return (
+      <SearchableMultiSelect
+        label="Caixas nesta vitrine"
+        placeholder="Buscar caixa pelo nome…"
+        hint="Digite para filtrar e clique para adicionar. Caixas já vinculadas a outra vitrine não aparecem aqui."
+        options={options}
+        value={selectedIds}
+        onChange={onChange}
+        disabled={disabled}
+        emptyMessage={
+          cases.length === 0
+            ? 'Nenhuma caixa cadastrada ainda.'
+            : assignedElsewhereCount === cases.length
+              ? 'Todas as caixas já estão em outras vitrines.'
+              : 'Nenhuma caixa encontrada para esta busca.'
+        }
+      />
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -329,6 +344,7 @@ export default function VitrinesPage() {
                               editCaseIds,
                               setEditCaseIds,
                               updateState.isLoading,
+                              vitrine._id,
                             )}
                             <div className="flex flex-wrap gap-2">
                               <Button

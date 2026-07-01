@@ -10,7 +10,7 @@ import { CaseEditorGeneralSection } from '@/components/cases/editor/CaseEditorGe
 import { CaseEditorItemsTable } from '@/components/cases/editor/CaseEditorItemsTable'
 import { CaseEditorPricingSection } from '@/components/cases/editor/CaseEditorPricingSection'
 import { CaseEditorSkinSearchSection } from '@/components/cases/editor/CaseEditorSkinSearchSection'
-import { fetchFairDevPresetItems } from '@/components/cases/editor/caseDevPreset'
+import { fetchCsgoNetDevPresetItems } from '@/components/cases/editor/caseDevPreset'
 import { fetchInfluencerDemoPresetItems } from '@/components/cases/editor/caseInfluencerDemoPreset'
 import type { CaseFormState } from '@/components/cases/editor/caseEditor.types'
 import {
@@ -289,7 +289,7 @@ export default function CaseEditorPage() {
     setDevPresetError(null)
     try {
       const valueMode = values.valueMode as CaseValueMode
-      const items = await fetchFairDevPresetItems({
+      const items = await fetchCsgoNetDevPresetItems({
         fetchCatalogItem,
         valueMode,
         targetMarginPercent: values.targetMarginPercent,
@@ -394,19 +394,23 @@ export default function CaseEditorPage() {
           onValueModeChange={handleValueModeChange}
         />
 
-        <CaseEditorDevPresetBar
-          loading={devPresetLoading}
-          error={devPresetError}
-          targetMarginPercent={values.targetMarginPercent}
-          discountPercent={values.discountPercent}
-          onApply={() => void handleDevPresetApply()}
-        />
+        {!isEdit ? (
+          <CaseEditorDevPresetBar
+            loading={devPresetLoading}
+            error={devPresetError}
+            targetMarginPercent={values.targetMarginPercent}
+            discountPercent={values.discountPercent}
+            onApply={() => void handleDevPresetApply()}
+          />
+        ) : null}
 
-        <CaseEditorInfluencerDemoPresetBar
-          loading={influencerPresetLoading}
-          error={influencerPresetError}
-          onApply={() => void handleInfluencerDemoPresetApply()}
-        />
+        {isEdit ? (
+          <CaseEditorInfluencerDemoPresetBar
+            loading={influencerPresetLoading}
+            error={influencerPresetError}
+            onApply={() => void handleInfluencerDemoPresetApply()}
+          />
+        ) : null}
 
         <CaseEditorSkinSearchSection
           currency={values.currency as SkinsCurrency}

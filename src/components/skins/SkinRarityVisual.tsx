@@ -9,6 +9,8 @@ type SkinRarity = {
 type SkinRarityVisualProps = {
   rarity?: SkinRarity | null
   className?: string
+  /** Exibe o badge com estrela no canto. Default: true */
+  showStar?: boolean
   children: ReactNode
 }
 
@@ -21,6 +23,7 @@ function rarityGlowStyle(color: string, opacity: number) {
 export function SkinRarityVisual({
   rarity,
   className = '',
+  showStar = true,
   children,
 }: SkinRarityVisualProps) {
   const color = rarity?.color
@@ -49,20 +52,22 @@ export function SkinRarityVisual({
             aria-hidden
             style={rarityGlowStyle(color, 34)}
           />
-          <div
-            className="pointer-events-none absolute left-2 top-2 z-[2] flex items-center gap-1 rounded-full border px-1.5 py-0.5 shadow-sm backdrop-blur-sm"
-            style={{
-              borderColor: `color-mix(in srgb, ${color} 55%, transparent)`,
-              backgroundColor: `color-mix(in srgb, ${color} 18%, rgb(9 9 11 / 0.72))`,
-              boxShadow: `0 0 12px color-mix(in srgb, ${color} 35%, transparent)`,
-            }}
-            aria-hidden
-          >
-            <Star
-              className="h-3.5 w-3.5 shrink-0"
-              style={{ color, fill: color }}
-            />
-          </div>
+          {showStar ? (
+            <div
+              className="pointer-events-none absolute left-2 top-2 z-[2] flex items-center gap-1 rounded-full border px-1.5 py-0.5 shadow-sm backdrop-blur-sm"
+              style={{
+                borderColor: `color-mix(in srgb, ${color} 55%, transparent)`,
+                backgroundColor: `color-mix(in srgb, ${color} 18%, rgb(9 9 11 / 0.72))`,
+                boxShadow: `0 0 12px color-mix(in srgb, ${color} 35%, transparent)`,
+              }}
+              aria-hidden
+            >
+              <Star
+                className="h-3.5 w-3.5 shrink-0"
+                style={{ color, fill: color }}
+              />
+            </div>
+          ) : null}
         </>
       ) : null}
       <div className="relative z-[1] flex h-full w-full items-center justify-center">

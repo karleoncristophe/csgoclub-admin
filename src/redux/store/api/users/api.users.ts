@@ -84,13 +84,110 @@ export type CaseOpenRecord = {
   valueUsd?: number
   valueBrl?: number
   valueEur?: number
+  rateBrl?: number
+  rateEur?: number
   isTestOpen: boolean
+  wasRerolled?: boolean
+  originalRolledSkinName?: string
+  dropResolutionMethod?: 'direct' | 'reroll' | 'fallback'
+  rerollAttempts?: number
   disposition: 'pending' | 'kept' | 'converted'
+  dispositionResolvedAt?: string
   wonItemImage?: string
   wonItemRarityName?: string
   wonItemRarityColor?: string
   convertedAmount?: number
+  paymentFromBalance?: number
+  paymentFromBonusBalance?: number
   createdAt?: string
+  case?: {
+    _id: string
+    name: string
+    slug: string
+    imageUrl?: string
+  }
+}
+
+export type AdminCaseOpenListItem = CaseOpenRecord & {
+  case: {
+    _id: string
+    name: string
+    slug: string
+    imageUrl?: string
+  }
+  user?: {
+    _id: string
+    name: string
+    steamId?: string
+    avatar?: string
+    avatarMedium?: string
+    avatarFull?: string
+  }
+}
+
+export type AdminCaseOpenCaseItem = {
+  skinName: string
+  image?: string
+  rarityName?: string
+  rarityColor?: string
+  price: number
+  basePrice: number
+  priceWithTax: number
+  probability: number
+  enabled: boolean
+  isWon: boolean
+}
+
+export type AdminCaseOpenDetail = AdminCaseOpenListItem & {
+  marginAtDropInstantPercent: number
+  marginAtDropCumulativePercent: number
+  requiredMarginPercent: number
+  instantMarginOk: boolean
+  cumulativeMarginOk: boolean
+  inventoryItemId?: string
+  caseItems: AdminCaseOpenCaseItem[]
+}
+
+export type AdminCaseOpenTopWonItem = {
+  openId: string
+  skinName: string
+  image?: string
+  rarityName?: string
+  rarityColor?: string
+  itemValue: number
+  currency: string
+  caseName?: string
+  userName?: string
+  createdAt?: string
+}
+
+export type AdminCaseOpenListSummary = {
+  totalOpens: number
+  totalPaid: number
+  totalWonValue: number
+  pendingCount: number
+  keptCount: number
+  convertedCount: number
+  testOpensCount: number
+  topWonItem?: AdminCaseOpenTopWonItem | null
+}
+
+export type AdminCaseOpenListResponse = {
+  data: AdminCaseOpenListItem[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  summary: AdminCaseOpenListSummary
+}
+
+export type GetUserCaseOpensParams = {
+  userId: string
+  page?: number
+  limit?: number
+  disposition?: 'pending' | 'kept' | 'converted'
+  isTestOpen?: boolean
+  caseId?: string
 }
 
 export type UserCaseOpenResult = {
@@ -342,6 +439,34 @@ export const usersApi = createApi({
         { type: 'Users', id: `${userId}-site-inventory` },
       ],
     }),
+    getUserCaseOpens: builder.query<AdminCaseOpenListResponse, GetUserCaseOpensParams>({
+      query: ({ userId, ...params }) => ({
+        url: USERS.CASE_OPENS(userId),
+        method: 'GET',
+        params: {
+          ...(params.page != null ? { page: params.page } : {}),
+          ...(params.limit != null ? { limit: params.limit } : {}),
+          ...(params.disposition ? { disposition: params.disposition } : {}),
+          ...(params.isTestOpen != null ? { isTestOpen: params.isTestOpen } : {}),
+          ...(params.caseId ? { caseId: params.caseId } : {}),
+        },
+      }),
+      providesTags: (_result, _error, { userId }) => [
+        { type: 'Users', id: `${userId}-case-opens` },
+      ],
+    }),
+    getUserCaseOpenById: builder.query<
+      AdminCaseOpenDetail,
+      { userId: string; openId: string }
+    >({
+      query: ({ userId, openId }) => ({
+        url: USERS.CASE_OPEN_BY_ID(userId, openId),
+        method: 'GET',
+      }),
+      providesTags: (_result, _error, { userId, openId }) => [
+        { type: 'Users', id: `${userId}-case-open-${openId}` },
+      ],
+    }),
     openUserTestCase: builder.mutation<
       UserCaseOpenBulkResult,
       {
@@ -362,6 +487,7 @@ export const usersApi = createApi({
       invalidatesTags: (_result, _error, { userId }) => [
         { type: 'Users', id: userId },
         { type: 'Users', id: `${userId}-site-inventory` },
+        { type: 'Users', id: `${userId}-case-opens` },
         'Cases',
       ],
     }),
@@ -374,9 +500,11 @@ export const usersApi = createApi({
         method: 'POST',
         body: { action },
       }),
-      invalidatesTags: (_result, _error, { userId }) => [
+      invalidatesTags: (_result, _error, { userId, openId }) => [
         { type: 'Users', id: userId },
         { type: 'Users', id: `${userId}-site-inventory` },
+        { type: 'Users', id: `${userId}-case-opens` },
+        { type: 'Users', id: `${userId}-case-open-${openId}` },
       ],
     }),
     convertAllUserSiteInventory: builder.mutation<
@@ -448,6 +576,8 @@ export const {
   useUpdateUserMutation,
   useGetUserInventoryQuery,
   useGetUserSiteInventoryQuery,
+  useGetUserCaseOpensQuery,
+  useGetUserCaseOpenByIdQuery,
   useOpenUserTestCaseMutation,
   useResolveUserTestCaseOpenMutation,
   useConvertAllUserSiteInventoryMutation,

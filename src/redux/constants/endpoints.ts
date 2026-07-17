@@ -28,6 +28,9 @@ export const USERS = {
   BY_ID: (id: string) => `/admin/users/${id}`,
   INVENTORY: (id: string) => `/admin/users/${id}/inventory`,
   SITE_INVENTORY: (id: string) => `/admin/users/${id}/site-inventory`,
+  CASE_OPENS: (id: string) => `/admin/users/${id}/case-opens`,
+  CASE_OPEN_BY_ID: (userId: string, openId: string) =>
+    `/admin/users/${userId}/case-opens/${openId}`,
   CONVERT_ALL_SITE_INVENTORY: (id: string) =>
     `/admin/users/${id}/site-inventory/convert-all`,
   OPEN_TEST_CASE: (userId: string, caseId: string) =>
@@ -46,6 +49,11 @@ export const CASES = {
   ROOT: '/admin/cases',
   BY_ID: (id: string) => `/admin/cases/${id}`,
   DUPLICATE: (id: string) => `/admin/cases/${id}/duplicate`,
+} as const
+
+export const CASE_OPENS = {
+  ROOT: '/admin/case-opens',
+  BY_ID: (openId: string) => `/admin/case-opens/${openId}`,
 } as const
 
 export const CASE_VITRINES = {

@@ -14,6 +14,7 @@ import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
 import { StatusPill, TextBadge } from '@/components/StatusPill'
+import { UserCaseOpensPanel } from '@/components/users/UserCaseOpensPanel'
 import { UserEditPanel } from '@/components/users/UserEditPanel'
 import { UserInfluencerCaseOpenPanel } from '@/components/users/UserInfluencerCaseOpenPanel'
 import { UserInventoryPanel } from '@/components/users/UserInventoryPanel'
@@ -313,6 +314,8 @@ export default function UserDetailPage() {
               walletCurrency={data.walletCurrency}
             />
           ) : null}
+
+          <UserCaseOpensPanel userId={data._id} />
 
           <UserSiteInventoryPanel
             userId={data._id}

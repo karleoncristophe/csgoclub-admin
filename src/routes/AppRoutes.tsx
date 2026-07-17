@@ -29,8 +29,14 @@ const UsersPage = lazy(
 const UserDetailPage = lazy(
   () => import('@/pages/dashboard/UserDetailPage'),
 )
+const UserCaseOpenDetailPage = lazy(
+  () => import('@/pages/dashboard/UserCaseOpenDetailPage'),
+)
 const CasesPage = lazy(
   () => import('@/pages/dashboard/CasesPage'),
+)
+const CaseOpensPage = lazy(
+  () => import('@/pages/dashboard/CaseOpensPage'),
 )
 const CaseEditorPage = lazy(
   () => import('@/pages/dashboard/CaseEditorPage'),
@@ -83,7 +89,13 @@ function ProtectedRoutes() {
         <Route path="categorias" element={<WeaponCategoriesPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="users/:id" element={<UserDetailPage />} />
+        <Route
+          path="users/:id/case-opens/:openId"
+          element={<UserCaseOpenDetailPage />}
+        />
         <Route path="cases" element={<CasesPage />} />
+        <Route path="case-opens" element={<CaseOpensPage />} />
+        <Route path="case-opens/:openId" element={<UserCaseOpenDetailPage />} />
         <Route path="cases/new" element={<CaseEditorPage />} />
         <Route path="cases/:id" element={<CaseEditorPage />} />
         <Route path="vitrines" element={<VitrinesPage />} />

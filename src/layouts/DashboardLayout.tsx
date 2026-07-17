@@ -22,6 +22,10 @@ import type { RootState } from '@/redux/store/store'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import {
+  PlatformDataEnvironmentBanner,
+  PlatformDataEnvironmentToggle,
+} from '@/components/ui/PlatformDataEnvironmentToggle'
 
 type NavItem = { href: string; label: string; Icon: LucideIcon }
 type NavSection = { title: string; items: readonly NavItem[] }
@@ -168,7 +172,8 @@ export default function DashboardLayout() {
           ))}
         </nav>
 
-        <div className="shrink-0 space-y-1 border-t border-slate-100 px-3 pb-2 pt-4 dark:border-zinc-800">
+        <div className="shrink-0 space-y-2 border-t border-slate-100 px-3 pb-2 pt-4 dark:border-zinc-800">
+          <PlatformDataEnvironmentToggle variant="sidebar" />
           <ThemeToggle variant="sidebar" />
           <button
             type="button"
@@ -243,7 +248,16 @@ export default function DashboardLayout() {
                 Painel administrativo
               </ThemeText>
             </div>
+            <div className="hidden items-center gap-2 sm:flex">
+              <PlatformDataEnvironmentToggle />
+              <ThemeToggle />
+            </div>
           </header>
+          <div className="hidden border-b border-zinc-200 px-4 py-3 dark:border-zinc-800 sm:flex sm:items-center sm:justify-end sm:gap-2 lg:hidden">
+            <PlatformDataEnvironmentToggle />
+            <ThemeToggle />
+          </div>
+          <PlatformDataEnvironmentBanner />
           <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
             <Suspense
               fallback={

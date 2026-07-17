@@ -8,12 +8,14 @@ import { skinsApi } from '@/redux/store/api/skins/api.skins'
 import { usersApi } from '@/redux/store/api/users/api.users'
 import { weaponCategoriesApi } from '@/redux/store/api/weapon-categories/api.weapon-categories'
 import meReducer from '@/redux/store/slices/meSlice'
+import platformDataEnvironmentReducer from '@/redux/store/slices/platformDataEnvironmentSlice'
 import securityReducer from '@/redux/store/slices/securitySlice'
 
 export const store = configureStore({
   reducer: {
     security: securityReducer,
     me: meReducer,
+    platformDataEnvironment: platformDataEnvironmentReducer,
     [authApi.reducerPath]: authApi.reducer,
     [skinsApi.reducerPath]: skinsApi.reducer,
     [casesApi.reducerPath]: casesApi.reducer,

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useGetAdminDashboardMetricsQuery } from '@/redux/store/api/metrics/api.metrics'
+import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import { Button } from '@/components/ui/Button'
 import {
   DateRangePickerModal,
@@ -74,6 +75,8 @@ const chartArticleClass =
   'overflow-hidden rounded-3xl border border-zinc-200/70 bg-gradient-to-br from-white via-white to-zinc-50/80 p-5 shadow-sm dark:border-zinc-700/80 dark:from-zinc-900/95 dark:via-zinc-900/90 dark:to-zinc-950 dark:ring-1 dark:ring-inset dark:ring-zinc-700/50 sm:p-6'
 
 export default function DashboardHomePage() {
+  const dataEnvironment = usePlatformDataEnvironment()
+  const isSandbox = dataEnvironment === 'SANDBOX'
   const initial = useMemo(() => initialDashboardRange(), [])
   const [rangeStart, setRangeStart] = useState(() => initial.start)
   const [rangeEnd, setRangeEnd] = useState(() => initial.end)
@@ -97,8 +100,9 @@ export default function DashboardHomePage() {
     return {
       startDate: startOfLocalDay(rangeStart).toISOString(),
       endDate: endOfLocalDay(rangeEnd).toISOString(),
+      dataEnvironment,
     }
-  }, [rangeStart, rangeEnd, queryOk])
+  }, [rangeStart, rangeEnd, queryOk, dataEnvironment])
 
   const {
     data: metrics,
@@ -144,10 +148,10 @@ export default function DashboardHomePage() {
               Métricas
             </ThemeText>
             <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
-              Cadastros, aberturas reais de caixa, depósitos e faturamento da
-              plataforma. Valores financeiros normalizados em USD; aberturas de
-              teste e afiliados de teste ficam de fora. Acima de 30 dias o
-              gráfico agrupa por mês.
+              {isSandbox
+                ? 'Visão Dev: influencers, aberturas de teste, créditos bônus e faturamento fake — nada se mistura com produção.'
+                : 'Visão Produção: cadastros reais, aberturas reais, depósitos e faturamento. Influencers e testes ficam de fora.'}{' '}
+              Acima de 30 dias o gráfico agrupa por mês.
             </ThemeText>
           </div>
           <Button
@@ -211,37 +215,57 @@ export default function DashboardHomePage() {
             <div className="mb-8 space-y-3">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <MetricTile
-                  label="Usuários cadastrados"
+                  label={isSandbox ? 'Influencers cadastrados' : 'Usuários cadastrados'}
                   value={metrics.totals.usersCreated}
-                  hint="Exclui contas marcadas como excluídas"
+                  hint={
+                    isSandbox
+                      ? 'Somente contas influencer / teste'
+                      : 'Exclui influencers e contas excluídas'
+                  }
                 />
                 <MetricTile
                   label="Aberturas de caixa"
                   value={metrics.totals.caseOpensReal}
-                  hint="Somente aberturas reais (sem teste)"
+                  hint={
+                    isSandbox
+                      ? 'Somente aberturas de teste'
+                      : 'Somente aberturas reais (sem teste)'
+                  }
                 />
                 <MetricTile
-                  label="Depósitos"
+                  label={isSandbox ? 'Créditos bônus' : 'Depósitos'}
                   value={metrics.totals.depositsCount}
-                  hint="Transações de depósito no período"
+                  hint={
+                    isSandbox
+                      ? 'Concessões manuais / bônus no período'
+                      : 'Transações de depósito no período'
+                  }
                 />
-                <MetricTile
-                  label="Influencers"
-                  value={metrics.totals.influencersCreated}
-                  hint="Cadastros de influencer ou afiliado de teste"
-                />
-                <MetricTile
-                  label="Créditos bônus"
-                  value={metrics.totals.bonusCreditsCount}
-                  hint="Concessões manuais pelo admin"
-                />
+                {!isSandbox ? (
+                  <>
+                    <MetricTile
+                      label="Influencers"
+                      value={metrics.totals.influencersCreated}
+                      hint="Cadastros de influencer (fora desta visão)"
+                    />
+                    <MetricTile
+                      label="Créditos bônus"
+                      value={metrics.totals.bonusCreditsCount}
+                      hint="Concessões manuais pelo admin"
+                    />
+                  </>
+                ) : null}
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <MetricTile
-                  label="Faturamento das caixas"
+                  label={isSandbox ? 'Gasto em aberturas teste' : 'Faturamento das caixas'}
                   value={metrics.totals.revenueUsdCents}
                   format="currency"
-                  hint="Gasto em aberturas reais (USD)"
+                  hint={
+                    isSandbox
+                      ? 'Gasto em aberturas de teste (USD)'
+                      : 'Gasto em aberturas reais (USD)'
+                  }
                 />
                 <MetricTile
                   label="Valor dos drops"
@@ -256,10 +280,14 @@ export default function DashboardHomePage() {
                   hint="Faturamento − valor dos drops"
                 />
                 <MetricTile
-                  label="Volume depositado"
+                  label={isSandbox ? 'Volume de bônus' : 'Volume depositado'}
                   value={metrics.totals.depositsVolumeCents}
                   format="currency"
-                  hint="Soma dos depósitos creditados"
+                  hint={
+                    isSandbox
+                      ? 'Soma dos créditos bônus no período'
+                      : 'Soma dos depósitos creditados'
+                  }
                 />
               </div>
             </div>
@@ -299,7 +327,9 @@ export default function DashboardHomePage() {
                       Cadastros e aberturas por {bucketLabel}
                     </ThemeText>
                     <ThemeText as="p" tone="secondary" className="text-sm">
-                      Novos usuários e aberturas reais de caixa
+                      {isSandbox
+                        ? 'Novos influencers e aberturas de teste'
+                        : 'Novos usuários e aberturas reais de caixa'}
                     </ThemeText>
                   </div>
                   <ChartTypeSelector
@@ -322,10 +352,13 @@ export default function DashboardHomePage() {
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <ThemeText as="h3" tone="primary" className="font-semibold">
-                      Depósitos e cadastros por {bucketLabel}
+                      {isSandbox ? 'Bônus e cadastros' : 'Depósitos e cadastros'} por{' '}
+                      {bucketLabel}
                     </ThemeText>
                     <ThemeText as="p" tone="secondary" className="text-sm">
-                      Novos depósitos creditados e usuários cadastrados
+                      {isSandbox
+                        ? 'Créditos bônus e influencers cadastrados'
+                        : 'Novos depósitos creditados e usuários cadastrados'}
                     </ThemeText>
                   </div>
                   <ChartTypeSelector
@@ -338,7 +371,7 @@ export default function DashboardHomePage() {
                   seriesGranularity={metrics.seriesGranularity}
                   variant={chartDeposits.variant}
                   keys={['depositsCount', 'usersCreated']}
-                  names={['Depósitos', 'Cadastros']}
+                  names={[isSandbox ? 'Bônus' : 'Depósitos', 'Cadastros']}
                   colors={['#2563eb', '#0d9488']}
                   gradientIds={['cs2DepCount', 'cs2UsersDep']}
                 />

@@ -6,8 +6,12 @@ import type {
   AdminCaseOpenListItem,
   AdminCaseOpenListResponse,
 } from '@/redux/store/api/users/api.users'
+import {
+  omitDataEnvironmentQueryArg,
+  type WithPlatformDataEnvironment,
+} from '@/utils/platformDataEnvironmentStorage'
 
-export type GetAllCaseOpensParams = {
+export type GetAllCaseOpensParams = WithPlatformDataEnvironment<{
   page?: number
   limit?: number
   disposition?: 'pending' | 'kept' | 'converted'
@@ -15,7 +19,7 @@ export type GetAllCaseOpensParams = {
   caseId?: string
   userId?: string
   search?: string
-}
+}>
 
 export type AdminCaseOpenGlobalItem = AdminCaseOpenListItem & {
   user?: {
@@ -38,19 +42,21 @@ export const caseOpensApi = createApi({
   tagTypes: ['CaseOpens', 'CaseOpen'],
   endpoints: (builder) => ({
     getAllCaseOpens: builder.query<AdminCaseOpenGlobalResponse, GetAllCaseOpensParams | void>({
-      query: (params) => ({
-        url: CASE_OPENS.ROOT,
-        method: 'GET',
-        params: {
-          ...(params?.page != null ? { page: params.page } : {}),
-          ...(params?.limit != null ? { limit: params.limit } : {}),
-          ...(params?.disposition ? { disposition: params.disposition } : {}),
-          ...(params?.isTestOpen != null ? { isTestOpen: params.isTestOpen } : {}),
-          ...(params?.caseId ? { caseId: params.caseId } : {}),
-          ...(params?.userId ? { userId: params.userId } : {}),
-          ...(params?.search ? { search: params.search } : {}),
-        },
-      }),
+      query: (params) => {
+        const clean = params ? omitDataEnvironmentQueryArg(params) : undefined
+        return {
+          url: CASE_OPENS.ROOT,
+          method: 'GET',
+          params: {
+            ...(clean?.page != null ? { page: clean.page } : {}),
+            ...(clean?.limit != null ? { limit: clean.limit } : {}),
+            ...(clean?.disposition ? { disposition: clean.disposition } : {}),
+            ...(clean?.caseId ? { caseId: clean.caseId } : {}),
+            ...(clean?.userId ? { userId: clean.userId } : {}),
+            ...(clean?.search ? { search: clean.search } : {}),
+          },
+        }
+      },
       providesTags: ['CaseOpens'],
     }),
     getCaseOpenById: builder.query<AdminCaseOpenDetail, string>({

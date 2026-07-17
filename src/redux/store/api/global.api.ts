@@ -9,13 +9,17 @@ import { signOut } from '@/redux/store/slices/securitySlice'
 import { removeMe } from '@/redux/store/slices/meSlice'
 import type { AppDispatch, RootState } from '@/redux/store/store'
 import { refreshAdminSessionOnce } from '@/auth/refreshAdminSession'
+import { ADMIN_DATA_ENVIRONMENT_HEADER } from '@/utils/platformDataEnvironmentStorage'
 
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL,
   prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as RootState).security.accessToken
+    const state = getState() as RootState
+    const token = state.security.accessToken
+    const dataEnvironment = state.platformDataEnvironment?.value ?? 'PRODUCTION'
+    headers.set('accept', 'application/json')
+    headers.set(ADMIN_DATA_ENVIRONMENT_HEADER, dataEnvironment)
     if (token) {
-      headers.set('accept', 'application/json')
       headers.set('authorization', `Bearer ${token}`)
     }
     return headers

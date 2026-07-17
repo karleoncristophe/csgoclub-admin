@@ -34,4 +34,5 @@ export type AdminDashboardMetricsResponse = {
 export type AdminDashboardMetricsQuery = {
   startDate: string
   endDate: string
+  dataEnvironment?: import('@/utils/platformDataEnvironmentStorage').PlatformDataEnvironment
 }

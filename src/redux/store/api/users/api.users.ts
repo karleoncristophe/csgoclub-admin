@@ -2,6 +2,10 @@ import { createApi } from '@reduxjs/toolkit/query/react'
 import { SkinsCurrency } from '@/constants/skinsCurrency'
 import { USERS } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
+import {
+  omitDataEnvironmentQueryArg,
+  type WithPlatformDataEnvironment,
+} from '@/utils/platformDataEnvironmentStorage'
 
 export type AppUser = {
   _id: string
@@ -181,14 +185,14 @@ export type AdminCaseOpenListResponse = {
   summary: AdminCaseOpenListSummary
 }
 
-export type GetUserCaseOpensParams = {
+export type GetUserCaseOpensParams = WithPlatformDataEnvironment<{
   userId: string
   page?: number
   limit?: number
   disposition?: 'pending' | 'kept' | 'converted'
   isTestOpen?: boolean
   caseId?: string
-}
+}>
 
 export type UserCaseOpenResult = {
   open: CaseOpenRecord
@@ -352,14 +356,14 @@ export type UserListPaginatedDto = {
   totalPages: number
 }
 
-export type GetUsersParams = {
+export type GetUsersParams = WithPlatformDataEnvironment<{
   page?: number
   limit?: number
   search?: string
   role?: 'ADMIN' | 'USER'
   active?: boolean
   includeDeleted?: boolean
-}
+}>
 
 export const usersApi = createApi({
   reducerPath: 'usersApi',
@@ -367,20 +371,23 @@ export const usersApi = createApi({
   tagTypes: ['Users'],
   endpoints: (builder) => ({
     getUsers: builder.query<UserListPaginatedDto, GetUsersParams | void>({
-      query: (params) => ({
-        url: USERS.LIST,
-        method: 'GET',
-        params: {
-          ...(params?.page != null ? { page: params.page } : {}),
-          ...(params?.limit != null ? { limit: params.limit } : {}),
-          ...(params?.search ? { search: params.search } : {}),
-          ...(params?.role ? { role: params.role } : {}),
-          ...(params?.active != null ? { active: params.active } : {}),
-          ...(params?.includeDeleted != null
-            ? { includeDeleted: params.includeDeleted }
-            : {}),
-        },
-      }),
+      query: (params) => {
+        const clean = params ? omitDataEnvironmentQueryArg(params) : undefined
+        return {
+          url: USERS.LIST,
+          method: 'GET',
+          params: {
+            ...(clean?.page != null ? { page: clean.page } : {}),
+            ...(clean?.limit != null ? { limit: clean.limit } : {}),
+            ...(clean?.search ? { search: clean.search } : {}),
+            ...(clean?.role ? { role: clean.role } : {}),
+            ...(clean?.active != null ? { active: clean.active } : {}),
+            ...(clean?.includeDeleted != null
+              ? { includeDeleted: clean.includeDeleted }
+              : {}),
+          },
+        }
+      },
       providesTags: ['Users'],
     }),
     getUserById: builder.query<UserAdminDetail, string>({
@@ -440,17 +447,19 @@ export const usersApi = createApi({
       ],
     }),
     getUserCaseOpens: builder.query<AdminCaseOpenListResponse, GetUserCaseOpensParams>({
-      query: ({ userId, ...params }) => ({
-        url: USERS.CASE_OPENS(userId),
-        method: 'GET',
-        params: {
-          ...(params.page != null ? { page: params.page } : {}),
-          ...(params.limit != null ? { limit: params.limit } : {}),
-          ...(params.disposition ? { disposition: params.disposition } : {}),
-          ...(params.isTestOpen != null ? { isTestOpen: params.isTestOpen } : {}),
-          ...(params.caseId ? { caseId: params.caseId } : {}),
-        },
-      }),
+      query: (args) => {
+        const { userId, ...params } = omitDataEnvironmentQueryArg(args)
+        return {
+          url: USERS.CASE_OPENS(userId),
+          method: 'GET',
+          params: {
+            ...(params.page != null ? { page: params.page } : {}),
+            ...(params.limit != null ? { limit: params.limit } : {}),
+            ...(params.disposition ? { disposition: params.disposition } : {}),
+            ...(params.caseId ? { caseId: params.caseId } : {}),
+          },
+        }
+      },
       providesTags: (_result, _error, { userId }) => [
         { type: 'Users', id: `${userId}-case-opens` },
       ],

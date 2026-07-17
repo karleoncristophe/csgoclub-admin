@@ -5,6 +5,7 @@ import type {
   AdminDashboardMetricsQuery,
   AdminDashboardMetricsResponse,
 } from '@/types/adminMetrics'
+import { omitDataEnvironmentQueryArg } from '@/utils/platformDataEnvironmentStorage'
 
 export const metricsApi = createApi({
   reducerPath: 'metricsApi',
@@ -15,11 +16,14 @@ export const metricsApi = createApi({
       AdminDashboardMetricsResponse,
       AdminDashboardMetricsQuery
     >({
-      query: ({ startDate, endDate }) => ({
-        url: METRICS.DASHBOARD,
-        method: 'GET',
-        params: { startDate, endDate },
-      }),
+      query: (args) => {
+        const { startDate, endDate } = omitDataEnvironmentQueryArg(args)
+        return {
+          url: METRICS.DASHBOARD,
+          method: 'GET',
+          params: { startDate, endDate },
+        }
+      },
       providesTags: ['AdminMetrics'],
     }),
   }),

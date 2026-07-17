@@ -10,6 +10,7 @@ import { PageTitle } from '@/components/ui/Title'
 import { linkBrand, listTable } from '@/components/ui/listTable'
 import { StatusPill, TextBadge } from '@/components/StatusPill'
 import useDebounce from '@/hooks/useDebounce'
+import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import { labelFilterBoolean, labelUserAppRole } from '@/i18n/enumLabels'
 import { useGetUsersQuery } from '@/redux/store/api/users/api.users'
 import { getErrorMessage } from '@/utils/getErrorMessage'
@@ -34,6 +35,8 @@ function parseActiveFilter(value: string): boolean | undefined {
 }
 
 export default function UsersPage() {
+  const dataEnvironment = usePlatformDataEnvironment()
+  const isSandbox = dataEnvironment === 'SANDBOX'
   const [searchInput, setSearchInput] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [activeFilter, setActiveFilter] = useState('')
@@ -47,6 +50,7 @@ export default function UsersPage() {
   const { data, isLoading, isFetching, isError, error } = useGetUsersQuery({
     page: safePage,
     limit: itemsPerPage,
+    dataEnvironment,
     search: debouncedSearch || undefined,
     role: roleFilter ? (roleFilter as 'ADMIN' | 'USER') : undefined,
     active: parseActiveFilter(activeFilter),
@@ -71,7 +75,13 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle subtitle="Usuários Steam com busca, filtros e paginação server-side.">
+      <PageTitle
+        subtitle={
+          isSandbox
+            ? 'Somente influencers / contas de teste. Visão Dev — não mistura com produção.'
+            : 'Somente usuários padrão. Visão Produção — influencers ficam de fora.'
+        }
+      >
         Usuários
       </PageTitle>
 

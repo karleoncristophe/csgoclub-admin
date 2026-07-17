@@ -7,6 +7,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
+import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import {
   useGetUserCaseOpensQuery,
   type AdminCaseOpenListItem,
@@ -69,9 +70,10 @@ type UserCaseOpensPanelProps = {
 }
 
 export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
+  const dataEnvironment = usePlatformDataEnvironment()
+  const isSandbox = dataEnvironment === 'SANDBOX'
   const [page, setPage] = useState(1)
   const [disposition, setDisposition] = useState<'pending' | 'kept' | 'converted' | ''>('')
-  const [isTestOpen, setIsTestOpen] = useState<'all' | 'true' | 'false'>('all')
   const pageSize = 12
   const safePage = Math.max(page, 1)
 
@@ -79,8 +81,8 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
     userId,
     page: safePage,
     limit: pageSize,
+    dataEnvironment,
     ...(disposition ? { disposition } : {}),
-    ...(isTestOpen === 'all' ? {} : { isTestOpen: isTestOpen === 'true' }),
   })
 
   const summary = data?.summary
@@ -151,26 +153,9 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
             {option.label}
           </button>
         ))}
-        <span className="mx-1 hidden h-8 w-px bg-zinc-200 dark:bg-zinc-700 sm:inline-block" />
-        {(
-          [
-            { value: 'all', label: 'Real + teste' },
-            { value: 'false', label: 'Só reais' },
-            { value: 'true', label: 'Só teste' },
-          ] as const
-        ).map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => {
-              setIsTestOpen(option.value)
-              setPage(1)
-            }}
-            className={filterChipClasses(isTestOpen === option.value, 'amber')}
-          >
-            {option.label}
-          </button>
-        ))}
+        <span className="inline-flex items-center rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100">
+          {isSandbox ? 'Só teste (Dev)' : 'Só reais (Produção)'}
+        </span>
       </div>
 
       {isLoading ? (

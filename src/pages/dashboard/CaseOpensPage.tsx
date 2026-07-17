@@ -9,6 +9,7 @@ import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import useDebounce from '@/hooks/useDebounce'
+import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import {
   useGetAllCaseOpensQuery,
   type AdminCaseOpenGlobalItem,
@@ -67,10 +68,11 @@ function StatCard({
 }
 
 export default function CaseOpensPage() {
+  const dataEnvironment = usePlatformDataEnvironment()
+  const isSandbox = dataEnvironment === 'SANDBOX'
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [disposition, setDisposition] = useState<'pending' | 'kept' | 'converted' | ''>('')
-  const [isTestOpen, setIsTestOpen] = useState<'all' | 'true' | 'false'>('all')
   const debouncedSearch = useDebounce(search.trim(), 300)
   const pageSize = 30
   const safePage = Math.max(page, 1)
@@ -78,8 +80,8 @@ export default function CaseOpensPage() {
   const { data, isLoading, isFetching, isError, error } = useGetAllCaseOpensQuery({
     page: safePage,
     limit: pageSize,
+    dataEnvironment,
     ...(disposition ? { disposition } : {}),
-    ...(isTestOpen === 'all' ? {} : { isTestOpen: isTestOpen === 'true' }),
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
 
@@ -89,7 +91,13 @@ export default function CaseOpensPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle subtitle="Histórico de aberturas de todos os clientes, com prêmio, valores e imagem da caixa.">
+      <PageTitle
+        subtitle={
+          isSandbox
+            ? 'Histórico de aberturas de teste (influencer). Visão Dev — não mistura com produção.'
+            : 'Histórico de aberturas reais. Visão Produção — testes ficam de fora.'
+        }
+      >
         Aberturas
       </PageTitle>
 
@@ -211,26 +219,9 @@ export default function CaseOpensPage() {
               {option.label}
             </button>
           ))}
-          <span className="mx-1 hidden h-8 w-px bg-zinc-200 dark:bg-zinc-700 sm:inline-block" />
-          {(
-            [
-              { value: 'all', label: 'Real + teste' },
-              { value: 'false', label: 'Só reais' },
-              { value: 'true', label: 'Só teste' },
-            ] as const
-          ).map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => {
-                setIsTestOpen(option.value)
-                setPage(1)
-              }}
-              className={filterChipClasses(isTestOpen === option.value, 'amber')}
-            >
-              {option.label}
-            </button>
-          ))}
+          <span className="inline-flex items-center rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100">
+            {isSandbox ? 'Só teste (Dev)' : 'Só reais (Produção)'}
+          </span>
         </div>
 
         {isLoading ? (

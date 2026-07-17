@@ -35,3 +35,26 @@ export const userInfluencerPanelClass =
 
 export const userInfluencerBannerClass =
   'rounded-2xl border border-amber-300/60 bg-amber-50/50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10'
+
+/**
+ * Chips de filtro — NÃO usar brand-950/amber-950 (não existem no tema).
+ * No dark: fundo escuro + texto claro com contraste legível.
+ */
+export const filterChipClass = {
+  base: 'rounded-full border px-3 py-1.5 text-xs font-medium transition',
+  idle:
+    'border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/60',
+  brandActive:
+    'border-brand-500 bg-brand-50 text-brand-800 dark:border-brand-400/50 dark:bg-brand-500/20 dark:text-brand-100',
+  amberActive:
+    'border-amber-500 bg-amber-50 text-amber-900 dark:border-amber-400/50 dark:bg-amber-500/20 dark:text-amber-100',
+} as const
+
+export function filterChipClasses(
+  active: boolean,
+  tone: 'brand' | 'amber' = 'brand',
+) {
+  const activeClass =
+    tone === 'amber' ? filterChipClass.amberActive : filterChipClass.brandActive
+  return `${filterChipClass.base} ${active ? activeClass : filterChipClass.idle}`
+}

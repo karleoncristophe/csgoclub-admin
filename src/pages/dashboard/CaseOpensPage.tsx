@@ -14,7 +14,7 @@ import {
   type AdminCaseOpenGlobalItem,
 } from '@/redux/store/api/case-opens/api.case-opens'
 import { getErrorMessage } from '@/utils/getErrorMessage'
-import { userStatCardSpaciousClass } from '@/components/users/userPanelClasses'
+import { filterChipClasses, userStatCardSpaciousClass } from '@/components/users/userPanelClasses'
 
 function formatMoney(value: number, currency = 'USD') {
   return new Intl.NumberFormat('pt-BR', {
@@ -206,11 +206,7 @@ export default function CaseOpensPage() {
                 setDisposition(option.value)
                 setPage(1)
               }}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                disposition === option.value
-                  ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500/60 dark:bg-brand-950/40 dark:text-brand-200'
-                  : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300'
-              }`}
+              className={filterChipClasses(disposition === option.value, 'brand')}
             >
               {option.label}
             </button>
@@ -230,11 +226,7 @@ export default function CaseOpensPage() {
                 setIsTestOpen(option.value)
                 setPage(1)
               }}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                isTestOpen === option.value
-                  ? 'border-amber-500 bg-amber-50 text-amber-800 dark:border-amber-500/60 dark:bg-amber-950/40 dark:text-amber-200'
-                  : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300'
-              }`}
+              className={filterChipClasses(isTestOpen === option.value, 'amber')}
             >
               {option.label}
             </button>

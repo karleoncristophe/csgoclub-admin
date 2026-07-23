@@ -65,3 +65,9 @@ export const CASE_VITRINES = {
 export const METRICS = {
   DASHBOARD: '/admin/metrics/dashboard',
 } as const
+
+export const COUPONS = {
+  ROOT: '/admin/coupons',
+  REWARD_TYPES: '/admin/coupons/reward-types',
+  BY_ID: (id: string) => `/admin/coupons/${id}`,
+} as const

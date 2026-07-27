@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { authApi } from '@/redux/store/api/auth/api.auth'
+import { battlesAdminApi } from '@/redux/store/api/battles/api.battles'
 import { casesApi } from '@/redux/store/api/cases/api.cases'
 import { caseOpensApi } from '@/redux/store/api/case-opens/api.case-opens'
 import { caseVitrinesApi } from '@/redux/store/api/case-vitrines/api.case-vitrines'
@@ -23,6 +24,7 @@ export const store = configureStore({
     [caseOpensApi.reducerPath]: caseOpensApi.reducer,
     [caseVitrinesApi.reducerPath]: caseVitrinesApi.reducer,
     [couponsApi.reducerPath]: couponsApi.reducer,
+    [battlesAdminApi.reducerPath]: battlesAdminApi.reducer,
     [metricsApi.reducerPath]: metricsApi.reducer,
     [usersApi.reducerPath]: usersApi.reducer,
     [weaponCategoriesApi.reducerPath]: weaponCategoriesApi.reducer,
@@ -35,6 +37,7 @@ export const store = configureStore({
       caseOpensApi.middleware,
       caseVitrinesApi.middleware,
       couponsApi.middleware,
+      battlesAdminApi.middleware,
       metricsApi.middleware,
       usersApi.middleware,
       weaponCategoriesApi.middleware,

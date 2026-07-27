@@ -71,3 +71,10 @@ export const COUPONS = {
   REWARD_TYPES: '/admin/coupons/reward-types',
   BY_ID: (id: string) => `/admin/coupons/${id}`,
 } as const
+
+export const BATTLES_ADMIN = {
+  ROOT: '/admin/battles',
+  CANCEL: (id: string) => `/admin/battles/${id}/cancel`,
+  BOTS: '/admin/battles/bots',
+  BOT_BY_ID: (id: string) => `/admin/battles/bots/${id}`,
+} as const

@@ -53,6 +53,9 @@ const DocumentationPage = lazy(
 const CouponsPage = lazy(
   () => import('@/pages/dashboard/CouponsPage'),
 )
+const BattlesAdminPage = lazy(
+  () => import('@/pages/dashboard/BattlesAdminPage'),
+)
 
 function AuthPageFallback() {
   return (
@@ -103,6 +106,7 @@ function ProtectedRoutes() {
         <Route path="cases/:id" element={<CaseEditorPage />} />
         <Route path="vitrines" element={<VitrinesPage />} />
         <Route path="coupons" element={<CouponsPage />} />
+        <Route path="battles" element={<BattlesAdminPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="documentation" element={<DocumentationPage />} />
       </Route>

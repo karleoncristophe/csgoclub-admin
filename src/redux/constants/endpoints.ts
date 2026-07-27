@@ -74,6 +74,7 @@ export const COUPONS = {
 
 export const BATTLES_ADMIN = {
   ROOT: '/admin/battles',
+  BY_ID: (id: string) => `/admin/battles/${id}`,
   CANCEL: (id: string) => `/admin/battles/${id}/cancel`,
   BOTS: '/admin/battles/bots',
   BOT_BY_ID: (id: string) => `/admin/battles/bots/${id}`,

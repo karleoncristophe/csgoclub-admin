@@ -13,23 +13,62 @@ export type AdminBattleBot = {
   updatedAt?: string
 }
 
-export type AdminBattleListItem = {
+export type AdminBattleDrop = {
+  roundIndex: number
+  caseId: string
+  skinName: string
+  image: string | null
+  rarityName: string | null
+  rarityColor: string | null
+  itemValue: number
+  fairTicket: number | null
+  dropResolutionMethod: string | null
+}
+
+export type AdminBattleSeat = {
+  index: number
+  type: string
+  userId: string | null
+  botId: string | null
+  name: string | null
+  avatarUrl: string | null
+  paid: boolean
+  totalValue: number
+  drops: AdminBattleDrop[]
+}
+
+export type AdminBattleCase = {
+  caseId: string
+  slug: string
+  name: string
+  imageUrl: string | null
+  price: number
+}
+
+export type AdminBattle = {
   id: string
   status: string
   mode: string
+  visibility: string
+  joinCode: string | null
   slots: number
+  caseSequence: AdminBattleCase[]
   priceTotal: number
   currency: string
+  hostUserId: string
+  seats: AdminBattleSeat[]
   currentRound: number
   winnerSeatIndex: number | null
+  tieBreak: boolean
+  fillWithBots: boolean
+  countdownEndsAt: string | null
+  startedAt: string | null
+  finishedAt: string | null
   createdAt: string | null
-  seats: Array<{
-    index: number
-    type: string
-    name: string | null
-    totalValue: number
-  }>
 }
+
+/** @deprecated use AdminBattle — list returns full serialize */
+export type AdminBattleListItem = AdminBattle
 
 export const battlesAdminApi = createApi({
   reducerPath: 'battlesAdminApi',
@@ -75,14 +114,21 @@ export const battlesAdminApi = createApi({
       }),
       invalidatesTags: ['BattleBots'],
     }),
-    getAdminBattles: builder.query<AdminBattleListItem[], number | void>({
+    getAdminBattles: builder.query<AdminBattle[], number | void>({
       query: (limit = 50) => ({
         url: `${BATTLES_ADMIN.ROOT}?limit=${limit ?? 50}`,
         method: 'GET',
       }),
       providesTags: ['BattlesAdmin'],
     }),
-    cancelAdminBattle: builder.mutation<AdminBattleListItem, string>({
+    getAdminBattleById: builder.query<AdminBattle, string>({
+      query: (id) => ({
+        url: BATTLES_ADMIN.BY_ID(id),
+        method: 'GET',
+      }),
+      providesTags: (_r, _e, id) => [{ type: 'BattlesAdmin', id }],
+    }),
+    cancelAdminBattle: builder.mutation<AdminBattle, string>({
       query: (id) => ({
         url: BATTLES_ADMIN.CANCEL(id),
         method: 'POST',
@@ -98,5 +144,6 @@ export const {
   useUpdateBattleBotMutation,
   useDeleteBattleBotMutation,
   useGetAdminBattlesQuery,
+  useGetAdminBattleByIdQuery,
   useCancelAdminBattleMutation,
 } = battlesAdminApi

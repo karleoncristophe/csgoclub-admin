@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Bot, Plus, Trash2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Bot, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { Input } from '@/components/ui/Input'
@@ -16,6 +17,12 @@ import {
   useUpdateBattleBotMutation,
 } from '@/redux/store/api/battles/api.battles'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+import {
+  BattlePlayerAvatars,
+  BattleStatusBadge,
+  battleModeLabel,
+  formatBattleMoney,
+} from './battles/battleUi'
 
 export default function BattlesAdminPage() {
   const { confirm } = useConfirm()
@@ -175,6 +182,7 @@ export default function BattlesAdminPage() {
             <thead>
               <tr>
                 <th className={listTable.th}>ID</th>
+                <th className={listTable.th}>Jogadores</th>
                 <th className={listTable.th}>Status</th>
                 <th className={listTable.th}>Modo</th>
                 <th className={listTable.th}>Preço</th>
@@ -185,54 +193,94 @@ export default function BattlesAdminPage() {
             <tbody>
               {battlesLoading ? (
                 <tr>
-                  <td className={listTable.td} colSpan={6}>
+                  <td className={listTable.td} colSpan={7}>
                     Carregando...
                   </td>
                 </tr>
               ) : battles.length === 0 ? (
                 <tr>
-                  <td className={listTable.td} colSpan={6}>
+                  <td className={listTable.td} colSpan={7}>
                     Nenhuma battle
                   </td>
                 </tr>
               ) : (
-                battles.map((battle) => (
-                  <tr key={battle.id}>
-                    <td className={listTable.td}>
-                      <code className="text-xs">{battle.id.slice(-8)}</code>
-                    </td>
-                    <td className={listTable.td}>{battle.status}</td>
-                    <td className={listTable.td}>{battle.mode}</td>
-                    <td className={listTable.td}>
-                      {battle.priceTotal} {battle.currency}
-                    </td>
-                    <td className={listTable.td}>{battle.currentRound}</td>
-                    <td className={listTable.td}>
-                      {battle.status === 'lobby' ||
-                      battle.status === 'countdown' ||
-                      battle.status === 'running' ? (
-                        <Button
-                          variant="secondary"
-                          onClick={async () => {
-                            const ok = await confirm({
-                              title: 'Cancelar battle e reembolsar?',
-                              description:
-                                'Jogadores humanos recebem o escrow de volta.',
-                              subjectLabel: 'Battle',
-                              subjectName: battle.id.slice(-8),
-                              confirmLabel: 'Cancelar battle',
-                              confirmVariant: 'danger',
-                            })
-                            if (ok) await cancelBattle(battle.id)
-                          }}
-                          type="button"
+                battles.map((battle) => {
+                  const canCancel =
+                    battle.status === 'lobby' ||
+                    battle.status === 'countdown' ||
+                    battle.status === 'running'
+
+                  return (
+                    <tr key={battle.id} className={listTable.tr}>
+                      <td className={listTable.td}>
+                        <Link
+                          to={`/dashboard/battles/${battle.id}`}
+                          className="font-mono text-xs text-brand-600 hover:underline dark:text-brand-400"
                         >
-                          Cancelar
-                        </Button>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))
+                          {battle.id.slice(-8)}
+                        </Link>
+                      </td>
+                      <td className={listTable.td}>
+                        <Link
+                          to={`/dashboard/battles/${battle.id}`}
+                          className="inline-flex items-center gap-2"
+                        >
+                          <BattlePlayerAvatars
+                            seats={battle.seats}
+                            winnerSeatIndex={battle.winnerSeatIndex}
+                            size="sm"
+                          />
+                        </Link>
+                      </td>
+                      <td className={listTable.td}>
+                        <BattleStatusBadge status={battle.status} />
+                      </td>
+                      <td className={listTable.td}>
+                        {battleModeLabel(battle.mode)}
+                      </td>
+                      <td className={listTable.tdStrong}>
+                        {formatBattleMoney(battle.priceTotal, battle.currency)}
+                      </td>
+                      <td className={listTable.td}>
+                        {battle.currentRound}
+                        <span className="text-zinc-400">
+                          /{battle.caseSequence?.length ?? '—'}
+                        </span>
+                      </td>
+                      <td className={listTable.td}>
+                        <div className="flex items-center justify-end gap-2">
+                          {canCancel ? (
+                            <Button
+                              variant="secondary"
+                              onClick={async () => {
+                                const ok = await confirm({
+                                  title: 'Cancelar battle e reembolsar?',
+                                  description:
+                                    'Jogadores humanos recebem o escrow de volta.',
+                                  subjectLabel: 'Battle',
+                                  subjectName: battle.id.slice(-8),
+                                  confirmLabel: 'Cancelar battle',
+                                  confirmVariant: 'danger',
+                                })
+                                if (ok) await cancelBattle(battle.id)
+                              }}
+                              type="button"
+                            >
+                              Cancelar
+                            </Button>
+                          ) : null}
+                          <Link
+                            to={`/dashboard/battles/${battle.id}`}
+                            className="inline-flex items-center gap-0.5 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                          >
+                            Detalhes
+                            <ChevronRight className="h-4 w-4" />
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>

@@ -123,13 +123,31 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'O que é o ledger (acumulado)?',
     answer:
-      'É o “extrato” da caixa: quanto os jogadores já pagaram para abrir menos quanto já saiu em skins.\n\nQuando a caixa tem itens caros, o ledger funciona como uma reserva. Primeiro entra dinheiro com aberturas baratas; depois, quando a margem acumulada permite, libera o item raro.\n\nNo painel do influencer você vê o ledger de teste separado do ledger real.',
+      'É o “extrato” da caixa: quanto os jogadores já pagaram para abrir menos quanto já saiu em skins.\n\nQuando a caixa tem itens caros, o ledger funciona como uma reserva. Primeiro entra dinheiro com aberturas baratas; depois, quando a margem acumulada permite, libera o item raro.\n\nNo painel do influencer você vê o ledger de teste separado do ledger real.\n\nNas case battles, o bot também mexe no ledger: ele só registra o payout do item (sem receita). Se isso quebrar a margem alvo, o ledger volta ao estado inicial de elegibilidade.',
     bullets: [
-      'Receita = soma do que foi pago nas aberturas.',
-      'Payout = soma do valor das skins entregues.',
+      'Receita = soma do que foi pago nas aberturas humanas.',
+      'Payout = soma do valor das skins entregues (humanos + bots de battle).',
       'Margem % = quanto sobrou em relação à receita.',
+      'Bot de battle: payout sem receita; reset do ledger se a margem quebrar.',
     ],
-    tags: ['ledger', 'acumulado', 'margem', 'item caro'],
+    tags: ['ledger', 'acumulado', 'margem', 'item caro', 'bot', 'battle'],
+  },
+  {
+    id: 'battle-1',
+    category: 'caixas-economia',
+    question: 'Como funciona o bot de case battle (aggression e margem)?',
+    answer:
+      'O bot joga com as mesmas probs da caixa, com um bias leve controlado pelo campo Aggression (0–100).\n\nO valor recomendado é ~25: competitivo e estável, sem parecer “roubado” nem “fraco demais”. Aggression alta em Classic favorece itens mais caros; em Crazy, itens mais baratos.\n\nNa battle, humano e bot usam o mesmo hard-cap: ninguém tira item acima do preço da caixa (protege a casa de jackpots). O humano sorteia com aggression 0 (probs puras); o bot usa o bias configurado — se alguém tiver vantagem, é o bot.\n\nNo drop, o bot respeita elegibilidade (margem) no instante. No ledger ele só soma o payout do item — não soma receita. Se a margem alvo quebrar, o ledger reinicia no estado inicial para não deixar a casa quebrada.',
+    bullets: [
+      'Aggression ~25 = padrão justo/competitivo (bias leve nas probs da caixa).',
+      'Battle: hard-cap no preço da caixa para humano e bot (sem jackpot).',
+      'Humano: probs puras; bot: bias leve — vantagem, se houver, é da casa.',
+      'Bot respeita elegibilidade/margem no momento do sorteio.',
+      'Ledger: payout do bot, sem receita.',
+      'Margem quebrada após bot → reset da elegibilidade (ledger zerado).',
+      'Humano na battle: receita + payout + open real, como abertura normal.',
+    ],
+    tags: ['battle', 'bot', 'aggression', 'ledger', 'margem', 'elegível'],
   },
   {
     id: 'case-1',
@@ -343,6 +361,8 @@ export const DOCUMENTATION_POPULAR_TAGS = [
   'ledger',
   'skins',
   'elegível',
+  'battle',
+  'bot',
 ]
 
 export const DOCUMENTATION_SUMMARY = [

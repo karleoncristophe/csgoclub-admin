@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bot, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { Input } from '@/components/ui/Input'
+import { Pagination } from '@/components/ui/Pagination'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
@@ -24,31 +25,50 @@ import {
   formatBattleMoney,
 } from './battles/battleUi'
 
+const DEFAULT_BOT_AGGRESSION = 25
+const BATTLES_PAGE_SIZE = 20
+
 export default function BattlesAdminPage() {
   const { confirm } = useConfirm()
   const { data: bots = [], isLoading: botsLoading } = useGetBattleBotsQuery()
-  const { data: battles = [], isLoading: battlesLoading, refetch } =
-    useGetAdminBattlesQuery(40)
+  const [page, setPage] = useState(1)
+  const safePage = Math.max(page, 1)
+  const {
+    data: battlesData,
+    isLoading: battlesLoading,
+    isFetching: battlesFetching,
+    refetch,
+  } = useGetAdminBattlesQuery({ page: safePage, limit: BATTLES_PAGE_SIZE })
+  const battles = battlesData?.data ?? []
+  const totalPages = Math.max(1, battlesData?.totalPages ?? 1)
+  const currentPage = Math.min(safePage, totalPages)
   const [createBot, { isLoading: creating }] = useCreateBattleBotMutation()
   const [updateBot] = useUpdateBattleBotMutation()
   const [deleteBot] = useDeleteBattleBotMutation()
   const [cancelBattle] = useCancelAdminBattleMutation()
 
   const [name, setName] = useState('')
-  const [aggression, setAggression] = useState('65')
+  const [aggression, setAggression] = useState(String(DEFAULT_BOT_AGGRESSION))
   const [weight, setWeight] = useState('1')
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [page, totalPages])
 
   async function handleCreate() {
     setError(null)
     try {
       await createBot({
         name: name.trim(),
-        aggression: Number(aggression) || 65,
+        aggression: Number(aggression) || DEFAULT_BOT_AGGRESSION,
         weight: Number(weight) || 1,
         active: true,
       }).unwrap()
       setName('')
+      setAggression(String(DEFAULT_BOT_AGGRESSION))
     } catch (e) {
       setError(getErrorMessage(e))
     }
@@ -56,7 +76,7 @@ export default function BattlesAdminPage() {
 
   return (
     <div className="space-y-8">
-      <PageTitle subtitle="Bots rentáveis (margem elegível) e histórico de case battles.">
+      <PageTitle subtitle="Bots justos (probs próximas da caixa) e histórico de case battles.">
         Battles
       </PageTitle>
 
@@ -73,10 +93,6 @@ export default function BattlesAdminPage() {
             Bots
           </ThemeText>
         </div>
-        <ThemeText as="p" tone="secondary" className="text-sm">
-          Aggression alta = bot favorece itens elegíveis mais caros (mais chance de
-          vencer e o pot humano ficar com a casa).
-        </ThemeText>
 
         <div className="flex flex-wrap items-end gap-3">
           <label className="space-y-1 text-sm">
@@ -85,7 +101,11 @@ export default function BattlesAdminPage() {
           </label>
           <label className="space-y-1 text-sm">
             <span>Aggression (0-100)</span>
-            <Input value={aggression} onChange={(e) => setAggression(e.target.value)} />
+            <Input
+              value={aggression}
+              onChange={(e) => setAggression(e.target.value)}
+              placeholder="25"
+            />
           </label>
           <label className="space-y-1 text-sm">
             <span>Peso</span>
@@ -96,6 +116,11 @@ export default function BattlesAdminPage() {
             Criar bot
           </Button>
         </div>
+        <ThemeText as="p" tone="secondary" className="text-xs">
+          Padrão sugerido: aggression {DEFAULT_BOT_AGGRESSION}. Peso = chance de ser escolhido
+          na vaga. Na battle, humano e bot têm hard-cap no preço da caixa (sem jackpot); o
+          humano sorteia com probs puras e o bot com o bias — se houver vantagem, é do bot.
+        </ThemeText>
 
         <div className={listTable.wrap}>
           <table className={listTable.table}>
@@ -125,8 +150,49 @@ export default function BattlesAdminPage() {
                 bots.map((bot) => (
                   <tr key={bot._id}>
                     <td className={listTable.td}>{bot.name}</td>
-                    <td className={listTable.td}>{bot.aggression}</td>
-                    <td className={listTable.td}>{bot.weight}</td>
+                    <td className={listTable.td}>
+                      <Input
+                        className="w-20"
+                        defaultValue={String(bot.aggression)}
+                        onBlur={(e) => {
+                          const next = Number(e.target.value)
+                          if (
+                            !Number.isFinite(next) ||
+                            next === bot.aggression ||
+                            next < 0 ||
+                            next > 100
+                          ) {
+                            e.target.value = String(bot.aggression)
+                            return
+                          }
+                          void updateBot({
+                            id: bot._id,
+                            body: { aggression: next },
+                          })
+                        }}
+                      />
+                    </td>
+                    <td className={listTable.td}>
+                      <Input
+                        className="w-16"
+                        defaultValue={String(bot.weight)}
+                        onBlur={(e) => {
+                          const next = Number(e.target.value)
+                          if (
+                            !Number.isFinite(next) ||
+                            next === bot.weight ||
+                            next < 1
+                          ) {
+                            e.target.value = String(bot.weight)
+                            return
+                          }
+                          void updateBot({
+                            id: bot._id,
+                            body: { weight: next },
+                          })
+                        }}
+                      />
+                    </td>
                     <td className={listTable.td}>
                       <button
                         className="underline"
@@ -285,6 +351,21 @@ export default function BattlesAdminPage() {
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          className="mt-2"
+          page={currentPage}
+          totalPages={totalPages}
+          onPageChange={(next) =>
+            setPage(Math.min(Math.max(next, 1), totalPages))
+          }
+        />
+
+        {battlesFetching && !battlesLoading ? (
+          <ThemeText as="p" tone="faint" className="text-center text-xs">
+            Atualizando página...
+          </ThemeText>
+        ) : null}
       </Surface>
     </div>
   )

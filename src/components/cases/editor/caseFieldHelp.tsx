@@ -168,6 +168,7 @@ export const CASE_FIELD_HELP = {
         <p><strong>Não (instant.) / Não (acum.)</strong> — bloqueado pela regra correspondente.</p>
         <HelpSection title="Como o sistema decide">
           <p>Itens até o preço da caixa: margem instantânea + acumulada. Itens mais caros: só ledger acumulado (pool compartilhado soma receita/payout).</p>
+          <p>Em case battles, o bot também passa por essa elegibilidade. No ledger ele só soma o payout do item (sem receita). Se a margem alvo quebrar, o ledger volta ao estado inicial.</p>
         </HelpSection>
       </>
     ),

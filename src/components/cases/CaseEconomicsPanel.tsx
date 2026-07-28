@@ -101,7 +101,9 @@ export function CaseEconomicsPanel({
         <ThemeText as="p" tone="secondary" className="mb-4 text-xs">
           Margem instantânea para itens até o preço da caixa; itens mais caros dependem do
           ledger acumulado{sharedLedger ? ' compartilhado' : ''}. Após um drop caro a margem
-          cai e volta a subir com novas aberturas.
+          cai e volta a subir com novas aberturas. Em case battles, o bot só registra payout
+          (sem receita); se a margem alvo quebrar, o ledger reinicia no estado inicial de
+          elegibilidade.
         </ThemeText>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

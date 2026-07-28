@@ -131,7 +131,8 @@ export const ECONOMY_PANEL_FIELDS: DocumentationEnumGroup = {
     {
       code: 'Ledger',
       label: 'Histórico real de aberturas',
-      hint: 'Quanto já entrou e quanto já saiu em skins nas aberturas reais.',
+      hint:
+        'Quanto já entrou e quanto já saiu em skins. Em battles, o bot só soma payout (sem receita); se a margem quebrar, o ledger pode resetar.',
     },
   ],
 }

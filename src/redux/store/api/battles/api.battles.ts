@@ -114,11 +114,24 @@ export const battlesAdminApi = createApi({
       }),
       invalidatesTags: ['BattleBots'],
     }),
-    getAdminBattles: builder.query<AdminBattle[], number | void>({
-      query: (limit = 50) => ({
-        url: `${BATTLES_ADMIN.ROOT}?limit=${limit ?? 50}`,
-        method: 'GET',
-      }),
+    getAdminBattles: builder.query<
+      {
+        data: AdminBattle[]
+        total: number
+        page: number
+        limit: number
+        totalPages: number
+      },
+      { page?: number; limit?: number } | void
+    >({
+      query: (params) => {
+        const page = params?.page ?? 1
+        const limit = params?.limit ?? 20
+        return {
+          url: `${BATTLES_ADMIN.ROOT}?page=${page}&limit=${limit}`,
+          method: 'GET',
+        }
+      },
       providesTags: ['BattlesAdmin'],
     }),
     getAdminBattleById: builder.query<AdminBattle, string>({

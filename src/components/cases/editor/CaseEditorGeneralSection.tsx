@@ -4,6 +4,7 @@ import {
   type CaseImageValue,
 } from '@/components/cases/CaseImageUploader'
 import { caseFieldProps } from '@/components/cases/editor/caseFieldHelp'
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
 import { FieldHelpButton } from '@/components/ui/FieldHelpButton'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -36,11 +37,15 @@ export function CaseEditorGeneralSection({
   const activeHelp = caseFieldProps('active')
   const imageHelp = caseFieldProps('caseImage')
 
+  const hasImage = Boolean(values.caseImage)
+  const vitrineName = vitrines.find((item) => item._id === values.vitrineId)?.name
+
   return (
     <Surface variant="card" className="!p-6">
       <ThemeText as="h2" tone="primary" className="mb-4 text-base font-semibold">
         Informações gerais
       </ThemeText>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Input
           label="Nome da caixa"
@@ -66,67 +71,7 @@ export function CaseEditorGeneralSection({
             </option>
           ))}
         </Select>
-        <Select
-          label="Valor no cálculo do VE"
-          name="valueMode"
-          value={values.valueMode}
-          onChange={(e) => onValueModeChange(e.target.value as CaseValueMode)}
-          onBlur={handleBlur}
-          {...caseFieldProps('valueMode')}
-        >
-          <option value="with_tax">Preço com taxa de categoria</option>
-          <option value="base">Preço base SkinsBack</option>
-        </Select>
-        <Select
-          label="Vitrine no site"
-          name="vitrineId"
-          value={values.vitrineId ?? ''}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          disabled={disabled}
-        >
-          <option value="">Sem vitrine</option>
-          {vitrines.map((vitrine) => (
-            <option key={vitrine._id} value={vitrine._id}>
-              {vitrine.name}
-            </option>
-          ))}
-        </Select>
-        <Input
-          label="Descrição"
-          name="description"
-          value={values.description}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="Opcional"
-          {...caseFieldProps('description')}
-        />
-        <div className="md:col-span-2 xl:col-span-3">
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <ThemeText as="span" tone="primary" className="text-sm font-medium">
-              Imagem da caixa
-            </ThemeText>
-            <FieldHelpButton fieldHelp={imageHelp.fieldHelp} />
-          </div>
-          {imageHelp.description ? (
-            <ThemeText as="p" tone="faint" className="mb-2 text-xs">
-              {imageHelp.description}
-            </ThemeText>
-          ) : null}
-          <CaseImageUploader
-            value={values.caseImage}
-            onChange={(next: CaseImageValue) => {
-              void setFieldValue('caseImage', next)
-              if (typeof next === 'string') {
-                void setFieldValue('imageUrl', next)
-              } else if (!next) {
-                void setFieldValue('imageUrl', '')
-              }
-            }}
-            disabled={disabled}
-          />
-        </div>
-        <label className="flex items-center gap-3 rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-800 md:col-span-2 xl:col-span-1">
+        <label className="flex items-center gap-3 self-end rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-800">
           <input
             type="checkbox"
             name="active"
@@ -147,6 +92,87 @@ export function CaseEditorGeneralSection({
             </ThemeText>
           </span>
         </label>
+      </div>
+
+      <div className="mt-4">
+        <CollapsibleSection
+          variant="inset"
+          title="Descrição, vitrine e imagem"
+          description="Opcionais de apresentação e base de cálculo do VE."
+          summary={
+            <ThemeText as="span" tone="faint" className="text-xs">
+              {[
+                vitrineName ?? 'Sem vitrine',
+                hasImage ? 'Com imagem' : 'Sem imagem',
+              ].join(' · ')}
+            </ThemeText>
+          }
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <Select
+              label="Valor no cálculo do VE"
+              name="valueMode"
+              value={values.valueMode}
+              onChange={(e) => onValueModeChange(e.target.value as CaseValueMode)}
+              onBlur={handleBlur}
+              {...caseFieldProps('valueMode')}
+            >
+              <option value="with_tax">Preço com taxa de categoria</option>
+              <option value="base">Preço base SkinsBack</option>
+            </Select>
+            <Select
+              label="Vitrine no site"
+              name="vitrineId"
+              value={values.vitrineId ?? ''}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              disabled={disabled}
+            >
+              <option value="">Sem vitrine</option>
+              {vitrines.map((vitrine) => (
+                <option key={vitrine._id} value={vitrine._id}>
+                  {vitrine.name}
+                </option>
+              ))}
+            </Select>
+            <div className="md:col-span-2">
+              <Input
+                label="Descrição"
+                name="description"
+                value={values.description}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder="Opcional"
+                {...caseFieldProps('description')}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <div className="mb-1.5 flex items-center gap-1.5">
+                <ThemeText as="span" tone="primary" className="text-sm font-medium">
+                  Imagem da caixa
+                </ThemeText>
+                <FieldHelpButton fieldHelp={imageHelp.fieldHelp} />
+              </div>
+              {imageHelp.description ? (
+                <ThemeText as="p" tone="faint" className="mb-2 text-xs">
+                  {imageHelp.description}
+                </ThemeText>
+              ) : null}
+              <CaseImageUploader
+                value={values.caseImage}
+                onChange={(next: CaseImageValue) => {
+                  void setFieldValue('caseImage', next)
+                  if (typeof next === 'string') {
+                    void setFieldValue('imageUrl', next)
+                  } else if (!next) {
+                    void setFieldValue('imageUrl', '')
+                  }
+                }}
+                disabled={disabled}
+              />
+            </div>
+          </div>
+        </CollapsibleSection>
       </div>
     </Surface>
   )

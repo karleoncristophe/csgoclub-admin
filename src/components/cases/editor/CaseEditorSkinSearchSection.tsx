@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Plus, Search } from 'lucide-react'
 import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
 import { filterChipClass } from '@/components/skins/filterChipClass'
+import { EditorSectionShell } from '@/components/cases/editor/EditorSectionShell'
 import { Pagination } from '@/components/ui/Pagination'
 import { Select } from '@/components/ui/Select'
-import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
@@ -21,12 +21,15 @@ type CaseEditorSkinSearchSectionProps = {
   currency: SkinsCurrency
   addedSkinNames: Set<string>
   onAddSkin: (skin: SkinsCatalogItem) => void
+  /** Renderiza sem o card externo e sem título (uso dentro de modal) */
+  embedded?: boolean
 }
 
 export function CaseEditorSkinSearchSection({
   currency,
   addedSkinNames,
   onAddSkin,
+  embedded = false,
 }: CaseEditorSkinSearchSectionProps) {
   const [searchInput, setSearchInput] = useState('')
   const [skinWeaponType, setSkinWeaponType] = useState('')
@@ -83,13 +86,17 @@ export function CaseEditorSkinSearchSection({
   }, [skinSearchPage, skinSearchTotalPages])
 
   return (
-    <Surface variant="card" className="!p-6">
-      <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
-        Buscar skins
-      </ThemeText>
-      <ThemeText as="p" tone="secondary" className="mb-6 text-sm">
-        Clique na skin para adicionar direto na tabela de itens.
-      </ThemeText>
+    <EditorSectionShell embedded={embedded}>
+      {embedded ? null : (
+        <>
+          <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
+            Buscar skins
+          </ThemeText>
+          <ThemeText as="p" tone="secondary" className="mb-6 text-sm">
+            Clique na skin para adicionar direto na tabela de itens.
+          </ThemeText>
+        </>
+      )}
 
       <div className="mb-6 grid gap-4 md:grid-cols-2">
         <div className="relative md:col-span-2">
@@ -261,6 +268,6 @@ export function CaseEditorSkinSearchSection({
           ) : null}
         </>
       ) : null}
-    </Surface>
+    </EditorSectionShell>
   )
 }

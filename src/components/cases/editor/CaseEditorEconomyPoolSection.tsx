@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, Search, X } from 'lucide-react'
 import { CaseListImage } from '@/components/cases/CaseListImage'
+import { EditorSectionShell } from '@/components/cases/editor/EditorSectionShell'
 import { Pagination } from '@/components/ui/Pagination'
-import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import useDebounce from '@/hooks/useDebounce'
@@ -42,6 +42,8 @@ type CaseEditorEconomyPoolSectionProps = {
   availableCases: CaseEconomyPoolOption[]
   economyLedger?: CaseEconomyLedger
   onSharedCaseIdsChange: (ids: string[]) => void
+  /** Renderiza sem o card externo e sem título (uso dentro de accordion) */
+  embedded?: boolean
 }
 
 export function CaseEditorEconomyPoolSection({
@@ -51,6 +53,7 @@ export function CaseEditorEconomyPoolSection({
   availableCases,
   economyLedger,
   onSharedCaseIdsChange,
+  embedded = false,
 }: CaseEditorEconomyPoolSectionProps) {
   const [searchInput, setSearchInput] = useState('')
   const [page, setPage] = useState(1)
@@ -110,14 +113,18 @@ export function CaseEditorEconomyPoolSection({
   }
 
   return (
-    <Surface variant="card" className="!p-6">
-      <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
-        Margem acumulada compartilhada
-      </ThemeText>
-      <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-        Aberturas reais das caixas selecionadas entram no mesmo ledger. Clique nas caixas abaixo
-        para adicionar ou remover do grupo.
-      </ThemeText>
+    <EditorSectionShell embedded={embedded}>
+      {embedded ? null : (
+        <>
+          <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
+            Margem acumulada compartilhada
+          </ThemeText>
+          <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
+            Aberturas reais das caixas selecionadas entram no mesmo ledger. Clique nas caixas
+            abaixo para adicionar ou remover do grupo.
+          </ThemeText>
+        </>
+      )}
 
       {economyLedger ? (
         <div className="mb-4 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/50 sm:grid-cols-3">
@@ -285,6 +292,6 @@ export function CaseEditorEconomyPoolSection({
           )}
         </>
       )}
-    </Surface>
+    </EditorSectionShell>
   )
 }

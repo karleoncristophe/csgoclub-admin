@@ -133,6 +133,20 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     tags: ['banco virtual', 'saldo', 'valor esperado', 'item caro', 'bot', 'battle'],
   },
   {
+    id: 'drop-4',
+    category: 'caixas-economia',
+    question: 'Onde vejo quanto uma caixa faturou e o que está liberado?',
+    answer:
+      'Na lista de Caixas, clique no nome da caixa ou no ícone de gráfico para abrir os Detalhes.\n\nA tela mostra o faturamento e os prêmios pagos, o lucro e a margem realizada, o saldo atual do banco virtual, qual item está mais perto de liberar e uma tabela item a item com quantas vezes cada skin já saiu, quanto ela já pagou em prêmios e a situação dela no banco.\n\nO gráfico dos últimos 30 dias compara o que entrou (barra) com o que saiu em prêmios (linha).',
+    bullets: [
+      'Os números respeitam a visão: Produção mostra aberturas reais, Dev mostra as de teste.',
+      'Chance real ao lado da chance configurada revela desvios do sorteio.',
+      'A barra de progresso por item mostra quanto do saldo exigido o banco já cobre.',
+      'O botão Aberturas abre o histórico já filtrado por esta caixa.',
+    ],
+    tags: ['detalhes', 'faturamento', 'banco virtual', 'elegível', 'caixa'],
+  },
+  {
     id: 'battle-1',
     category: 'caixas-economia',
     question: 'Como funciona o bot de case battle (aggression e margem)?',

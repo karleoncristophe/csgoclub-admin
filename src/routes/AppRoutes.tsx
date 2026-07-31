@@ -41,6 +41,9 @@ const CaseOpensPage = lazy(
 const CaseEditorPage = lazy(
   () => import('@/pages/dashboard/CaseEditorPage'),
 )
+const CaseDetailPage = lazy(
+  () => import('@/pages/dashboard/CaseDetailPage'),
+)
 const VitrinesPage = lazy(
   () => import('@/pages/dashboard/VitrinesPage'),
 )
@@ -106,6 +109,7 @@ function ProtectedRoutes() {
         <Route path="case-opens" element={<CaseOpensPage />} />
         <Route path="case-opens/:openId" element={<UserCaseOpenDetailPage />} />
         <Route path="cases/new" element={<CaseEditorPage />} />
+        <Route path="cases/:id/details" element={<CaseDetailPage />} />
         <Route path="cases/:id" element={<CaseEditorPage />} />
         <Route path="vitrines" element={<VitrinesPage />} />
         <Route path="coupons" element={<CouponsPage />} />

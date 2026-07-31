@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Trash2 } from 'lucide-react'
 import { caseFieldProps } from '@/components/cases/editor/caseFieldHelp'
 import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
@@ -27,6 +28,8 @@ type CaseEditorItemsTableProps = {
   ledger: CaseEconomyLedger
   itemsError?: string
   onItemsChange: (items: CaseDropItem[]) => void
+  /** Botões exibidos no cabeçalho do card (adicionar skins, presets) */
+  headerAction?: ReactNode
 }
 
 export function CaseEditorItemsTable({
@@ -38,6 +41,7 @@ export function CaseEditorItemsTable({
   ledger,
   itemsError,
   onItemsChange,
+  headerAction,
 }: CaseEditorItemsTableProps) {
   const bankInjection = computeBankInjection(openPrice, targetMarginPercent)
   const bankAvailable = roundPrice((ledger.bankBalance ?? 0) + bankInjection)
@@ -55,17 +59,24 @@ export function CaseEditorItemsTable({
 
   return (
     <Surface variant="card" className="!p-6">
-      <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
-        Itens da caixa ({items.length})
-      </ThemeText>
-      <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-        Configure o drop % de cada item. Itens acima do preço da abertura só ficam
-        elegíveis quando o banco virtual acumula o valor de mercado deles.
-      </ThemeText>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <ThemeText as="h2" tone="primary" className="text-base font-semibold">
+            Itens da caixa ({items.length})
+          </ThemeText>
+          <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
+            Configure o drop % de cada item. Itens acima do preço da abertura só ficam
+            elegíveis quando o banco virtual acumula o valor de mercado deles.
+          </ThemeText>
+        </div>
+        {headerAction ? (
+          <div className="flex shrink-0 flex-wrap gap-2">{headerAction}</div>
+        ) : null}
+      </div>
 
       {items.length === 0 ? (
         <ThemeText tone="secondary" className="text-sm">
-          Nenhum item adicionado. Use a busca acima para montar a caixa.
+          Nenhum item adicionado. Use “Adicionar skins” para montar a caixa.
         </ThemeText>
       ) : (
         <div className="overflow-x-auto">

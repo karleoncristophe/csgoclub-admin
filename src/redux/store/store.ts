@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit'
+import { aiAssistantApi } from '@/redux/store/api/ai/api.ai'
 import { authApi } from '@/redux/store/api/auth/api.auth'
 import { battlesAdminApi } from '@/redux/store/api/battles/api.battles'
 import { casesApi } from '@/redux/store/api/cases/api.cases'
@@ -28,6 +29,7 @@ export const store = configureStore({
     [metricsApi.reducerPath]: metricsApi.reducer,
     [usersApi.reducerPath]: usersApi.reducer,
     [weaponCategoriesApi.reducerPath]: weaponCategoriesApi.reducer,
+    [aiAssistantApi.reducerPath]: aiAssistantApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -41,6 +43,7 @@ export const store = configureStore({
       metricsApi.middleware,
       usersApi.middleware,
       weaponCategoriesApi.middleware,
+      aiAssistantApi.middleware,
     ),
 })
 

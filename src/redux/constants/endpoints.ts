@@ -49,6 +49,7 @@ export const UPLOAD = {
 export const CASES = {
   ROOT: '/admin/cases',
   BY_ID: (id: string) => `/admin/cases/${id}`,
+  DETAILS: (id: string) => `/admin/cases/${id}/details`,
   DUPLICATE: (id: string) => `/admin/cases/${id}/duplicate`,
 } as const
 
@@ -71,6 +72,11 @@ export const COUPONS = {
   ROOT: '/admin/coupons',
   REWARD_TYPES: '/admin/coupons/reward-types',
   BY_ID: (id: string) => `/admin/coupons/${id}`,
+} as const
+
+export const AI_ASSISTANT = {
+  STATUS: '/admin/ai/status',
+  CASE_ASSISTANT: '/admin/ai/case-assistant',
 } as const
 
 export const BATTLES_ADMIN = {

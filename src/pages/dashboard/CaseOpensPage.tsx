@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Box, ExternalLink, Package, Search } from 'lucide-react'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { TextBadge } from '@/components/StatusPill'
@@ -70,6 +70,8 @@ function StatCard({
 export default function CaseOpensPage() {
   const dataEnvironment = usePlatformDataEnvironment()
   const isSandbox = dataEnvironment === 'SANDBOX'
+  const [searchParams, setSearchParams] = useSearchParams()
+  const caseId = searchParams.get('caseId') ?? ''
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [disposition, setDisposition] = useState<'pending' | 'kept' | 'converted' | ''>('')
@@ -81,9 +83,19 @@ export default function CaseOpensPage() {
     page: safePage,
     limit: pageSize,
     dataEnvironment,
+    ...(caseId ? { caseId } : {}),
     ...(disposition ? { disposition } : {}),
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
+
+  const filteredCaseName = caseId ? data?.data[0]?.case.name : undefined
+
+  const clearCaseFilter = () => {
+    const next = new URLSearchParams(searchParams)
+    next.delete('caseId')
+    setSearchParams(next, { replace: true })
+    setPage(1)
+  }
 
   const summary = data?.summary
   const opens = data?.data ?? []
@@ -222,6 +234,15 @@ export default function CaseOpensPage() {
           <span className="inline-flex items-center rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100">
             {isSandbox ? 'Só teste (Dev)' : 'Só reais (Produção)'}
           </span>
+          {caseId ? (
+            <button
+              type="button"
+              onClick={clearCaseFilter}
+              className={filterChipClasses(true, 'brand')}
+            >
+              Caixa: {filteredCaseName ?? 'filtrada'} ✕
+            </button>
+          ) : null}
         </div>
 
         {isLoading ? (

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Copy, Pencil, Plus, Trash2 } from 'lucide-react'
+import { BarChart3, Copy, Pencil, Plus, Trash2 } from 'lucide-react'
 import { CaseListNameCell } from '@/components/cases/CaseListImage'
 import { IconButton } from '@/components/ui/IconButton'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
@@ -128,11 +128,16 @@ export default function CasesPage() {
                 {data.map((lootCase) => (
                   <tr key={lootCase._id} className={listTable.tr}>
                     <td className={listTable.td}>
-                      <CaseListNameCell
-                        name={lootCase.name}
-                        slug={lootCase.slug}
-                        imageUrl={lootCase.imageUrl}
-                      />
+                      <Link
+                        to={`/dashboard/cases/${lootCase._id}/details`}
+                        className="block rounded-xl transition hover:opacity-80"
+                      >
+                        <CaseListNameCell
+                          name={lootCase.name}
+                          slug={lootCase.slug}
+                          imageUrl={lootCase.imageUrl}
+                        />
+                      </Link>
                     </td>
                     <td className={listTable.td}>
                       <ThemeText tone="primary" className="text-sm font-medium">
@@ -166,6 +171,14 @@ export default function CasesPage() {
                     </td>
                     <td className={listTable.td}>
                       <div className="flex items-center justify-end gap-1">
+                        <IconButton
+                          label="Ver detalhes da caixa"
+                          onClick={() =>
+                            navigate(`/dashboard/cases/${lootCase._id}/details`)
+                          }
+                        >
+                          <BarChart3 className="h-4 w-4" aria-hidden />
+                        </IconButton>
                         <IconButton
                           label="Duplicar caixa"
                           disabled={

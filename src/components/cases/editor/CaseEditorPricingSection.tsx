@@ -1,8 +1,8 @@
 import type { FormikProps } from 'formik'
 import { caseFieldProps } from '@/components/cases/editor/caseFieldHelp'
+import { EditorSectionShell } from '@/components/cases/editor/EditorSectionShell'
 import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import { Input } from '@/components/ui/Input'
-import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import type { CaseFormState } from './caseEditor.types'
@@ -12,20 +12,25 @@ type CaseEditorPricingSectionProps = {
   formik: FormikProps<CaseFormState>
   currency: SkinsCurrency
   totalEV: number
+  /** Renderiza sem o card externo e sem título (uso dentro de accordion) */
+  embedded?: boolean
 }
 
 export function CaseEditorPricingSection({
   formik,
   currency,
   totalEV,
+  embedded = false,
 }: CaseEditorPricingSectionProps) {
   const { values, setFieldValue, handleChange, handleBlur, touched, errors } = formik
 
   return (
-    <Surface variant="card" className="!p-6">
-      <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
-        Preço da caixa
-      </ThemeText>
+    <EditorSectionShell embedded={embedded}>
+      {embedded ? null : (
+        <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
+          Preço da caixa
+        </ThemeText>
+      )}
       <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
         Com base no VE total dos itens ({formatSkinsPrice(totalEV, currency)}), a margem define o
         preço de tabela e o desconto ajusta o valor final na vitrine.
@@ -102,6 +107,6 @@ export function CaseEditorPricingSection({
           {...caseFieldProps('price')}
         />
       </div>
-    </Surface>
+    </EditorSectionShell>
   )
 }

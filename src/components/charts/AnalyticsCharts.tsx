@@ -15,7 +15,6 @@ import {
   YAxis,
   type TooltipPayload,
 } from 'recharts'
-import type { AdminDashboardMetricsSeriesRow } from '@/types/adminMetrics'
 import { formatCentsUSD } from '@/utils/formatDisplay'
 
 export type ChartVariant = 'area' | 'line' | 'bar'
@@ -183,13 +182,13 @@ function MetricsTooltipBody({
   payload,
   label,
   xTick,
-  valueFormat = 'count',
+  formatValue,
 }: {
   active?: boolean
   payload?: TooltipPayload
   label?: string
   xTick: (v: string) => string
-  valueFormat?: 'count' | 'currency'
+  formatValue: (value: number) => string
 }) {
   if (!active || !payload?.length) return null
   return (
@@ -211,7 +210,7 @@ function MetricsTooltipBody({
               {entry.name != null ? String(entry.name) : ''}
             </span>
             <span className="tabular-nums text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              {formatChartValue(numericTooltipValue(entry.value), valueFormat)}
+              {formatValue(numericTooltipValue(entry.value))}
             </span>
           </li>
         ))}
@@ -303,28 +302,32 @@ export function useChartVariant(storageKey: string) {
   return { variant, onChange }
 }
 
-type SeriesKey = keyof Pick<
-  AdminDashboardMetricsSeriesRow,
-  | 'usersCreated'
-  | 'caseOpensReal'
-  | 'depositsCount'
-  | 'revenueUsdCents'
-  | 'payoutUsdCents'
-  | 'marginUsdCents'
-  | 'depositsVolumeCents'
+export type ChartSeriesRow = { date: string }
+
+/** Só campos numéricos podem virar série do gráfico. */
+type NumericKey<Row> = Extract<
+  { [K in keyof Row]: Row[K] extends number ? K : never }[keyof Row],
+  string
 >
 
-type DualSeriesChartProps = {
-  data: AdminDashboardMetricsSeriesRow[]
+type DualSeriesChartProps<Row extends ChartSeriesRow> = {
+  data: Row[]
   seriesGranularity: string
   variant: ChartVariant
-  keys: [SeriesKey, SeriesKey]
+  keys: [NumericKey<Row>, NumericKey<Row>]
   names: [string, string]
   colors: [string, string]
   gradientIds: [string, string]
+  /** Presets prontos: contagem simples ou centavos de dólar. */
   valueFormat?: 'count' | 'currency'
+  /** Formatação própria dos valores (ex.: moeda da caixa). Vence o valueFormat. */
+  formatValue?: (value: number) => string
+  /** Formatação própria dos ticks do eixo Y. Padrão: usa formatValue. */
+  formatAxisTick?: (value: number) => string
+  /** Largura reservada para os labels do eixo Y. */
+  yAxisWidth?: number
   third?: {
-    key: SeriesKey
+    key: NumericKey<Row>
     name: string
     color: string
     gradientId: string
@@ -333,7 +336,7 @@ type DualSeriesChartProps = {
 
 const CHART_HEIGHT = 308
 
-export function DualSeriesMetricsChart({
+export function DualSeriesMetricsChart<Row extends ChartSeriesRow>({
   data,
   seriesGranularity,
   variant,
@@ -342,8 +345,11 @@ export function DualSeriesMetricsChart({
   colors,
   gradientIds,
   valueFormat = 'count',
+  formatValue,
+  formatAxisTick,
+  yAxisWidth,
   third,
-}: DualSeriesChartProps) {
+}: DualSeriesChartProps<Row>) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
@@ -354,14 +360,19 @@ export function DualSeriesMetricsChart({
 
   const chartData = useMemo(
     () =>
-      data.map((d) => ({
-        ...d,
-        [keys[0]]: Number(d[keys[0]] ?? 0),
-        [keys[1]]: Number(d[keys[1]] ?? 0),
-        ...(third ? { [third.key]: Number(d[third.key] ?? 0) } : {}),
+      data.map((row) => ({
+        ...row,
+        [keys[0]]: Number(row[keys[0]] ?? 0),
+        [keys[1]]: Number(row[keys[1]] ?? 0),
+        ...(third ? { [third.key]: Number(row[third.key] ?? 0) } : {}),
       })),
     [data, keys, third],
   )
+
+  const valueFormatter = formatValue ?? ((v: number) => formatChartValue(v, valueFormat))
+  const axisFormatter =
+    formatAxisTick ??
+    (formatValue ? valueFormatter : (v: number) => formatChartAxisTick(v, valueFormat))
 
   if (!chartData.length) {
     return (
@@ -378,7 +389,7 @@ export function DualSeriesMetricsChart({
   const chartMargin = {
     top: 6,
     right: 8,
-    left: valueFormat === 'currency' ? 4 : 0,
+    left: valueFormat === 'currency' || formatValue ? 4 : 0,
     bottom: 2,
   }
 
@@ -399,9 +410,9 @@ export function DualSeriesMetricsChart({
       axisLine={false}
       tickLine={false}
       tickMargin={4}
-      width={valueFormat === 'currency' ? 72 : 36}
-      allowDecimals={valueFormat === 'currency'}
-      tickFormatter={(v) => formatChartAxisTick(Number(v), valueFormat)}
+      width={yAxisWidth ?? (valueFormat === 'currency' || formatValue ? 72 : 36)}
+      allowDecimals={valueFormat === 'currency' || Boolean(formatValue)}
+      tickFormatter={(v) => axisFormatter(Number(v))}
     />
   )
   const tip = (
@@ -413,7 +424,7 @@ export function DualSeriesMetricsChart({
           payload={payload}
           label={label != null ? String(label) : undefined}
           xTick={xTick}
-          valueFormat={valueFormat}
+          formatValue={valueFormatter}
         />
       )}
     />

@@ -14,7 +14,7 @@ import {
   ChartTypeSelector,
   DualSeriesMetricsChart,
   useChartVariant,
-} from '@/pages/dashboard/DashboardAnalyticsCharts'
+} from '@/components/charts/AnalyticsCharts'
 import {
   loadStoredMetricsRange,
   saveStoredMetricsRange,

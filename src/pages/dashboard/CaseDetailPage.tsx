@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -8,6 +9,11 @@ import {
   Pencil,
   Unlock,
 } from 'lucide-react'
+import {
+  ChartTypeSelector,
+  DualSeriesMetricsChart,
+  useChartVariant,
+} from '@/components/charts/AnalyticsCharts'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { TextBadge } from '@/components/StatusPill'
 import { Surface } from '@/components/ui/Surface'
@@ -19,9 +25,12 @@ import { formatSkinsPrice, type SkinsCurrency } from '@/constants/skinsCurrency'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import {
   useGetCaseDetailsQuery,
+  type AdminCaseDailyPoint,
   type AdminCaseItemStats,
 } from '@/redux/store/api/cases/api.cases'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+
+const DAILY_WINDOW_DAYS = 30
 
 function formatDateTime(value?: string) {
   if (!value) return '—'
@@ -33,9 +42,24 @@ function formatDateTime(value?: string) {
   }).format(date)
 }
 
-function formatDayLabel(value: string) {
-  const [, month, day] = value.split('-')
-  return month && day ? `${day}/${month}` : value
+/**
+ * A API só devolve os dias que tiveram abertura. A curva precisa da janela
+ * inteira, senão dois dias isolados viram uma linha esticada sem noção de tempo.
+ */
+function buildDailySeries(daily: AdminCaseDailyPoint[]): AdminCaseDailyPoint[] {
+  const byDate = new Map(daily.map((point) => [point.date, point]))
+  const series: AdminCaseDailyPoint[] = []
+  const cursor = new Date()
+  cursor.setUTCHours(0, 0, 0, 0)
+  cursor.setUTCDate(cursor.getUTCDate() - (DAILY_WINDOW_DAYS - 1))
+
+  for (let index = 0; index < DAILY_WINDOW_DAYS; index += 1) {
+    const date = cursor.toISOString().slice(0, 10)
+    series.push(byDate.get(date) ?? { date, opens: 0, revenue: 0, payout: 0 })
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  }
+
+  return series
 }
 
 function formatOpens(value: number | null) {
@@ -160,6 +184,11 @@ export default function CaseDetailPage() {
     { id, dataEnvironment },
     { skip: !id },
   )
+  const chart = useChartVariant('cs2-case-daily')
+  const dailySeries = useMemo(
+    () => buildDailySeries(data?.daily ?? []),
+    [data?.daily],
+  )
 
   if (isLoading) {
     return (
@@ -183,13 +212,9 @@ export default function CaseDetailPage() {
     )
   }
 
-  const { case: lootCase, bank, financials, items, daily } = data
+  const { case: lootCase, bank, financials, items } = data
   const currency = lootCase.currency
   const money = (value: number) => formatSkinsPrice(value, currency)
-  const maxDailyValue = Math.max(
-    1,
-    ...daily.map((point) => Math.max(point.revenue, point.payout)),
-  )
   const blockedCount = bank.enabledItemsCount - bank.eligibleItemsCount
 
   return (
@@ -415,39 +440,27 @@ export default function CaseDetailPage() {
         </div>
       </Surface>
 
-      {daily.length > 0 ? (
-        <Surface variant="card" className="!p-6">
-          <SectionTitle className="mb-1">Últimos 30 dias</SectionTitle>
-          <ThemeText tone="secondary" className="mb-5 text-sm">
-            Barra cheia é o faturamento; a linha interna é o valor entregue em prêmios.
-          </ThemeText>
-          <div className="scrollbar-list overflow-x-auto">
-            <div className="flex min-w-full items-end gap-1.5">
-              {daily.map((point) => (
-                <div
-                  key={point.date}
-                  className="flex min-w-[2.25rem] flex-1 flex-col items-center gap-1.5"
-                  title={`${formatDayLabel(point.date)} · ${point.opens} abertura(s) · faturou ${money(point.revenue)} · pagou ${money(point.payout)}`}
-                >
-                  <div className="relative flex h-32 w-full items-end overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-800/60">
-                    <div
-                      className="w-full rounded-md bg-brand-500/80"
-                      style={{ height: `${(point.revenue / maxDailyValue) * 100}%` }}
-                    />
-                    <div
-                      className="absolute bottom-0 left-0 w-full border-t-2 border-amber-500"
-                      style={{ height: `${(point.payout / maxDailyValue) * 100}%` }}
-                    />
-                  </div>
-                  <ThemeText tone="faint" className="text-[10px]">
-                    {formatDayLabel(point.date)}
-                  </ThemeText>
-                </div>
-              ))}
-            </div>
+      <Surface variant="card" className="!p-6">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <SectionTitle>Últimos 30 dias</SectionTitle>
+            <ThemeText tone="secondary" className="mt-1 text-sm">
+              Quanto entrou nesta caixa por dia contra o valor dos prêmios entregues.
+            </ThemeText>
           </div>
-        </Surface>
-      ) : null}
+          <ChartTypeSelector value={chart.variant} onChange={chart.onChange} />
+        </div>
+        <DualSeriesMetricsChart
+          data={dailySeries}
+          seriesGranularity="day"
+          variant={chart.variant}
+          keys={['revenue', 'payout']}
+          names={['Faturamento', 'Prêmios']}
+          colors={['#059669', '#6366f1']}
+          gradientIds={['cs2CaseRevenue', 'cs2CasePayout']}
+          formatValue={money}
+        />
+      </Surface>
 
       <Surface variant="card" className="!p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

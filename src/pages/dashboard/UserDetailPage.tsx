@@ -18,6 +18,7 @@ import { UserCaseOpensPanel } from '@/components/users/UserCaseOpensPanel'
 import { UserEditPanel } from '@/components/users/UserEditPanel'
 import { UserInfluencerCaseOpenPanel } from '@/components/users/UserInfluencerCaseOpenPanel'
 import { UserInventoryPanel } from '@/components/users/UserInventoryPanel'
+import { UserKycPanel } from '@/components/users/UserKycPanel'
 import { UserSiteInventoryPanel } from '@/components/users/UserSiteInventoryPanel'
 import { labelUserAppRole } from '@/i18n/enumLabels'
 import { useGetUserByIdQuery } from '@/redux/store/api/users/api.users'
@@ -237,6 +238,17 @@ export default function UserDetailPage() {
                         <span className="text-amber-700 dark:text-amber-300">Influencer</span>
                       </TextBadge>
                     ) : null}
+                    {data.kycVerified || data.kycStatus === 'approved' ? (
+                      <TextBadge>
+                        <span className="text-emerald-700 dark:text-emerald-300">KYC verificado</span>
+                      </TextBadge>
+                    ) : data.kycStatus && data.kycStatus !== 'not_started' ? (
+                      <TextBadge>
+                        <span className="text-sky-700 dark:text-sky-300">
+                          KYC: {data.kycStatus}
+                        </span>
+                      </TextBadge>
+                    ) : null}
                   </div>
 
                   <ThemeText as="p" tone="secondary" className="mt-3 max-w-xl text-sm leading-relaxed">
@@ -305,6 +317,8 @@ export default function UserDetailPage() {
               <CopyableField label="URL do perfil" value={data.profileUrl} />
             </div>
           </Surface>
+
+          <UserKycPanel user={data} />
 
           <UserEditPanel user={data} onUpdated={() => refetch()} />
 

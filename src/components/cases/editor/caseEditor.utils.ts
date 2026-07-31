@@ -25,7 +25,6 @@ export function mapCaseToFormValues(lootCase: LootCase): CaseFormState {
     vitrineId: lootCase.vitrineId ? String(lootCase.vitrineId) : '',
     items: lootCase.items.map((item): CaseDropItem => ({
       ...item,
-      minMarginPercent: item.minMarginPercent ?? lootCase.targetMarginPercent,
       probabilityTolerance: DEFAULT_ITEM_PROBABILITY_TOLERANCE,
       enabled: item.enabled ?? true,
       expectedValue:
@@ -92,7 +91,6 @@ export function touchAllCaseFormFields(
       skinName: true,
       probability: true,
       probabilityTolerance: true,
-      minMarginPercent: true,
       basePrice: true,
       priceWithTax: true,
       price: true,

@@ -37,6 +37,7 @@ export const USERS = {
     `/admin/users/${userId}/cases/${caseId}/open`,
   RESOLVE_TEST_CASE_OPEN: (userId: string, openId: string) =>
     `/admin/users/${userId}/case-opens/${openId}/disposition`,
+  KYC: (id: string) => `/admin/users/${id}/kyc`,
 } as const
 
 export const UPLOAD = {

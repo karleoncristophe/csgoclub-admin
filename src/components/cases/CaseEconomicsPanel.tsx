@@ -2,14 +2,17 @@ import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import {
+  computeBankInjection,
+  computeBankTargetForFullPool,
+  computeOpensToUnlockItem,
   computePriceAfterDiscount,
   computeProbabilitySum,
   computeRealMargin,
   computeSuggestedSalePrice,
   computeTotalExpectedValue,
   computeAggregatedProbabilityTolerance,
-  computeMinOpenPriceForPool,
   countEligibleDropItems,
+  EMPTY_CASE_ECONOMY_LEDGER,
   getEnabledDropItems,
   getProbabilityDelta,
   isProbabilitySumValid,
@@ -39,7 +42,7 @@ export function CaseEconomicsPanel({
   config,
   listPrice,
   finalPrice,
-  ledger = { totalRevenue: 0, totalPayout: 0, totalRealOpens: 0 },
+  ledger = EMPTY_CASE_ECONOMY_LEDGER,
   sharedLedger = false,
 }: CaseEconomicsPanelProps) {
   const enabledItems = getEnabledDropItems(items)
@@ -71,18 +74,27 @@ export function CaseEconomicsPanel({
   const negativeMargin = finalPrice > 0 && finalPrice < totalEV
   const targetMargin = config.targetMarginPercent / 100
 
+  const bankInjection = computeBankInjection(
+    finalPrice,
+    config.targetMarginPercent,
+  )
+  const bankBalance = roundPrice(ledger.bankBalance ?? 0)
+  // O saldo avaliado já considera a injeção da próxima abertura.
+  const bankAvailable = roundPrice(bankBalance + bankInjection)
+
   const eligibleDropCount = countEligibleDropItems({
     items,
     openPrice: finalPrice,
-    caseTargetMarginPercent: config.targetMarginPercent,
-    ledger,
+    bankBalance: bankAvailable,
     valueMode,
   })
   const blockedDropCount = Math.max(0, enabledItems.length - eligibleDropCount)
-  const minPriceForFullPool = roundPrice(
-    computeMinOpenPriceForPool(items, valueMode, config.targetMarginPercent),
-  )
-  const needsLedgerFunding = finalPrice > 0 && minPriceForFullPool > finalPrice
+  const bankTargetForFullPool = computeBankTargetForFullPool(items, valueMode)
+  const opensToUnlockFullPool = computeOpensToUnlockItem({
+    itemValue: bankTargetForFullPool,
+    openPrice: finalPrice,
+    targetMarginPercent: config.targetMarginPercent,
+  })
 
   const cumulativeMarginPercent =
     ledger.totalRevenue > 0
@@ -99,11 +111,11 @@ export function CaseEconomicsPanel({
           Economia da caixa (tempo real)
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mb-4 text-xs">
-          Margem instantânea para itens até o preço da caixa; itens mais caros dependem do
-          ledger acumulado{sharedLedger ? ' compartilhado' : ''}. Após um drop caro a margem
-          cai e volta a subir com novas aberturas. Em case battles, o bot só registra payout
-          (sem receita); se a margem alvo quebrar, o ledger reinicia no estado inicial de
-          elegibilidade.
+          Cada abertura injeta o Valor Esperado no banco virtual
+          {sharedLedger ? ' compartilhado' : ''} e o item ganho é retirado pelo valor exato.
+          Itens até o preço da caixa saem sempre; os mais caros só ficam elegíveis quando o
+          saldo alcança o valor de mercado deles, e voltam a travar assim que alguém os leva.
+          Em case battles o bot só retira do banco, sem injetar — no piso o saldo para em zero.
         </ThemeText>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -142,23 +154,22 @@ export function CaseEconomicsPanel({
               {eligibleDropCount} / {enabledItems.length}
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
-              {blockedDropCount} bloqueado(s) agora · ledger{' '}
-              {cumulativeMarginPercent != null
-                ? `${cumulativeMarginPercent.toFixed(2)}%`
-                : 'zerado'}
+              {blockedDropCount} travado(s) pelo banco agora
             </ThemeText>
           </div>
           <div>
             <ThemeText tone="label" className="text-xs uppercase">
-              Piso vitrine (pool completo)
+              Banco para o pool completo
             </ThemeText>
             <ThemeText tone="primary" className="mt-1 text-lg font-semibold">
-              {formatSkinsPrice(minPriceForFullPool, currency)}
+              {formatSkinsPrice(bankTargetForFullPool, currency)}
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
-              {needsLedgerFunding
-                ? 'Itens caros liberam via ledger no preço atual'
-                : 'Todos elegíveis no preço atual'}
+              {opensToUnlockFullPool === 0
+                ? 'Todos cabem no preço da abertura'
+                : Number.isFinite(opensToUnlockFullPool)
+                  ? `~${opensToUnlockFullPool.toLocaleString('pt-BR')} abertura(s) do zero`
+                  : 'Sem injeção: itens caros nunca liberam'}
             </ThemeText>
           </div>
           <div>
@@ -183,6 +194,22 @@ export function CaseEconomicsPanel({
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
               Tabela: {formatSkinsPrice(listPrice, currency)}
+            </ThemeText>
+          </div>
+          <div>
+            <ThemeText tone="label" className="text-xs uppercase">
+              Banco virtual (saldo)
+            </ThemeText>
+            <ThemeText
+              tone="primary"
+              className={`mt-1 text-lg font-semibold ${
+                bankBalance < 0 ? 'text-red-600 dark:text-red-400' : ''
+              }`}
+            >
+              {formatSkinsPrice(bankBalance, currency)}
+            </ThemeText>
+            <ThemeText tone="faint" className="text-xs">
+              +{formatSkinsPrice(bankInjection, currency)} por abertura
             </ThemeText>
           </div>
           <div>
@@ -239,8 +266,8 @@ export function CaseEconomicsPanel({
             tone="secondary"
             className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200"
           >
-            Nenhum item pode cair agora. Itens baratos precisam de margem instantânea; itens
-            acima do preço da caixa precisam de ledger acumulado saudável.
+            Nenhum item pode cair agora: nenhum cabe no preço da abertura e o banco virtual
+            não cobre os mais caros. Ajuste o preço ou inclua um item mais barato.
           </ThemeText>
         ) : null}
       </Surface>

@@ -8,17 +8,17 @@ export const DROP_METHOD_ENUMS: DocumentationEnumGroup = {
     {
       code: 'Direto',
       label: 'Sorteio aceito de primeira',
-      hint: 'O item sorteado já podia sair com as regras atuais.',
+      hint: 'O item sorteado estava elegível: cabia no preço ou o banco cobria o valor dele.',
     },
     {
       code: 'Re-roll',
       label: 'Novo sorteio',
-      hint: 'O primeiro item não podia sair; o sistema sorteou de novo.',
+      hint: 'O item sorteado estava travado pelo banco; o sistema sorteou de novo só entre os elegíveis.',
     },
     {
       code: 'Fallback',
       label: 'Item de segurança',
-      hint: 'Depois de várias tentativas, entregou o item barato elegível.',
+      hint: 'Nenhum item estava elegível; entregou o mais barato do pool.',
     },
   ],
 }
@@ -121,7 +121,7 @@ export const ECONOMY_PANEL_FIELDS: DocumentationEnumGroup = {
     {
       code: 'Pool elegível',
       label: 'Itens que podem sair agora',
-      hint: 'Ex.: 4/6 = quatro skins liberadas, duas ainda bloqueadas.',
+      hint: 'Ex.: 4/6 = quatro skins liberadas, duas ainda esperando o banco.',
     },
     {
       code: 'Margem real',
@@ -129,10 +129,10 @@ export const ECONOMY_PANEL_FIELDS: DocumentationEnumGroup = {
       hint: 'Diferença entre preço da caixa e VE — antes de abrir de verdade.',
     },
     {
-      code: 'Ledger',
-      label: 'Histórico real de aberturas',
+      code: 'Banco virtual',
+      label: 'Saldo acumulado da caixa',
       hint:
-        'Quanto já entrou e quanto já saiu em skins. Em battles, o bot só soma payout (sem receita); se a margem quebrar, o ledger pode resetar.',
+        'Cada abertura injeta o VE; cada item caro ganho retira o valor dele. É esse saldo que libera ou trava as skins mais caras.',
     },
   ],
 }
@@ -146,19 +146,19 @@ export const CASE_EDITOR_FIELDS: DocumentationEnumGroup = {
       hint: 'Peso de cada skin na roleta. Não é garantia se estiver bloqueada.',
     },
     {
-      code: 'Margem mín.',
-      label: 'Proteção por item',
-      hint: 'Impede entregar aquela skin se quebrar o lucro mínimo.',
+      code: 'Banco exigido',
+      label: 'Saldo necessário para liberar',
+      hint: 'Item mais caro que a abertura só sai quando o banco tem o valor de mercado dele.',
     },
     {
       code: 'Margem alvo',
       label: 'Lucro desejado da caixa',
-      hint: 'Usada para sugerir o preço de abertura.',
+      hint: 'Sugere o preço e define quanto entra no banco por abertura (preço − margem).',
     },
     {
       code: 'Elegível',
       label: 'Pode sair agora?',
-      hint: 'Sim = liberada. Não (ledger) = item caro aguardando histórico.',
+      hint: 'Sim = liberada. Não (banco) = item caro esperando o saldo acumular.',
     },
     {
       code: 'Tolerância',

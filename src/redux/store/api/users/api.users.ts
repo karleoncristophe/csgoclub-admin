@@ -36,6 +36,48 @@ export type UserAdminDetail = AppUser & {
   totalSpendable: number
   withdrawableBalance: number
   walletCurrency: SkinsCurrency
+  kycStatus?:
+    | 'not_started'
+    | 'in_progress'
+    | 'in_review'
+    | 'approved'
+    | 'declined'
+    | 'expired'
+    | 'abandoned'
+  kycVerified?: boolean
+  kycSessionId?: string
+  kycProviderStatus?: string
+  kycVerifiedAt?: string
+  kycDeclinedAt?: string
+  kycDecisionSummary?: Record<string, unknown>
+}
+
+export type UserKycDetail = {
+  status:
+    | 'not_started'
+    | 'in_progress'
+    | 'in_review'
+    | 'approved'
+    | 'declined'
+    | 'expired'
+    | 'abandoned'
+  verified: boolean
+  sessionId?: string
+  providerStatus?: string
+  verificationUrl?: string
+  verifiedAt?: string
+  declinedAt?: string
+  updatedAt?: string
+  sessions: Array<{
+    sessionId: string
+    status: UserKycDetail['status']
+    providerStatus?: string
+    verifiedAt?: string
+    declinedAt?: string
+    createdAt?: string
+    updatedAt?: string
+    decisionSummary?: Record<string, unknown>
+  }>
 }
 
 export type UserCaseOpenBulkResult = {
@@ -68,6 +110,7 @@ export type UserCaseOpenBulkResult = {
     totalRevenue: number
     totalPayout: number
     totalRealOpens: number
+    bankBalance: number
   }
   dropSummary: {
     directCount: number
@@ -143,11 +186,11 @@ export type AdminCaseOpenCaseItem = {
 }
 
 export type AdminCaseOpenDetail = AdminCaseOpenListItem & {
-  marginAtDropInstantPercent: number
-  marginAtDropCumulativePercent: number
-  requiredMarginPercent: number
-  instantMarginOk: boolean
-  cumulativeMarginOk: boolean
+  bankBalanceBefore: number
+  bankInjection: number
+  bankBalanceAfter: number
+  requiredBankBalance: number
+  coveredByOpenPrice: boolean
   inventoryItemId?: string
   caseItems: AdminCaseOpenCaseItem[]
 }
@@ -576,6 +619,13 @@ export const usersApi = createApi({
         }
       },
     }),
+    getUserKyc: builder.query<UserKycDetail, string>({
+      query: (id) => ({
+        url: USERS.KYC(id),
+        method: 'GET',
+      }),
+      providesTags: (_result, _error, id) => [{ type: 'Users', id: `${id}-kyc` }],
+    }),
   }),
 })
 
@@ -590,4 +640,5 @@ export const {
   useOpenUserTestCaseMutation,
   useResolveUserTestCaseOpenMutation,
   useConvertAllUserSiteInventoryMutation,
+  useGetUserKycQuery,
 } = usersApi

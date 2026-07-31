@@ -259,33 +259,30 @@ export default function UserCaseOpenDetailPage() {
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl border border-zinc-200/80 p-4 dark:border-zinc-800">
                     <div className="flex items-center gap-2">
-                      {data.instantMarginOk ? (
+                      {data.coveredByOpenPrice ? (
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                       ) : (
-                        <XCircle className="h-4 w-4 text-rose-500" />
+                        <XCircle className="h-4 w-4 text-amber-500" />
                       )}
                       <ThemeText as="p" tone="primary" className="text-sm font-medium">
-                        Margem instantânea
+                        Liberação do item
                       </ThemeText>
                     </div>
                     <ThemeText as="p" tone="secondary" className="mt-2 text-sm">
-                      {data.marginAtDropInstantPercent.toFixed(2)}% (exigida{' '}
-                      {data.requiredMarginPercent.toFixed(2)}%)
+                      {data.coveredByOpenPrice
+                        ? 'Cabia no preço da abertura'
+                        : `Liberado pelo banco (exigia ${formatMoney(data.requiredBankBalance ?? 0, data.currency)})`}
                     </ThemeText>
                   </div>
                   <div className="rounded-2xl border border-zinc-200/80 p-4 dark:border-zinc-800">
-                    <div className="flex items-center gap-2">
-                      {data.cumulativeMarginOk ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-rose-500" />
-                      )}
-                      <ThemeText as="p" tone="primary" className="text-sm font-medium">
-                        Margem acumulada
-                      </ThemeText>
-                    </div>
+                    <ThemeText as="p" tone="primary" className="text-sm font-medium">
+                      Banco virtual da caixa
+                    </ThemeText>
                     <ThemeText as="p" tone="secondary" className="mt-2 text-sm">
-                      {data.marginAtDropCumulativePercent.toFixed(2)}%
+                      {formatMoney(data.bankBalanceBefore ?? 0, data.currency)} +{' '}
+                      {formatMoney(data.bankInjection ?? 0, data.currency)} −{' '}
+                      {formatMoney(data.itemValue, data.currency)} ={' '}
+                      <strong>{formatMoney(data.bankBalanceAfter ?? 0, data.currency)}</strong>
                     </ThemeText>
                   </div>
                 </div>

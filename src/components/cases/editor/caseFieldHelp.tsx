@@ -109,7 +109,7 @@ export const CASE_FIELD_HELP = {
         <p>É o peso do item na tabela. Ex.: <strong>0,013%</strong> = muito raro; <strong>98%</strong> = quase sempre.</p>
         <HelpSection title="Não é garantia de cair">
           <p>
-            Se a coluna <strong>Elegível</strong> está <strong>Não</strong>, esse item <strong>não pode sair</strong> no preço atual da caixa — mesmo com drop baixo. O motor bloqueia itens que quebrariam a margem.
+            Se a coluna <strong>Elegível</strong> está <strong>Não</strong>, esse item <strong>não pode sair</strong> agora — mesmo com drop alto. O banco virtual ainda não acumulou o valor dele, então a chance é zero até liberar.
           </p>
         </HelpSection>
         <HelpSection title="Soma das chances">
@@ -133,17 +133,18 @@ export const CASE_FIELD_HELP = {
       </>
     ),
   },
-  minMarginPercent: {
-    title: 'Margem mín.',
-    description: 'Lucro mínimo exigido se ESTE item for o resultado da abertura.',
+  requiredBankBalance: {
+    title: 'Banco exigido',
+    description: 'Saldo que o banco virtual precisa ter para ESTE item poder cair.',
     details: (
       <>
-        <p>Margem = quanto a casa “ganha” na abertura: <strong>(preço da caixa − valor da skin) ÷ preço da caixa</strong>.</p>
-        <HelpSection title="Exemplo">
-          <p>Caixa $0,21 e skin $72 → margem negativa gigante. Com margem mín. 30%, esse item fica <strong>inelegível</strong> e não cai.</p>
+        <p>Item que custa <strong>até o preço da abertura</strong> não precisa de banco: a própria abertura paga por ele.</p>
+        <HelpSection title="Item acima do preço da caixa">
+          <p>Exige que o banco tenha o <strong>valor de mercado exato</strong> do item. Caixa $0,10 e skin $56,76 → o banco precisa alcançar $56,76.</p>
+          <p>A estimativa de aberturas usa o Valor Esperado injetado por abertura (preço − margem alvo). Ex.: $0,07 por abertura → ~811 aberturas.</p>
         </HelpSection>
-        <HelpSection title="Diferente da margem alvo">
-          <p><strong>Margem alvo</strong> define o preço sugerido da caixa. <strong>Margem mín.</strong> é por item — protege contra um drop caro que drenaria o caixa.</p>
+        <HelpSection title="Depois que alguém ganha">
+          <p>O valor exato sai do banco. Se o saldo cair abaixo do preço de outros itens caros, eles voltam a ficar travados na hora.</p>
         </HelpSection>
       </>
     ),
@@ -160,15 +161,18 @@ export const CASE_FIELD_HELP = {
   },
   itemEligible: {
     title: 'Elegível',
-    description: 'Se o item PODE ser entregue agora, com o preço e margens atuais.',
+    description: 'Se o item PODE ser entregue agora, com o saldo atual do banco virtual.',
     details: (
       <>
         <p><strong>Sim</strong> — pode sair no sorteio (respeitando o Drop %).</p>
-        <p><strong>Não (ledger)</strong> — item acima do preço da caixa; aguarda margem acumulada no ledger.</p>
-        <p><strong>Não (instant.) / Não (acum.)</strong> — bloqueado pela regra correspondente.</p>
+        <p><strong>Não (banco)</strong> — item mais caro que a abertura e o banco ainda não acumulou o valor dele. Chance zero até liberar.</p>
         <HelpSection title="Como o sistema decide">
-          <p>Itens até o preço da caixa: margem instantânea + acumulada. Itens mais caros: só ledger acumulado (pool compartilhado soma receita/payout).</p>
-          <p>Em case battles, o bot também passa por essa elegibilidade. No ledger ele só soma o payout do item (sem receita). Se a margem alvo quebrar, o ledger volta ao estado inicial.</p>
+          <p>Cada abertura injeta o <strong>Valor Esperado</strong> (preço − margem alvo) no banco. Item até o preço da abertura sai sempre; item mais caro só quando o saldo alcança o valor de mercado dele.</p>
+          <p>Os mais baratos liberam primeiro, e o saldo é acumulativo — vários itens podem ficar elegíveis ao mesmo tempo.</p>
+        </HelpSection>
+        <HelpSection title="Resgate e bloqueio">
+          <p>Quando alguém ganha um item, o valor exato sai do banco. Itens caros que ficaram acima do novo saldo voltam a travar imediatamente e só liberam com novas aberturas.</p>
+          <p>Em case battles o bot só retira do banco (não paga abertura). O saldo para no zero para os bots não deixarem o banco devendo.</p>
         </HelpSection>
       </>
     ),

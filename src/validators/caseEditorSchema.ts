@@ -1,6 +1,7 @@
 import * as Yup from 'yup'
 import { SkinsCurrency } from '@/constants/skinsCurrency'
 import {
+  computeBankInjection,
   computeProbabilitySum,
   computeTotalExpectedValue,
   countEligibleDropItems,
@@ -26,7 +27,6 @@ export const caseDropItemSchema = Yup.object({
   price: Yup.number().min(MIN_CASE_ITEM_PRICE).required(),
   probability: Yup.number().min(0).max(100).required(),
   probabilityTolerance: Yup.number().min(0).max(5).required(),
-  minMarginPercent: Yup.number().min(0).max(99.99).required(),
   enabled: Yup.boolean().required(),
 })
 
@@ -125,6 +125,8 @@ export const caseEditorSchema = Yup.object({
         message: `"${invalid.skinName}" está sem preço válido no catálogo`,
       })
     })
+    // Com o banco zerado só saem itens que cabem no preço da abertura; sem
+    // nenhum deles a caixa não paga nem a primeira abertura.
     .test('droppable-pool', 'Nenhum item elegível para drop', function (items) {
       if (!items?.length) return true
       const parent = this.parent as {
@@ -138,18 +140,19 @@ export const caseEditorSchema = Yup.object({
           priceWithTax: item.priceWithTax,
           price: item.price,
           probability: item.probability,
-          minMarginPercent: item.minMarginPercent,
           enabled: item.enabled,
         })),
         openPrice: parent.price,
-        caseTargetMarginPercent: parent.targetMarginPercent,
-        ledger: { totalRevenue: 0, totalPayout: 0 },
+        bankBalance: computeBankInjection(
+          parent.price,
+          parent.targetMarginPercent,
+        ),
         valueMode: parent.valueMode,
       })
       if (eligible > 0) return true
       return this.createError({
         message:
-          'Nenhum item habilitado pode cair com o preço e margens atuais. Ajuste preço, margem mín. ou chances.',
+          'Nenhum item habilitado cabe no preço da abertura. Inclua um item mais barato ou aumente o preço.',
       })
     }),
 }).test('margin-check', 'Margem negativa', function (values) {

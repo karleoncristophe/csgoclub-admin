@@ -1,19 +1,15 @@
 import { SkinsCurrency } from '@/constants/skinsCurrency'
 import type { CaseDropItem } from '@/redux/store/api/cases/api.cases'
 import type { SkinsCatalogItem } from '@/redux/store/api/skins/api.skins'
-import {
-  DEFAULT_ITEM_PROBABILITY_TOLERANCE,
-  roundPrice,
-  type CaseValueMode,
-} from '@/utils/caseEconomics'
+import { roundPrice } from '@/utils/caseEconomics'
 import type { DevPresetItemSeed } from './caseDevPreset'
 import { buildCaseDropItemFromPreset } from './caseDevPreset'
 
 /**
  * Pool balanceado para demo de influencer: VE ~US$ 5,9 → caixa ~US$ 8,4.
- * Todos os tiers ficam abaixo de 70% do preço (margem instantânea 30%), então
- * Todos os tiers ficam elegíveis no preço da caixa — diferente do modelo csgo.net
- * (filler 99,5% + vitrine cara bloqueada pela margem instantânea).
+ * Todos os tiers custam menos que o preço da caixa, então saem sempre sem
+ * depender do banco virtual — diferente do modelo csgo.net (filler 99,5% +
+ * vitrine cara que só libera quando o banco acumula).
  */
 export const INFLUENCER_DEMO_PRESET_ITEMS: DevPresetItemSeed[] = [
   {
@@ -79,8 +75,6 @@ type FetchCatalogItemFn = (params: {
 
 export async function fetchInfluencerDemoPresetItems(input: {
   fetchCatalogItem: FetchCatalogItemFn
-  valueMode: CaseValueMode
-  targetMarginPercent: number
 }): Promise<CaseDropItem[]> {
   return Promise.all(
     INFLUENCER_DEMO_PRESET_ITEMS.map(async (seed) => {
@@ -94,16 +88,9 @@ export async function fetchInfluencerDemoPresetItems(input: {
             priceUsd: roundPrice(catalog.price ?? seed.priceUsd),
           },
           catalog,
-          input.valueMode,
-          input.targetMarginPercent,
         )
       } catch {
-        return buildCaseDropItemFromPreset(
-          seed,
-          null,
-          input.valueMode,
-          input.targetMarginPercent,
-        )
+        return buildCaseDropItemFromPreset(seed, null)
       }
     }),
   )

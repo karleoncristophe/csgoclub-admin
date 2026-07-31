@@ -7,6 +7,8 @@ import { ThemeText } from '@/components/ui/ThemeText'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import type { CaseDropItem } from '@/redux/store/api/cases/api.cases'
 import {
+  computeBankInjection,
+  computeOpensToUnlockItem,
   evaluateDropEligibility,
   resolveItemEconomicsValue,
   roundPrice,
@@ -37,6 +39,9 @@ export function CaseEditorItemsTable({
   itemsError,
   onItemsChange,
 }: CaseEditorItemsTableProps) {
+  const bankInjection = computeBankInjection(openPrice, targetMarginPercent)
+  const bankAvailable = roundPrice((ledger.bankBalance ?? 0) + bankInjection)
+
   const updateItem = (skinName: string, patch: Partial<CaseDropItem>) => {
     onItemsChange(updateCaseDropItem(items, skinName, patch))
   }
@@ -48,22 +53,14 @@ export function CaseEditorItemsTable({
     })
   }
 
-  const handleMinMarginChange = (skinName: string, rawValue: string) => {
-    const minMarginPercent = Number(rawValue.replace(',', '.'))
-    updateItem(skinName, {
-      minMarginPercent: Number.isFinite(minMarginPercent)
-        ? Math.min(99.99, Math.max(0, minMarginPercent))
-        : 0,
-    })
-  }
-
   return (
     <Surface variant="card" className="!p-6">
       <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
         Itens da caixa ({items.length})
       </ThemeText>
       <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-        Configure o drop % e a margem mín. de cada item na linha correspondente.
+        Configure o drop % de cada item. Itens acima do preço da abertura só ficam
+        elegíveis quando o banco virtual acumula o valor de mercado deles.
       </ThemeText>
 
       {items.length === 0 ? (
@@ -100,8 +97,8 @@ export function CaseEditorItemsTable({
                 </th>
                 <th className="px-3 py-2">
                   <FieldLabelWithHelp
-                    label="Margem mín."
-                    fieldHelp={caseFieldProps('minMarginPercent').fieldHelp}
+                    label="Banco exigido"
+                    fieldHelp={caseFieldProps('requiredBankBalance').fieldHelp}
                     className="text-xs uppercase tracking-wide text-zinc-500"
                   />
                 </th>
@@ -129,9 +126,13 @@ export function CaseEditorItemsTable({
                 const eligibility = evaluateDropEligibility({
                   item,
                   openPrice,
-                  caseTargetMarginPercent: targetMarginPercent,
-                  ledger,
+                  bankBalance: bankAvailable,
                   valueMode,
+                })
+                const opensToUnlock = computeOpensToUnlockItem({
+                  itemValue,
+                  openPrice,
+                  targetMarginPercent,
                 })
                 const rowMuted = item.enabled === false
 
@@ -201,19 +202,26 @@ export function CaseEditorItemsTable({
                         className="w-24 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900"
                       />
                     </td>
-                    <td className="px-3 py-3">
-                      <input
-                        type="number"
-                        min={0}
-                        max={99.99}
-                        step="0.01"
-                        value={item.minMarginPercent}
-                        onChange={(e) =>
-                          handleMinMarginChange(item.skinName, e.target.value)
-                        }
-                        disabled={item.enabled === false}
-                        className="w-24 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900"
-                      />
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      {eligibility.coveredByOpenPrice ? (
+                        <ThemeText tone="faint" className="text-xs">
+                          Cabe no preço
+                        </ThemeText>
+                      ) : (
+                        <>
+                          <ThemeText tone="primary" className="text-xs font-medium">
+                            {formatSkinsPrice(
+                              eligibility.requiredBankBalance,
+                              currency,
+                            )}
+                          </ThemeText>
+                          <ThemeText tone="faint" className="mt-0.5 block text-[10px]">
+                            {Number.isFinite(opensToUnlock)
+                              ? `~${opensToUnlock.toLocaleString('pt-BR')} abertura(s)`
+                              : 'sem injeção'}
+                          </ThemeText>
+                        </>
+                      )}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap font-semibold text-brand-700 dark:text-brand-400">
                       {formatSkinsPrice(veItem, currency)}
@@ -230,11 +238,7 @@ export function CaseEditorItemsTable({
                       ) : (
                         <span
                           className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
-                          title={
-                            eligibility.instantApplicable
-                              ? `Instant: ${eligibility.instantMarginPercent.toFixed(2)}% (mín ${eligibility.requiredMarginPercent}%) · Acum: ${eligibility.cumulativeMarginPercent.toFixed(2)}%`
-                              : `Financiado pelo ledger · Acum: ${eligibility.cumulativeMarginPercent.toFixed(2)}% (mín ${eligibility.requiredMarginPercent}%)`
-                          }
+                          title={`Banco em ${formatSkinsPrice(eligibility.bankBalance, currency)} · exige ${formatSkinsPrice(eligibility.requiredBankBalance, currency)} · faltam ${formatSkinsPrice(eligibility.bankShortfall, currency)}`}
                         >
                           {describeDropEligibility(eligibility)}
                         </span>

@@ -4,7 +4,6 @@ import type { SkinsCatalogItem } from '@/redux/store/api/skins/api.skins'
 import {
   DEFAULT_ITEM_PROBABILITY_TOLERANCE,
   roundPrice,
-  type CaseValueMode,
 } from '@/utils/caseEconomics'
 
 /** Snapshot csgo.net — nomes, chances e preços USD enviados pelo time. */
@@ -88,10 +87,9 @@ export function estimateCsgoNetDevPresetPricing(
   )
   const margin = targetMarginPercent / 100
   const divisor = 1 - margin
-  const evPrice = divisor > 0 ? expectedValue / divisor : expectedValue
-  const maxItem = Math.max(...CSGO_NET_DEV_PRESET_ITEMS.map((item) => item.priceUsd))
-  const eligibilityFloor = divisor > 0 ? maxItem / divisor : maxItem
-  const listPrice = roundPrice(Math.max(evPrice, eligibilityFloor))
+  const listPrice = roundPrice(
+    divisor > 0 ? expectedValue / divisor : expectedValue,
+  )
   const finalPrice = roundPrice(listPrice * (1 - Math.min(100, Math.max(0, discountPercent)) / 100))
 
   return { expectedValue, listPrice, finalPrice }
@@ -100,8 +98,6 @@ export function estimateCsgoNetDevPresetPricing(
 export function buildCaseDropItemFromPreset(
   seed: DevPresetItemSeed,
   catalog: SkinsCatalogItem | null,
-  valueMode: CaseValueMode,
-  targetMarginPercent: number,
 ): CaseDropItem {
   const price = seed.priceUsd
   const economicsValue = price
@@ -120,7 +116,6 @@ export function buildCaseDropItemFromPreset(
     priceWithTax: price,
     price: economicsValue,
     probability: seed.probability,
-    minMarginPercent: targetMarginPercent,
     probabilityTolerance: DEFAULT_ITEM_PROBABILITY_TOLERANCE,
     enabled: true,
     expectedValue: roundPrice(price * (seed.probability / 100)),
@@ -134,8 +129,6 @@ type FetchCatalogItemFn = (params: {
 
 export async function fetchCsgoNetDevPresetItems(input: {
   fetchCatalogItem: FetchCatalogItemFn
-  valueMode: CaseValueMode
-  targetMarginPercent: number
 }): Promise<CaseDropItem[]> {
   return Promise.all(
     CSGO_NET_DEV_PRESET_ITEMS.map(async (seed) => {
@@ -144,19 +137,9 @@ export async function fetchCsgoNetDevPresetItems(input: {
         const catalog = await input
           .fetchCatalogItem({ name: queryName, currency: SkinsCurrency.USD })
           .unwrap()
-        return buildCaseDropItemFromPreset(
-          seed,
-          catalog,
-          input.valueMode,
-          input.targetMarginPercent,
-        )
+        return buildCaseDropItemFromPreset(seed, catalog)
       } catch {
-        return buildCaseDropItemFromPreset(
-          seed,
-          null,
-          input.valueMode,
-          input.targetMarginPercent,
-        )
+        return buildCaseDropItemFromPreset(seed, null)
       }
     }),
   )

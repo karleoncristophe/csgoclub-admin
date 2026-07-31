@@ -15,6 +15,7 @@ import {
 } from '@/redux/store/api/users/api.users'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import {
+  computeBankInjection,
   countEligibleDropItems,
   getEnabledDropItems,
   type CaseValueMode,
@@ -113,11 +114,13 @@ export function UserInfluencerCaseOpenPanel({
 
   const eligiblePoolCount = useMemo(() => {
     if (!selectedCase) return null
+    const bankAvailable =
+      (testLedger?.bankBalance ?? 0) +
+      computeBankInjection(selectedCase.price, selectedCase.targetMarginPercent)
     return countEligibleDropItems({
       items: selectedCase.items,
       openPrice: selectedCase.price,
-      caseTargetMarginPercent: selectedCase.targetMarginPercent,
-      ledger: testLedger ?? { totalRevenue: 0, totalPayout: 0 },
+      bankBalance: bankAvailable,
       valueMode: (selectedCase.valueMode ?? 'with_tax') as CaseValueMode,
     })
   }, [selectedCase, testLedger])

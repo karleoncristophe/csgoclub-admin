@@ -9,11 +9,21 @@ export type CaseEconomyLedger = {
   totalRevenue: number
   totalPayout: number
   totalRealOpens?: number
+  /** Saldo do banco virtual da caixa. */
+  bankBalance?: number
+}
+
+export const EMPTY_CASE_ECONOMY_LEDGER: CaseEconomyLedger = {
+  totalRevenue: 0,
+  totalPayout: 0,
+  totalRealOpens: 0,
+  bankBalance: 0,
 }
 
 export type CaseEconomicsConfig = {
   targetMarginPercent: number
   probabilityTargetPercent: number
+  probabilityTolerance?: number
   discountPercent: number
 }
 
@@ -22,19 +32,21 @@ export type CaseEconomicsItem = {
   priceWithTax: number
   price: number
   probability: number
-  minMarginPercent?: number
+  probabilityTolerance?: number
   enabled?: boolean
   skinName?: string
 }
 
 export type DropEligibilityResult = {
-  instant: boolean
-  cumulative: boolean
   eligible: boolean
-  instantApplicable: boolean
-  instantMarginPercent: number
-  cumulativeMarginPercent: number
-  requiredMarginPercent: number
+  /** Item custa até o preço da abertura, então a própria abertura o paga. */
+  coveredByOpenPrice: boolean
+  /** Saldo mínimo exigido no banco (0 quando coberto pela abertura). */
+  requiredBankBalance: number
+  /** Saldo avaliado, já incluindo a injeção da abertura atual. */
+  bankBalance: number
+  /** Quanto falta acumular no banco para liberar o item. */
+  bankShortfall: number
 }
 
 export function resolveItemEconomicsValue(
@@ -93,73 +105,65 @@ export function computeRealMargin(
   return (finalPrice - totalExpectedValue) / finalPrice
 }
 
-export function computeInstantMarginPercent(
+/** Tolerância para comparar saldo com preço sem ruído de ponto flutuante. */
+const BANK_EPSILON = 1e-9
+
+/**
+ * Valor Esperado injetado no banco virtual a cada abertura: o preço pago menos
+ * a margem alvo da casa.
+ */
+export function computeBankInjection(
   openPrice: number,
-  itemValue: number,
+  targetMarginPercent: number,
 ): number {
   if (!Number.isFinite(openPrice) || openPrice <= 0) return 0
-  return ((openPrice - itemValue) / openPrice) * 100
-}
-
-export function computeCumulativeMarginPercent(
-  ledger: CaseEconomyLedger,
-  openPrice: number,
-  itemValue: number,
-): number {
-  const revenue = ledger.totalRevenue + openPrice
-  if (revenue <= 0) return 0
-  const payout = ledger.totalPayout + itemValue
-  return ((revenue - payout) / revenue) * 100
-}
-
-export function resolveRequiredItemMarginPercent(
-  item: Pick<CaseEconomicsItem, 'minMarginPercent'>,
-  caseTargetMarginPercent: number,
-): number {
-  if (
-    typeof item.minMarginPercent === 'number' &&
-    Number.isFinite(item.minMarginPercent)
-  ) {
-    return item.minMarginPercent
-  }
-  return caseTargetMarginPercent
+  const margin = Math.min(100, Math.max(0, targetMarginPercent)) / 100
+  return roundPrice(openPrice * (1 - margin))
 }
 
 export function evaluateDropEligibility(input: {
   item: CaseEconomicsItem
   openPrice: number
-  caseTargetMarginPercent: number
-  ledger: CaseEconomyLedger
+  bankBalance: number
   valueMode: CaseValueMode
 }): DropEligibilityResult {
-  const itemValue = resolveItemEconomicsValue(input.item, input.valueMode)
-  const requiredMarginPercent = resolveRequiredItemMarginPercent(
-    input.item,
-    input.caseTargetMarginPercent,
+  const itemValue = roundPrice(
+    resolveItemEconomicsValue(input.item, input.valueMode),
   )
-  const instantMarginPercent = computeInstantMarginPercent(
-    input.openPrice,
-    itemValue,
-  )
-  const cumulativeMarginPercent = computeCumulativeMarginPercent(
-    input.ledger,
-    input.openPrice,
-    itemValue,
-  )
-  const instantApplicable = itemValue <= input.openPrice
-  const instant =
-    !instantApplicable || instantMarginPercent >= requiredMarginPercent
-  const cumulative = cumulativeMarginPercent >= input.caseTargetMarginPercent
+  const openPrice = roundPrice(input.openPrice)
+  const bankBalance = roundPrice(input.bankBalance)
+
+  const coveredByOpenPrice = itemValue <= openPrice + BANK_EPSILON
+  const requiredBankBalance = coveredByOpenPrice ? 0 : itemValue
+  const eligible =
+    coveredByOpenPrice || bankBalance + BANK_EPSILON >= requiredBankBalance
 
   return {
-    instant,
-    cumulative,
-    eligible: instant && cumulative,
-    instantApplicable,
-    instantMarginPercent: roundEconomics(instantMarginPercent, 4),
-    cumulativeMarginPercent: roundEconomics(cumulativeMarginPercent, 4),
-    requiredMarginPercent,
+    eligible,
+    coveredByOpenPrice,
+    requiredBankBalance,
+    bankBalance,
+    bankShortfall: eligible ? 0 : roundPrice(requiredBankBalance - bankBalance),
   }
+}
+
+/**
+ * Quantas aberturas o banco precisa acumular, do zero, para liberar o item.
+ */
+export function computeOpensToUnlockItem(input: {
+  itemValue: number
+  openPrice: number
+  targetMarginPercent: number
+}): number {
+  if (input.itemValue <= input.openPrice + BANK_EPSILON) return 0
+
+  const injection = computeBankInjection(
+    input.openPrice,
+    input.targetMarginPercent,
+  )
+  if (injection <= 0) return Number.POSITIVE_INFINITY
+
+  return Math.ceil(roundPrice(input.itemValue) / injection)
 }
 
 export function computeProbabilitySum(
@@ -179,49 +183,41 @@ export function roundPrice(value: number): number {
   return Math.round(value * 100) / 100
 }
 
-export function computeMinOpenPriceForPool(
+/**
+ * Saldo que o banco precisa alcançar para o item mais caro ficar elegível.
+ */
+export function computeBankTargetForFullPool(
   items: CaseEconomicsItem[],
   valueMode: CaseValueMode,
-  targetMarginPercent: number,
 ): number {
   const enabled = getEnabledDropItems(items)
   if (enabled.length === 0) return 0
 
-  const maxValue = Math.max(
-    ...enabled.map((item) => resolveItemEconomicsValue(item, valueMode)),
+  return roundPrice(
+    Math.max(
+      ...enabled.map((item) => resolveItemEconomicsValue(item, valueMode)),
+    ),
   )
-  const margin = targetMarginPercent / 100
-  const divisor = 1 - margin
-  if (divisor <= 0) return roundPrice(maxValue)
-  return roundPrice(maxValue / divisor)
 }
 
+/**
+ * Preço de tabela é sempre VE ÷ (1 − margem). Itens acima do preço não puxam o
+ * preço para cima: eles são liberados pelo banco virtual conforme ele acumula.
+ */
 export function resolveFairCaseListPrice(input: {
   items: CaseEconomicsItem[]
   valueMode: CaseValueMode
   targetMarginPercent: number
 }): number {
   const expectedValue = computeTotalExpectedValue(input.items, input.valueMode)
-  const evBasedPrice = computeSuggestedSalePrice(
-    expectedValue,
-    input.targetMarginPercent,
+  return roundPrice(
+    computeSuggestedSalePrice(expectedValue, input.targetMarginPercent),
   )
-  const eligibilityFloor = computeMinOpenPriceForPool(
-    input.items,
-    input.valueMode,
-    input.targetMarginPercent,
-  )
-  return roundPrice(Math.max(evBasedPrice, eligibilityFloor))
 }
 
 export function describeDropEligibility(eligibility: DropEligibilityResult): string {
   if (eligibility.eligible) return 'Sim'
-  if (!eligibility.instantApplicable) {
-    return 'Não (ledger)'
-  }
-  if (!eligibility.instant && !eligibility.cumulative) return 'Não'
-  if (!eligibility.instant) return 'Não (instant.)'
-  return 'Não (acum.)'
+  return 'Não (banco)'
 }
 
 export function computeAggregatedProbabilityTolerance(
@@ -237,7 +233,8 @@ export function isProbabilitySumValid(
   config: Pick<CaseEconomicsConfig, 'probabilityTargetPercent' | 'probabilityTolerance'>,
 ): boolean {
   return (
-    Math.abs(sum - config.probabilityTargetPercent) <= config.probabilityTolerance
+    Math.abs(sum - config.probabilityTargetPercent) <=
+    (config.probabilityTolerance ?? 0)
   )
 }
 
@@ -272,16 +269,14 @@ export function hasNegativeMargin(
 export function countEligibleDropItems(input: {
   items: CaseEconomicsItem[]
   openPrice: number
-  caseTargetMarginPercent: number
-  ledger: CaseEconomyLedger
+  bankBalance: number
   valueMode: CaseValueMode
 }): number {
   return getEnabledDropItems(input.items).filter((item) =>
     evaluateDropEligibility({
       item,
       openPrice: input.openPrice,
-      caseTargetMarginPercent: input.caseTargetMarginPercent,
-      ledger: input.ledger,
+      bankBalance: input.bankBalance,
       valueMode: input.valueMode,
     }).eligible,
   ).length
@@ -308,7 +303,6 @@ export function catalogSkinToCaseItem(
   },
   valueMode: CaseValueMode,
   probability = 0,
-  targetMarginPercent = 30,
 ) {
   const economicsValue = resolveItemEconomicsValue(
     {
@@ -328,7 +322,6 @@ export function catalogSkinToCaseItem(
     priceWithTax: skin.priceWithTax,
     price: economicsValue,
     probability,
-    minMarginPercent: targetMarginPercent,
     probabilityTolerance: DEFAULT_ITEM_PROBABILITY_TOLERANCE,
     enabled: true,
     expectedValue: roundPrice(economicsValue * (probability / 100)),
@@ -344,7 +337,6 @@ export function remapCaseItemsForValueMode<
     skinName: string
     image?: string
     taxPercent: number
-    minMarginPercent?: number
     enabled?: boolean
     expectedValue?: number
   },
@@ -363,20 +355,15 @@ export function normalizeCaseItemEconomics<
   T extends {
     price: number
     probability: number
-    minMarginPercent?: number
     enabled?: boolean
   },
->(item: T, targetMarginPercent: number): T & {
-  minMarginPercent: number
+>(item: T): T & {
   enabled: boolean
   expectedValue: number
 } {
-  const minMarginPercent = item.minMarginPercent ?? targetMarginPercent
-  const enabled = item.enabled ?? true
   return {
     ...item,
-    minMarginPercent,
-    enabled,
+    enabled: item.enabled ?? true,
     expectedValue: roundPrice(item.price * (item.probability / 100)),
   }
 }

@@ -3,17 +3,13 @@ import { SkinsCurrency } from '@/constants/skinsCurrency'
 import { CASES } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
 import { caseVitrinesApi } from '@/redux/store/api/case-vitrines/api.case-vitrines'
-import type { CaseValueMode } from '@/utils/caseEconomics'
+import type { CaseEconomyLedger, CaseValueMode } from '@/utils/caseEconomics'
+
+export type { CaseEconomyLedger }
 
 export type CaseDropItemRarity = {
   name?: string
   color?: string
-}
-
-export type CaseEconomyLedger = {
-  totalRevenue: number
-  totalPayout: number
-  totalRealOpens: number
 }
 
 export type CaseDropItem = {
@@ -26,7 +22,6 @@ export type CaseDropItem = {
   price: number
   probability: number
   probabilityTolerance: number
-  minMarginPercent: number
   enabled: boolean
   expectedValue?: number
 }

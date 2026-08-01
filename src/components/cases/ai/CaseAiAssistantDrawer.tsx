@@ -31,10 +31,10 @@ const THINKING_PHRASES = [
 ]
 
 const STARTER_PROMPTS = [
+  'Vou colar a tabela de skins de outra caixa. Monta uma igual aqui.',
   'Monta uma caixa de R$ 25 com foco em pistolas, 100% de chance somando.',
   'Adiciona a AK-47 Redline Field-Tested na lista com 0,5% de chance.',
-  'Quais facas cabem numa caixa de R$ 50 sem estourar a margem?',
-  'Reequilibra as chances para a soma fechar em 100% mantendo a margem.',
+  'Reequilibra as chances para a soma fechar em 100%.',
 ]
 
 type ChatEntry = {
@@ -104,7 +104,7 @@ function DraftCard({
 
   return (
     <div className="mt-3 space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-3 dark:border-zinc-800 dark:bg-zinc-950/50">
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <div>
           <ThemeText as="span" tone="faint" className="block text-[10px] uppercase tracking-wide">
             Itens
@@ -123,18 +123,10 @@ function DraftCard({
         </div>
         <div>
           <ThemeText as="span" tone="faint" className="block text-[10px] uppercase tracking-wide">
-            VE total
+            Valor da caixa
           </ThemeText>
           <ThemeText as="span" tone="primary" className="text-sm font-semibold">
             {formatSkinsPrice(draft.expectedValue, currency)}
-          </ThemeText>
-        </div>
-        <div>
-          <ThemeText as="span" tone="faint" className="block text-[10px] uppercase tracking-wide">
-            Preço final
-          </ThemeText>
-          <ThemeText as="span" tone="primary" className="text-sm font-semibold">
-            {formatSkinsPrice(draft.suggestedFinalPrice, currency)}
           </ThemeText>
         </div>
       </div>
@@ -366,9 +358,9 @@ export function CaseAiAssistantDrawer({
           {entries.length === 0 && !disabled ? (
             <div className="space-y-3">
               <ThemeText as="p" tone="secondary" className="text-sm">
-                Me diga o que você quer na caixa. Eu busco as skins no catálogo
-                real, monto as chances e devolvo a proposta pronta para aplicar
-                no formulário.
+                Me diga o que você quer na caixa, ou cole a tabela de skins de
+                outra caixa. Eu busco tudo no catálogo real, monto as chances e
+                devolvo a proposta pronta para aplicar no formulário.
               </ThemeText>
               <div className="space-y-2">
                 {STARTER_PROMPTS.map((prompt) => (
@@ -473,9 +465,9 @@ export function CaseAiAssistantDrawer({
                 }
               }}
               rows={2}
-              maxLength={4000}
+              maxLength={12000}
               disabled={disabled || isLoading}
-              placeholder="Ex.: monta uma caixa de R$ 30 com AK e Desert Eagle"
+              placeholder="Peça uma caixa, cole a tabela de skins de outro site ou mande um link"
               className="scrollbar-list max-h-32 min-h-[56px] w-full resize-none rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-600"
             />
             <Button

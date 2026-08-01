@@ -120,6 +120,30 @@ function BankProgress({ ratio }: { ratio: number }) {
   )
 }
 
+function BankAmountRow({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string
+  value: string
+  highlight?: boolean
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <ThemeText tone="faint" className="text-[11px]">
+        {label}
+      </ThemeText>
+      <ThemeText
+        tone={highlight ? 'primary' : 'secondary'}
+        className={`text-xs tabular-nums ${highlight ? 'font-semibold' : ''}`}
+      >
+        {value}
+      </ThemeText>
+    </div>
+  )
+}
+
 function EligibilityCell({
   item,
   currency,
@@ -154,7 +178,7 @@ function EligibilityCell({
   const ratio = item.requiredBankBalance > 0 ? bankBalance / item.requiredBankBalance : 1
 
   return (
-    <div className="min-w-[10rem] space-y-1.5">
+    <div className="min-w-[11rem] space-y-1.5">
       {item.eligible ? (
         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
           <Unlock className="h-3 w-3" aria-hidden />
@@ -167,11 +191,23 @@ function EligibilityCell({
         </span>
       )}
       <BankProgress ratio={ratio} />
-      <ThemeText tone="faint" className="text-xs">
-        {item.eligible
-          ? `Banco exigido ${formatSkinsPrice(item.requiredBankBalance, currency)}`
-          : `Falta ${formatSkinsPrice(item.bankShortfall, currency)} · ${formatOpens(item.opensToUnlock)}`}
-      </ThemeText>
+      <div className="space-y-0.5">
+        <BankAmountRow
+          label="Acumulado"
+          value={formatSkinsPrice(bankBalance, currency)}
+          highlight
+        />
+        <BankAmountRow
+          label="Exigido"
+          value={formatSkinsPrice(item.requiredBankBalance, currency)}
+        />
+      </div>
+      {!item.eligible ? (
+        <ThemeText tone="faint" className="text-xs">
+          Falta {formatSkinsPrice(item.bankShortfall, currency)} ·{' '}
+          {formatOpens(item.opensToUnlock)}
+        </ThemeText>
+      ) : null}
     </div>
   )
 }

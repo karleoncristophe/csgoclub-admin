@@ -149,17 +149,16 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
   {
     id: 'battle-1',
     category: 'caixas-economia',
-    question: 'Como funciona o bot de case battle (aggression e margem)?',
+    question: 'Como funciona o bot de case battle?',
     answer:
-      'O bot joga com as mesmas probs da caixa, com um bias leve controlado pelo campo Aggression (0–100).\n\nO valor recomendado é ~25: competitivo e estável, sem parecer “roubado” nem “fraco demais”. Aggression alta em Classic favorece itens mais caros; em Crazy, itens mais baratos.\n\nNa battle, humano e bot usam o mesmo hard-cap: ninguém tira item acima do preço da caixa (protege a casa de jackpots). O humano sorteia com aggression 0 (probs puras); o bot usa o bias configurado — se alguém tiver vantagem, é o bot.\n\nO assento de bot não paga abertura, então só retira do banco virtual, sem injetar nada. O saldo é travado no zero para os bots não deixarem o banco devendo.',
+      'O bot abre a caixa como um jogador normal: mesmas chances, mesma injeção no banco virtual e mesma retirada do item ganho. Conta nas aberturas reais e na margem da caixa.\n\nEle tem um saldo próprio (começa em 1.000.000). Cada rodada debita o preço da abertura; quando a grana acaba, o saldo volta para 1.000.000 e ele continua jogando.\n\nNão existe mais aggression nem bias — o sorteio é o mesmo do player. Se o bot vencer a battle, o pot humano fica com a casa (o bot não recebe inventário).',
     bullets: [
-      'Aggression ~25 = padrão justo/competitivo (bias leve nas probs da caixa).',
-      'Battle: hard-cap no preço da caixa para humano e bot (sem jackpot).',
-      'Humano: probs puras; bot: bias leve — vantagem, se houver, é da casa.',
-      'Bot retira do banco sem injetar; o saldo nunca fica negativo por bot.',
-      'Humano na battle: injeta o valor esperado e retira o item, como abertura normal.',
+      'Bot = mesma regra de drop e banco da abertura normal.',
+      'Saldo do bot: paga a abertura; recarrega para 1M quando acaba.',
+      'Conta em totalOpens, receita, payout e banco virtual da caixa.',
+      'Sorteio puro: mesmas probs do player, sem bias.',
     ],
-    tags: ['battle', 'bot', 'aggression', 'banco virtual', 'saldo', 'elegível'],
+    tags: ['battle', 'bot', 'banco virtual', 'saldo', 'caixa'],
   },
   {
     id: 'case-1',

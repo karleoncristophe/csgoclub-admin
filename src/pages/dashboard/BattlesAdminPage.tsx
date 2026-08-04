@@ -25,8 +25,14 @@ import {
   formatBattleMoney,
 } from './battles/battleUi'
 
-const DEFAULT_BOT_AGGRESSION = 25
 const BATTLES_PAGE_SIZE = 20
+
+function formatBotBalance(value: number | undefined) {
+  return (value ?? 0).toLocaleString('pt-BR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })
+}
 
 export default function BattlesAdminPage() {
   const { confirm } = useConfirm()
@@ -48,7 +54,6 @@ export default function BattlesAdminPage() {
   const [cancelBattle] = useCancelAdminBattleMutation()
 
   const [name, setName] = useState('')
-  const [aggression, setAggression] = useState(String(DEFAULT_BOT_AGGRESSION))
   const [weight, setWeight] = useState('1')
   const [error, setError] = useState<string | null>(null)
 
@@ -63,12 +68,11 @@ export default function BattlesAdminPage() {
     try {
       await createBot({
         name: name.trim(),
-        aggression: Number(aggression) || DEFAULT_BOT_AGGRESSION,
         weight: Number(weight) || 1,
         active: true,
       }).unwrap()
       setName('')
-      setAggression(String(DEFAULT_BOT_AGGRESSION))
+      setWeight('1')
     } catch (e) {
       setError(getErrorMessage(e))
     }
@@ -76,7 +80,7 @@ export default function BattlesAdminPage() {
 
   return (
     <div className="space-y-8">
-      <PageTitle subtitle="Bots justos (probs próximas da caixa) e histórico de case battles.">
+      <PageTitle subtitle="Bots abrem caixas como players e histórico de case battles.">
         Battles
       </PageTitle>
 
@@ -86,7 +90,7 @@ export default function BattlesAdminPage() {
         </ThemeText>
       ) : null}
 
-      <Surface className="space-y-4 p-4">
+      <Surface variant="card" className="space-y-4 !p-4">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-brand-600" />
           <ThemeText as="h2" className="text-lg font-semibold">
@@ -95,31 +99,26 @@ export default function BattlesAdminPage() {
         </div>
 
         <div className="flex flex-wrap items-end gap-3">
-          <label className="space-y-1 text-sm">
-            <span>Nome</span>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Crusher" />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span>Aggression (0-100)</span>
-            <Input
-              value={aggression}
-              onChange={(e) => setAggression(e.target.value)}
-              placeholder="25"
-            />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span>Peso</span>
-            <Input value={weight} onChange={(e) => setWeight(e.target.value)} />
-          </label>
+          <Input
+            label="Nome"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Crusher"
+          />
+          <Input
+            label="Peso"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+          />
           <Button disabled={creating || !name.trim()} onClick={handleCreate}>
             <Plus className="mr-1 h-4 w-4" />
             Criar bot
           </Button>
         </div>
         <ThemeText as="p" tone="secondary" className="text-xs">
-          Padrão sugerido: aggression {DEFAULT_BOT_AGGRESSION}. Peso = chance de ser escolhido
-          na vaga. Na battle, humano e bot têm hard-cap no preço da caixa (sem jackpot); o
-          humano sorteia com probs puras e o bot com o bias — se houver vantagem, é do bot.
+          O bot abre a caixa com as mesmas regras do jogador (banco virtual, margem e
+          chances). Tem saldo próprio que começa em 1.000.000 e recarrega quando acaba.
+          Peso = chance de ser escolhido na vaga.
         </ThemeText>
 
         <div className={listTable.wrap}>
@@ -127,7 +126,7 @@ export default function BattlesAdminPage() {
             <thead>
               <tr>
                 <th className={listTable.th}>Nome</th>
-                <th className={listTable.th}>Aggression</th>
+                <th className={listTable.th}>Saldo</th>
                 <th className={listTable.th}>Peso</th>
                 <th className={listTable.th}>Ativo</th>
                 <th className={listTable.th} />
@@ -151,29 +150,11 @@ export default function BattlesAdminPage() {
                   <tr key={bot._id}>
                     <td className={listTable.td}>{bot.name}</td>
                     <td className={listTable.td}>
-                      <Input
-                        className="w-20"
-                        defaultValue={String(bot.aggression)}
-                        onBlur={(e) => {
-                          const next = Number(e.target.value)
-                          if (
-                            !Number.isFinite(next) ||
-                            next === bot.aggression ||
-                            next < 0 ||
-                            next > 100
-                          ) {
-                            e.target.value = String(bot.aggression)
-                            return
-                          }
-                          void updateBot({
-                            id: bot._id,
-                            body: { aggression: next },
-                          })
-                        }}
-                      />
+                      {formatBotBalance(bot.balance)}
                     </td>
                     <td className={listTable.td}>
                       <Input
+                        label="Peso"
                         className="w-16"
                         defaultValue={String(bot.weight)}
                         onBlur={(e) => {
@@ -234,7 +215,7 @@ export default function BattlesAdminPage() {
         </div>
       </Surface>
 
-      <Surface className="space-y-4 p-4">
+      <Surface variant="card" className="space-y-4 !p-4">
         <div className="flex items-center justify-between gap-3">
           <ThemeText as="h2" className="text-lg font-semibold">
             Battles recentes

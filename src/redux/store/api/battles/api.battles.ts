@@ -6,7 +6,7 @@ export type AdminBattleBot = {
   _id: string
   name: string
   avatarUrl?: string
-  aggression: number
+  balance: number
   active: boolean
   weight: number
   createdAt?: string
@@ -84,7 +84,6 @@ export const battlesAdminApi = createApi({
       {
         name: string
         avatarUrl?: string
-        aggression?: number
         weight?: number
         active?: boolean
       }

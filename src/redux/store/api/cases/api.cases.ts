@@ -189,6 +189,8 @@ export const casesApi = createApi({
   reducerPath: 'casesApi',
   baseQuery: baseQueryWithReauth,
   tagTypes: ['Cases', 'Case'],
+  // Voltar para a listagem após criar/editar sempre confere com o servidor.
+  refetchOnMountOrArgChange: true,
   endpoints: (builder) => ({
     getCases: builder.query<LootCase[], void>({
       query: () => ({ url: CASES.ROOT, method: 'GET' }),
@@ -206,8 +208,20 @@ export const casesApi = createApi({
       query: (body) => ({ url: CASES.ROOT, method: 'POST', body }),
       invalidatesTags: ['Cases'],
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        await queryFulfilled
-        dispatch(caseVitrinesApi.util.invalidateTags(['CaseVitrines']))
+        try {
+          const { data: created } = await queryFulfilled
+          // Insere na lista na hora — sem esperar o refetch da invalidação.
+          dispatch(
+            casesApi.util.updateQueryData('getCases', undefined, (draft) => {
+              if (!draft.some((item) => item._id === created._id)) {
+                draft.unshift(created)
+              }
+            }),
+          )
+          dispatch(caseVitrinesApi.util.invalidateTags(['CaseVitrines']))
+        } catch {
+          // Erro da mutation: a UI já trata via unwrap.
+        }
       },
     }),
     updateCase: builder.mutation<LootCase, { id: string; body: UpdateCasePayload }>({
@@ -217,9 +231,22 @@ export const casesApi = createApi({
         body,
       }),
       invalidatesTags: (_result, _error, { id }) => ['Cases', { type: 'Case', id }],
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        await queryFulfilled
-        dispatch(caseVitrinesApi.util.invalidateTags(['CaseVitrines']))
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        try {
+          const { data: updated } = await queryFulfilled
+          dispatch(
+            casesApi.util.updateQueryData('getCases', undefined, (draft) => {
+              const index = draft.findIndex((item) => item._id === id)
+              if (index >= 0) draft[index] = updated
+            }),
+          )
+          dispatch(
+            casesApi.util.updateQueryData('getCaseById', id, () => updated),
+          )
+          dispatch(caseVitrinesApi.util.invalidateTags(['CaseVitrines']))
+        } catch {
+          // Erro da mutation: a UI já trata via unwrap.
+        }
       },
     }),
     deleteCase: builder.mutation<{ success: true }, string>({
@@ -228,6 +255,19 @@ export const casesApi = createApi({
         method: 'DELETE',
       }),
       invalidatesTags: ['Cases'],
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          casesApi.util.updateQueryData('getCases', undefined, (draft) => {
+            const index = draft.findIndex((item) => item._id === id)
+            if (index >= 0) draft.splice(index, 1)
+          }),
+        )
+        try {
+          await queryFulfilled
+        } catch {
+          patch.undo()
+        }
+      },
     }),
     duplicateCase: builder.mutation<LootCase, string>({
       query: (id) => ({
@@ -235,6 +275,20 @@ export const casesApi = createApi({
         method: 'POST',
       }),
       invalidatesTags: ['Cases'],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data: created } = await queryFulfilled
+          dispatch(
+            casesApi.util.updateQueryData('getCases', undefined, (draft) => {
+              if (!draft.some((item) => item._id === created._id)) {
+                draft.unshift(created)
+              }
+            }),
+          )
+        } catch {
+          // Erro da mutation: a UI já trata via unwrap.
+        }
+      },
     }),
   }),
 })

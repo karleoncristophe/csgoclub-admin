@@ -6,7 +6,11 @@ import { Input } from '@/components/ui/Input'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import type { CaseFormState } from './caseEditor.types'
-import { fieldError } from './caseEditor.utils'
+import {
+  fieldError,
+  formatNumberFieldValue,
+  parseNumberFieldValue,
+} from './caseEditor.utils'
 
 type CaseEditorPricingSectionProps = {
   formik: FormikProps<CaseFormState>
@@ -22,7 +26,7 @@ export function CaseEditorPricingSection({
   totalEV,
   embedded = false,
 }: CaseEditorPricingSectionProps) {
-  const { values, setFieldValue, handleChange, handleBlur, touched, errors } = formik
+  const { values, setFieldValue, handleBlur, touched, errors } = formik
 
   return (
     <EditorSectionShell embedded={embedded}>
@@ -43,9 +47,12 @@ export function CaseEditorPricingSection({
           min={0}
           max={99.99}
           step="0.01"
-          value={values.targetMarginPercent}
+          value={formatNumberFieldValue(values.targetMarginPercent)}
           onChange={(e) => {
-            void setFieldValue('targetMarginPercent', Number(e.target.value))
+            void setFieldValue(
+              'targetMarginPercent',
+              parseNumberFieldValue(e.target.value),
+            )
             void setFieldValue('listPriceManual', false)
             void setFieldValue('priceManual', false)
           }}
@@ -60,8 +67,13 @@ export function CaseEditorPricingSection({
           min={0}
           max={100}
           step="0.0001"
-          value={values.probabilityTargetPercent}
-          onChange={handleChange}
+          value={formatNumberFieldValue(values.probabilityTargetPercent)}
+          onChange={(e) => {
+            void setFieldValue(
+              'probabilityTargetPercent',
+              parseNumberFieldValue(e.target.value),
+            )
+          }}
           onBlur={handleBlur}
           error={fieldError(
             touched.probabilityTargetPercent,
@@ -86,9 +98,12 @@ export function CaseEditorPricingSection({
           min={0}
           max={100}
           step="0.01"
-          value={values.discountPercent}
+          value={formatNumberFieldValue(values.discountPercent)}
           onChange={(e) => {
-            void setFieldValue('discountPercent', Number(e.target.value))
+            void setFieldValue(
+              'discountPercent',
+              parseNumberFieldValue(e.target.value),
+            )
             void setFieldValue('priceManual', false)
           }}
           onBlur={handleBlur}

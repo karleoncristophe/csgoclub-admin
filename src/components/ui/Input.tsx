@@ -20,6 +20,8 @@ export function Input({
   id,
   className = '',
   endAdornment,
+  type,
+  onFocus,
   ...rest
 }: InputProps) {
   const uid = useId()
@@ -39,12 +41,21 @@ export function Input({
       <div className="relative">
         <input
           id={inputId}
+          type={type}
           className={`h-11 w-full rounded-xl border bg-white px-3.5 text-zinc-900 shadow-sm transition-colors placeholder:text-zinc-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 ${
             endAdornment ? 'pr-12' : ''
           } ${
             error ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15' : 'border-zinc-200'
           } ${className}`}
           {...rest}
+          onFocus={(event) => {
+            // Em type=number, digitar com "0" no campo vira "0500". Selecionar
+            // tudo no foco faz a digitação substituir o valor antigo.
+            if (type === 'number') {
+              event.currentTarget.select()
+            }
+            onFocus?.(event)
+          }}
         />
         {endAdornment ? (
           <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center">

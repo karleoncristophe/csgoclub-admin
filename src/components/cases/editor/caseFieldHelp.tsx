@@ -96,8 +96,8 @@ export const CASE_FIELD_HELP = {
     description: 'Se a caixa aparece no site para os jogadores.',
     details: (
       <>
-        <p><strong>Marcado</strong> — jogadores podem ver e abrir (se o site já publica caixas).</p>
-        <p><strong>Desmarcado</strong> — caixa fica só no admin; útil para montar e testar antes de lançar.</p>
+        <p><strong>Ativa</strong> — jogadores podem ver e abrir (se o site já publica caixas).</p>
+        <p><strong>Inativa</strong> — caixa fica só no admin; útil para montar e testar antes de lançar.</p>
       </>
     ),
   },

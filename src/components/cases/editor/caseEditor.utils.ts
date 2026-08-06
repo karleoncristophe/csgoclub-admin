@@ -52,6 +52,38 @@ export function fieldError(
   return touched && error ? error : undefined
 }
 
+/**
+ * Valor controlado de input numérico: sempre number limpo (sem "0500").
+ * String vazia só enquanto o campo está em branco de propósito.
+ */
+export function formatNumberFieldValue(value: unknown): number | '' {
+  if (value === '' || value == null) return ''
+  const raw = typeof value === 'number' ? value : Number(String(value).replace(',', '.'))
+  return Number.isFinite(raw) ? raw : ''
+}
+
+/** Interpreta o que o usuário digitou sem preservar zero à esquerda. */
+export function parseNumberFieldValue(raw: string): number {
+  const normalized = raw.trim().replace(',', '.')
+  if (
+    normalized === '' ||
+    normalized === '-' ||
+    normalized === '.' ||
+    normalized === '-.'
+  ) {
+    return 0
+  }
+  const num = Number(normalized)
+  return Number.isFinite(num) ? num : 0
+}
+
+/** Ao focar, seleciona tudo — digitar substitui o 0 em vez de virar 0500. */
+export function selectNumberInputOnFocus(
+  event: { currentTarget: HTMLInputElement },
+) {
+  event.currentTarget.select()
+}
+
 export function collectFormErrors(errors: unknown): string[] {
   if (!errors) return []
 

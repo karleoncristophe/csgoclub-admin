@@ -9,6 +9,7 @@ import { FieldHelpButton } from '@/components/ui/FieldHelpButton'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Surface } from '@/components/ui/Surface'
+import { Switch } from '@/components/ui/Switch'
 import { ThemeText } from '@/components/ui/ThemeText'
 import {
   SKINS_CURRENCY_OPTIONS,
@@ -32,7 +33,15 @@ export function CaseEditorGeneralSection({
   onCurrencyChange,
   onValueModeChange,
 }: CaseEditorGeneralSectionProps) {
-  const { values, setFieldValue, handleChange, handleBlur, touched, errors } = formik
+  const {
+    values,
+    setFieldValue,
+    setFieldTouched,
+    handleChange,
+    handleBlur,
+    touched,
+    errors,
+  } = formik
   const { data: vitrines = [] } = useGetCaseVitrinesQuery()
   const activeHelp = caseFieldProps('active')
   const imageHelp = caseFieldProps('caseImage')
@@ -71,27 +80,19 @@ export function CaseEditorGeneralSection({
             </option>
           ))}
         </Select>
-        <label className="flex items-center gap-3 self-end rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-800">
-          <input
-            type="checkbox"
-            name="active"
-            checked={values.active}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="h-4 w-4 rounded border-zinc-300 text-brand-600"
-          />
-          <span>
-            <span className="flex items-center gap-1.5">
-              <ThemeText as="span" tone="primary" className="text-sm font-medium">
-                Caixa ativa
-              </ThemeText>
-              <FieldHelpButton fieldHelp={activeHelp.fieldHelp} />
-            </span>
-            <ThemeText as="span" tone="faint" className="mt-0.5 block text-xs">
-              Exibida no site com o preço final
-            </ThemeText>
-          </span>
-        </label>
+        <Switch
+          label="Caixa ativa"
+          name="active"
+          checked={values.active}
+          onChange={(checked) => {
+            void setFieldValue('active', checked)
+          }}
+          onBlur={() => {
+            void setFieldTouched('active', true)
+          }}
+          description="Exibida no site com o preço final"
+          fieldHelp={activeHelp.fieldHelp}
+        />
       </div>
 
       <div className="mt-4">

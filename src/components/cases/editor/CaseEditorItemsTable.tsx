@@ -17,7 +17,11 @@ import {
   type CaseEconomyLedger,
   type CaseValueMode,
 } from '@/utils/caseEconomics'
-import { updateCaseDropItem } from './caseEditor.utils'
+import {
+  formatNumberFieldValue,
+  selectNumberInputOnFocus,
+  updateCaseDropItem,
+} from './caseEditor.utils'
 
 type CaseEditorItemsTableProps = {
   items: CaseDropItem[]
@@ -205,10 +209,11 @@ export function CaseEditorItemsTable({
                         min={0}
                         max={100}
                         step="0.0001"
-                        value={item.probability}
+                        value={formatNumberFieldValue(item.probability)}
                         onChange={(e) =>
                           handleProbabilityChange(item.skinName, e.target.value)
                         }
+                        onFocus={selectNumberInputOnFocus}
                         disabled={item.enabled === false}
                         className="w-24 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900"
                       />

@@ -20,7 +20,6 @@ import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle, SectionTitle } from '@/components/ui/Title'
 import { listTable, linkBrand } from '@/components/ui/listTable'
-import { userStatCardSpaciousClass } from '@/components/users/userPanelClasses'
 import { formatSkinsPrice, type SkinsCurrency } from '@/constants/skinsCurrency'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import {
@@ -64,50 +63,49 @@ function buildDailySeries(daily: AdminCaseDailyPoint[]): AdminCaseDailyPoint[] {
 
 function formatOpens(value: number | null) {
   if (value == null) return '—'
-  if (value === 0) return 'liberado'
+  if (value === 0) return 'já liberado'
   return `${value.toLocaleString('pt-BR')} abertura${value === 1 ? '' : 's'}`
 }
 
-function StatCard({
+function Metric({
   label,
   value,
   hint,
-  variant = 'default',
 }: {
   label: string
   value: string
-  hint: string
-  variant?: keyof typeof userStatCardSpaciousClass
+  hint?: string
 }) {
   return (
-    <div className={userStatCardSpaciousClass[variant]}>
+    <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/40 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
       <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
         {label}
       </ThemeText>
-      <ThemeText as="p" tone="primary" className="mt-2 text-xl font-bold sm:text-2xl">
+      <ThemeText as="p" tone="primary" className="mt-2 text-xl font-bold tabular-nums sm:text-2xl">
         {value}
       </ThemeText>
-      <ThemeText as="p" tone="faint" className="mt-2 text-xs leading-relaxed">
-        {hint}
-      </ThemeText>
+      {hint ? (
+        <ThemeText as="p" tone="faint" className="mt-1.5 text-xs leading-relaxed">
+          {hint}
+        </ThemeText>
+      ) : null}
     </div>
   )
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 py-2">
+    <div className="flex items-baseline justify-between gap-4 border-b border-zinc-100 py-2.5 last:border-0 dark:border-zinc-800/80">
       <ThemeText tone="secondary" className="text-sm">
         {label}
       </ThemeText>
-      <ThemeText tone="primary" className="text-sm font-medium">
+      <ThemeText tone="primary" className="text-sm font-medium tabular-nums">
         {value}
       </ThemeText>
     </div>
   )
 }
 
-/** Quanto do saldo exigido o banco já cobre. */
 function BankProgress({ ratio }: { ratio: number }) {
   const percent = Math.min(100, Math.max(0, ratio * 100))
   return (
@@ -116,30 +114,6 @@ function BankProgress({ ratio }: { ratio: number }) {
         className={`h-full rounded-full ${percent >= 100 ? 'bg-emerald-500' : 'bg-amber-500'}`}
         style={{ width: `${percent}%` }}
       />
-    </div>
-  )
-}
-
-function BankAmountRow({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string
-  value: string
-  highlight?: boolean
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <ThemeText tone="faint" className="text-[11px]">
-        {label}
-      </ThemeText>
-      <ThemeText
-        tone={highlight ? 'primary' : 'secondary'}
-        className={`text-xs tabular-nums ${highlight ? 'font-semibold' : ''}`}
-      >
-        {value}
-      </ThemeText>
     </div>
   )
 }
@@ -175,7 +149,8 @@ function EligibilityCell({
     )
   }
 
-  const ratio = item.requiredBankBalance > 0 ? bankBalance / item.requiredBankBalance : 1
+  const ratio =
+    item.requiredBankBalance > 0 ? bankBalance / item.requiredBankBalance : 1
 
   return (
     <div className="min-w-[11rem] space-y-1.5">
@@ -191,17 +166,9 @@ function EligibilityCell({
         </span>
       )}
       <BankProgress ratio={ratio} />
-      <div className="space-y-0.5">
-        <BankAmountRow
-          label="Acumulado"
-          value={formatSkinsPrice(bankBalance, currency)}
-          highlight
-        />
-        <BankAmountRow
-          label="Exigido"
-          value={formatSkinsPrice(item.requiredBankBalance, currency)}
-        />
-      </div>
+      <ThemeText tone="secondary" className="text-xs tabular-nums">
+        Precisa {formatSkinsPrice(item.requiredBankBalance, currency)}
+      </ThemeText>
       {!item.eligible ? (
         <ThemeText tone="faint" className="text-xs">
           Falta {formatSkinsPrice(item.bankShortfall, currency)} ·{' '}
@@ -251,7 +218,9 @@ export default function CaseDetailPage() {
   const { case: lootCase, bank, financials, items } = data
   const currency = lootCase.currency
   const money = (value: number) => formatSkinsPrice(value, currency)
-  const blockedCount = bank.enabledItemsCount - bank.eligibleItemsCount
+  const blockedCount = Math.max(0, bank.enabledItemsCount - bank.eligibleItemsCount)
+  const itemsPaidOut = items.reduce((sum, item) => sum + item.totalPaidOut, 0)
+  const itemsTimesWon = items.reduce((sum, item) => sum + item.timesWon, 0)
 
   return (
     <div className="space-y-6">
@@ -264,8 +233,8 @@ export default function CaseDetailPage() {
         <PageTitle
           subtitle={
             isSandbox
-              ? `/${lootCase.slug} · Visão Dev: números vindos apenas de aberturas de teste (influencer).`
-              : `/${lootCase.slug} · Visão Produção: números vindos apenas de aberturas reais.`
+              ? `/${lootCase.slug} · Visão Dev: só aberturas de teste (influencer).`
+              : `/${lootCase.slug} · Visão Produção: só aberturas reais.`
           }
         >
           {lootCase.name}
@@ -303,19 +272,13 @@ export default function CaseDetailPage() {
               </div>
             )}
           </div>
-          <div className="min-w-[16rem] flex-1 space-y-2">
+          <div className="min-w-[14rem] flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <TextBadge>{lootCase.active ? 'Ativa' : 'Inativa'}</TextBadge>
               <TextBadge>{currency}</TextBadge>
               <TextBadge>
                 {lootCase.valueMode === 'with_tax' ? 'Valor com taxa' : 'Valor base'}
               </TextBadge>
-              {lootCase.sharedCaseIds.length > 0 ? (
-                <TextBadge>
-                  Banco compartilhado com {lootCase.sharedCaseIds.length} caixa
-                  {lootCase.sharedCaseIds.length === 1 ? '' : 's'}
-                </TextBadge>
-              ) : null}
             </div>
             {lootCase.description ? (
               <ThemeText tone="secondary" className="text-sm leading-relaxed">
@@ -327,75 +290,95 @@ export default function CaseDetailPage() {
               {formatDateTime(lootCase.updatedAt)}
             </ThemeText>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className={userStatCardSpaciousClass.brand}>
-              <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
-                Preço da abertura
+        </div>
+
+        <div className="mt-5 grid gap-3 border-t border-zinc-100 pt-5 sm:grid-cols-2 lg:grid-cols-4 dark:border-zinc-800">
+          <div>
+            <ThemeText tone="faint" className="text-xs">
+              Preço da abertura
+            </ThemeText>
+            <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
+              {money(lootCase.price)}
+            </ThemeText>
+            {lootCase.discountPercent > 0 ? (
+              <ThemeText tone="faint" className="text-xs">
+                Tabela {money(lootCase.listPrice)} · −{lootCase.discountPercent}%
               </ThemeText>
-              <ThemeText as="p" tone="primary" className="mt-1 text-xl font-bold">
-                {money(lootCase.price)}
-              </ThemeText>
-              {lootCase.discountPercent > 0 ? (
-                <ThemeText as="p" tone="faint" className="mt-1 text-xs line-through">
-                  {money(lootCase.listPrice)}
-                </ThemeText>
-              ) : null}
-            </div>
-            <div className={userStatCardSpaciousClass.default}>
-              <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
-                Valor esperado
-              </ThemeText>
-              <ThemeText as="p" tone="primary" className="mt-1 text-xl font-bold">
-                {money(lootCase.expectedValue)}
-              </ThemeText>
-              <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-                Margem de design {lootCase.realMarginPercent.toFixed(2)}%
-              </ThemeText>
-            </div>
+            ) : null}
+          </div>
+          <div>
+            <ThemeText tone="faint" className="text-xs">
+              Valor esperado (VE)
+            </ThemeText>
+            <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
+              {money(lootCase.expectedValue)}
+            </ThemeText>
+            <ThemeText tone="faint" className="text-xs">
+              Soma do valor × chance de cada item
+            </ThemeText>
+          </div>
+          <div>
+            <ThemeText tone="faint" className="text-xs">
+              Margem alvo
+            </ThemeText>
+            <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
+              {lootCase.targetMarginPercent}%
+            </ThemeText>
+            <ThemeText tone="faint" className="text-xs">
+              Preço = VE × (1 + margem)
+            </ThemeText>
+          </div>
+          <div>
+            <ThemeText tone="faint" className="text-xs">
+              Margem real (design)
+            </ThemeText>
+            <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
+              {lootCase.realMarginPercent.toFixed(2)}%
+            </ThemeText>
+            <ThemeText tone="faint" className="text-xs">
+              (Preço − VE) ÷ VE
+            </ThemeText>
           </div>
         </div>
       </Surface>
 
       <Surface variant="card" className="!p-6">
-        <SectionTitle className="mb-4">Faturamento</SectionTitle>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <StatCard
-            label="Faturamento"
+        <SectionTitle className="mb-1">Resultado</SectionTitle>
+        <ThemeText tone="secondary" className="mb-5 text-sm leading-relaxed">
+          Quanto entrou nas aberturas, quanto saiu em prêmios e o que sobrou.
+        </ThemeText>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Metric
+            label="Entrou (faturamento)"
             value={money(financials.totalRevenue)}
-            hint={`${financials.totalOpens.toLocaleString('pt-BR')} abertura${financials.totalOpens === 1 ? '' : 's'} registrada${financials.totalOpens === 1 ? '' : 's'}`}
-            variant="brand"
+            hint={`${financials.totalOpens.toLocaleString('pt-BR')} abertura${financials.totalOpens === 1 ? '' : 's'}`}
           />
-          <StatCard
-            label="Prêmios pagos"
+          <Metric
+            label="Saiu (prêmios)"
             value={money(financials.totalPayout)}
-            hint={`Média de ${money(financials.averagePayoutPerOpen)} por abertura`}
+            hint={`Média ${money(financials.averagePayoutPerOpen)} por abertura`}
           />
-          <StatCard
-            label="Lucro"
+          <Metric
+            label="Sobrou (lucro)"
             value={money(financials.profit)}
-            hint="Faturamento menos os prêmios entregues"
-            variant={financials.profit < 0 ? 'rose' : 'default'}
-          />
-          <StatCard
-            label="Margem realizada"
-            value={`${financials.marginPercent.toFixed(2)}%`}
-            hint={`Meta de design: ${lootCase.targetMarginPercent}%`}
-          />
-          <StatCard
-            label="Maior prêmio"
-            value={money(financials.biggestPayout)}
-            hint={
-              financials.lastOpenAt
-                ? `Última abertura em ${formatDateTime(financials.lastOpenAt)}`
-                : 'Nenhuma abertura ainda'
-            }
-            variant="amber"
+            hint={`Margem realizada ${financials.marginPercent.toFixed(2)}% · meta ${lootCase.targetMarginPercent}%`}
           />
         </div>
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <Surface variant="insetPanelSm">
-            <ThemeText tone="overline" className="mb-2">
+        <div className="mt-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950/40">
+          <ThemeText tone="primary" className="text-sm font-medium tabular-nums">
+            {money(financials.totalRevenue)} − {money(financials.totalPayout)} ={' '}
+            {money(financials.profit)}
+          </ThemeText>
+          <ThemeText tone="faint" className="mt-1 text-xs">
+            Faturamento − prêmios pagos = lucro
+          </ThemeText>
+        </div>
+
+        <div className="mt-5 grid gap-6 border-t border-zinc-100 pt-5 lg:grid-cols-2 dark:border-zinc-800">
+          <div>
+            <ThemeText tone="overline" className="mb-1">
               Destino dos prêmios
             </ThemeText>
             <InfoRow
@@ -410,67 +393,91 @@ export default function CaseDetailPage() {
               label="Aguardando decisão"
               value={financials.pendingCount.toLocaleString('pt-BR')}
             />
-          </Surface>
-          <Surface variant="insetPanelSm">
-            <ThemeText tone="overline" className="mb-2">
-              Como o drop foi resolvido
+            <InfoRow
+              label="Soma"
+              value={(
+                financials.keptCount +
+                financials.convertedCount +
+                financials.pendingCount
+              ).toLocaleString('pt-BR')}
+            />
+          </div>
+          <div>
+            <ThemeText tone="overline" className="mb-1">
+              Como o drop saiu
             </ThemeText>
             <InfoRow
-              label="Item sorteado já elegível"
+              label="Direto (já liberado)"
               value={financials.directCount.toLocaleString('pt-BR')}
             />
             <InfoRow
-              label="Novo sorteio (banco travou o item)"
+              label="Re-sorteio (banco travou)"
               value={financials.rerollCount.toLocaleString('pt-BR')}
             />
             <InfoRow
-              label="Item de segurança (nada elegível)"
+              label="Fallback (nada liberado)"
               value={financials.fallbackCount.toLocaleString('pt-BR')}
             />
-          </Surface>
+            <InfoRow
+              label="Soma"
+              value={(
+                financials.directCount +
+                financials.rerollCount +
+                financials.fallbackCount
+              ).toLocaleString('pt-BR')}
+            />
+          </div>
         </div>
       </Surface>
 
       <Surface variant="card" className="!p-6">
         <SectionTitle className="mb-1">Banco virtual</SectionTitle>
-        <ThemeText tone="secondary" className="mb-4 text-sm leading-relaxed">
-          Cada abertura injeta {money(bank.injectionPerOpen)} no banco. Um item mais caro
-          que o preço da abertura só entra no sorteio quando o saldo alcança o valor de
-          mercado dele, e o valor sai do banco quando alguém ganha.
+        <ThemeText tone="secondary" className="mb-5 text-sm leading-relaxed">
+          Cada abertura coloca {money(bank.injectionPerOpen)} no banco (o VE da caixa).
+          Itens até o preço da abertura saem sempre. Itens mais caros só entram no
+          sorteio quando o saldo chega no valor deles — e esse valor sai do banco
+          quando alguém ganha.
         </ThemeText>
+
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            label="Saldo atual"
+          <Metric
+            label="Saldo agora"
             value={money(bank.balance)}
-            hint={`Injeção de ${money(bank.injectionPerOpen)} por abertura`}
-            variant={bank.balance < 0 ? 'rose' : 'brand'}
+            hint={`+ ${money(bank.injectionPerOpen)} por abertura`}
           />
-          <StatCard
+          <Metric
             label="Itens liberados"
             value={`${bank.eligibleItemsCount}/${bank.enabledItemsCount}`}
             hint={
               blockedCount > 0
-                ? `${blockedCount} item${blockedCount === 1 ? '' : 's'} esperando saldo`
-                : 'Todo o pool está liberado agora'
+                ? `${blockedCount} ainda precisam de saldo`
+                : 'Todos liberados neste momento'
             }
           />
-          <StatCard
-            label="Próximo a liberar"
-            value={bank.nextUnlock ? money(bank.nextUnlock.bankShortfall) : '—'}
+          <Metric
+            label="Próximo item"
+            value={
+              bank.nextUnlock
+                ? money(bank.nextUnlock.bankShortfall)
+                : 'Nada travado'
+            }
             hint={
               bank.nextUnlock
-                ? `${bank.nextUnlock.skinName} · ${formatOpens(bank.nextUnlock.opensToUnlock)}`
-                : 'Nada travado no momento'
+                ? `Falta esse valor para liberar ${bank.nextUnlock.skinName} · ${formatOpens(bank.nextUnlock.opensToUnlock)}`
+                : 'Nenhum item esperando saldo'
             }
-            variant="amber"
           />
-          <StatCard
-            label="Pool completo"
-            value={money(bank.targetForFullPool)}
+          <Metric
+            label="Para liberar tudo"
+            value={
+              bank.shortfallForFullPool > 0
+                ? money(bank.shortfallForFullPool)
+                : 'Pronto'
+            }
             hint={
               bank.shortfallForFullPool > 0
-                ? `Faltam ${money(bank.shortfallForFullPool)} · ${formatOpens(bank.opensToFullPool)}`
-                : 'Saldo já cobre o item mais caro'
+                ? `Saldo precisa chegar a ${money(bank.targetForFullPool)} · ${formatOpens(bank.opensToFullPool)}`
+                : `Saldo já cobre o item mais caro (${money(bank.targetForFullPool)})`
             }
           />
         </div>
@@ -481,7 +488,7 @@ export default function CaseDetailPage() {
           <div>
             <SectionTitle>Últimos 30 dias</SectionTitle>
             <ThemeText tone="secondary" className="mt-1 text-sm">
-              Quanto entrou nesta caixa por dia contra o valor dos prêmios entregues.
+              Faturamento do dia versus prêmios entregues.
             </ThemeText>
           </div>
           <ChartTypeSelector value={chart.variant} onChange={chart.onChange} />
@@ -499,11 +506,21 @@ export default function CaseDetailPage() {
       </Surface>
 
       <Surface variant="card" className="!p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <SectionTitle>Itens da caixa</SectionTitle>
-          <ThemeText tone="faint" className="text-xs">
-            Ordenados do mais barato ao mais caro — a ordem em que o banco vai liberando.
-          </ThemeText>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <SectionTitle>Itens da caixa</SectionTitle>
+            <ThemeText tone="secondary" className="mt-1 text-sm">
+              Do mais barato ao mais caro — a ordem em que o banco libera.
+            </ThemeText>
+          </div>
+          <div className="text-right">
+            <ThemeText tone="faint" className="text-xs">
+              Totais da tabela
+            </ThemeText>
+            <ThemeText tone="primary" className="text-sm font-medium tabular-nums">
+              {itemsTimesWon.toLocaleString('pt-BR')} saídas · {money(itemsPaidOut)} pagos
+            </ThemeText>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className={listTable.table}>
@@ -513,8 +530,8 @@ export default function CaseDetailPage() {
                 <th className={listTable.th}>Valor</th>
                 <th className={listTable.th}>Chance</th>
                 <th className={listTable.th}>Saiu</th>
-                <th className={listTable.th}>Pago em prêmios</th>
-                <th className={listTable.th}>Situação no banco</th>
+                <th className={listTable.th}>Pago</th>
+                <th className={listTable.th}>Banco</th>
               </tr>
             </thead>
             <tbody className={listTable.tbody}>
@@ -550,23 +567,23 @@ export default function CaseDetailPage() {
                     </div>
                   </td>
                   <td className={listTable.td}>
-                    <ThemeText tone="primary" className="text-sm font-medium">
+                    <ThemeText tone="primary" className="text-sm font-medium tabular-nums">
                       {money(item.price)}
                     </ThemeText>
-                    <ThemeText tone="faint" className="text-xs">
+                    <ThemeText tone="faint" className="text-xs tabular-nums">
                       VE {money(item.expectedValue)}
                     </ThemeText>
                   </td>
                   <td className={listTable.td}>
-                    <ThemeText tone="primary" className="text-sm">
+                    <ThemeText tone="primary" className="text-sm tabular-nums">
                       {item.probability.toFixed(4)}%
                     </ThemeText>
-                    <ThemeText tone="faint" className="text-xs">
+                    <ThemeText tone="faint" className="text-xs tabular-nums">
                       real {item.actualDropPercent.toFixed(4)}%
                     </ThemeText>
                   </td>
                   <td className={listTable.td}>
-                    <ThemeText tone="primary" className="text-sm">
+                    <ThemeText tone="primary" className="text-sm tabular-nums">
                       {item.timesWon.toLocaleString('pt-BR')}×
                     </ThemeText>
                     {item.lastWonAt ? (
@@ -575,7 +592,9 @@ export default function CaseDetailPage() {
                       </ThemeText>
                     ) : null}
                   </td>
-                  <td className={listTable.td}>{money(item.totalPaidOut)}</td>
+                  <td className={`${listTable.td} tabular-nums`}>
+                    {money(item.totalPaidOut)}
+                  </td>
                   <td className={listTable.td}>
                     <EligibilityCell
                       item={item}
@@ -586,6 +605,30 @@ export default function CaseDetailPage() {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="border-t border-zinc-200 dark:border-zinc-800">
+                <td className={listTable.td} colSpan={3}>
+                  <ThemeText tone="secondary" className="text-sm font-medium">
+                    Totais
+                  </ThemeText>
+                </td>
+                <td className={listTable.td}>
+                  <ThemeText tone="primary" className="text-sm font-semibold tabular-nums">
+                    {itemsTimesWon.toLocaleString('pt-BR')}×
+                  </ThemeText>
+                </td>
+                <td className={listTable.td}>
+                  <ThemeText tone="primary" className="text-sm font-semibold tabular-nums">
+                    {money(itemsPaidOut)}
+                  </ThemeText>
+                </td>
+                <td className={listTable.td}>
+                  <ThemeText tone="faint" className="text-xs">
+                    {bank.eligibleItemsCount}/{bank.enabledItemsCount} liberados
+                  </ThemeText>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </Surface>
@@ -596,7 +639,7 @@ export default function CaseDetailPage() {
           <div>
             <InfoRow label="Preço de tabela" value={money(lootCase.listPrice)} />
             <InfoRow label="Desconto" value={`${lootCase.discountPercent}%`} />
-            <InfoRow label="Preço sugerido" value={money(lootCase.suggestedPrice)} />
+            <InfoRow label="Preço final" value={money(lootCase.price)} />
             <InfoRow
               label="Margem alvo"
               value={`${lootCase.targetMarginPercent}%`}
@@ -609,7 +652,7 @@ export default function CaseDetailPage() {
             />
             <InfoRow
               label="Itens"
-              value={`${lootCase.enabledItemsCount} habilitados de ${lootCase.itemsCount}`}
+              value={`${lootCase.enabledItemsCount} ativos de ${lootCase.itemsCount}`}
             />
             <InfoRow
               label="Primeira abertura"

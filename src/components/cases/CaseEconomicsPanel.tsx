@@ -7,7 +7,6 @@ import {
   computeOpensToUnlockItem,
   computePriceAfterDiscount,
   computeProbabilitySum,
-  computeRealMargin,
   computeSuggestedSalePrice,
   computeTotalExpectedValue,
   computeAggregatedProbabilityTolerance,
@@ -66,10 +65,6 @@ export function CaseEconomicsPanel({
   )
   const priceAfterDiscount = roundPrice(
     computePriceAfterDiscount(listPrice, config.discountPercent),
-  )
-  const realMarginPercent = roundEconomics(
-    computeRealMargin(finalPrice, totalEV) * 100,
-    2,
   )
   const negativeMargin = finalPrice > 0 && finalPrice < totalEV
   const targetMargin = config.targetMarginPercent / 100
@@ -174,7 +169,7 @@ export function CaseEconomicsPanel({
           </div>
           <div>
             <ThemeText tone="label" className="text-xs uppercase">
-              Margem real (design)
+              Margem
             </ThemeText>
             <ThemeText
               tone="primary"
@@ -182,8 +177,13 @@ export function CaseEconomicsPanel({
                 negativeMargin ? 'text-red-600 dark:text-red-400' : ''
               }`}
             >
-              {realMarginPercent.toFixed(2)}%
+              {config.targetMarginPercent}%
             </ThemeText>
+            {negativeMargin ? (
+              <ThemeText tone="faint" className="text-xs text-red-600 dark:text-red-400">
+                Preço final abaixo do VE
+              </ThemeText>
+            ) : null}
           </div>
           <div>
             <ThemeText tone="label" className="text-xs uppercase">

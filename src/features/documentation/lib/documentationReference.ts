@@ -124,9 +124,9 @@ export const ECONOMY_PANEL_FIELDS: DocumentationEnumGroup = {
       hint: 'Ex.: 4/6 = quatro skins liberadas, duas ainda esperando o banco.',
     },
     {
-      code: 'Margem real',
-      label: 'Lucro no design',
-      hint: 'Diferença entre preço da caixa e VE — antes de abrir de verdade.',
+      code: 'Margem',
+      label: 'Margem alvo do editor',
+      hint: 'A mesma % que você definiu em Preço e margem — usada para sugerir o preço (VE × (1 + margem)).',
     },
     {
       code: 'Banco virtual',

@@ -292,7 +292,7 @@ export default function CaseDetailPage() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 border-t border-zinc-100 pt-5 sm:grid-cols-2 lg:grid-cols-4 dark:border-zinc-800">
+        <div className="mt-5 grid gap-3 border-t border-zinc-100 pt-5 sm:grid-cols-3 dark:border-zinc-800">
           <div>
             <ThemeText tone="faint" className="text-xs">
               Preço da abertura
@@ -319,24 +319,13 @@ export default function CaseDetailPage() {
           </div>
           <div>
             <ThemeText tone="faint" className="text-xs">
-              Margem alvo
+              Margem
             </ThemeText>
             <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
               {lootCase.targetMarginPercent}%
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
-              Preço = VE × (1 + margem)
-            </ThemeText>
-          </div>
-          <div>
-            <ThemeText tone="faint" className="text-xs">
-              Margem real (design)
-            </ThemeText>
-            <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
-              {lootCase.realMarginPercent.toFixed(2)}%
-            </ThemeText>
-            <ThemeText tone="faint" className="text-xs">
-              (Preço − VE) ÷ VE
+              A mesma margem alvo do editor · preço = VE × (1 + margem)
             </ThemeText>
           </div>
         </div>
@@ -362,7 +351,7 @@ export default function CaseDetailPage() {
           <Metric
             label="Sobrou (lucro)"
             value={money(financials.profit)}
-            hint={`Margem realizada ${financials.marginPercent.toFixed(2)}% · meta ${lootCase.targetMarginPercent}%`}
+            hint={`Das aberturas: ${financials.marginPercent.toFixed(2)}% · margem da caixa: ${lootCase.targetMarginPercent}%`}
           />
         </div>
 

@@ -152,7 +152,7 @@ export default function CasesPage() {
                     <td className={listTable.td}>
                       {formatSkinsPrice(lootCase.expectedValue, lootCase.currency)}
                     </td>
-                    <td className={listTable.td}>{lootCase.realMarginPercent.toFixed(2)}%</td>
+                    <td className={listTable.td}>{lootCase.targetMarginPercent}%</td>
                     <td className={listTable.td}>{lootCase.items.length}</td>
                     <td className={listTable.td}>
                       <ThemeText tone="primary" className="text-sm">

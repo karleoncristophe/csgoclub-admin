@@ -568,7 +568,7 @@ export default function CaseEditorPage() {
 
       <CollapsibleSection
         title="Resumo econômico"
-        description="VE, banco virtual, pool elegível e margem real em tempo real."
+        description="VE, banco virtual, pool elegível e margem do editor em tempo real."
         summary={
           <ThemeText as="span" tone="faint" className="text-xs">
             VE {formatSkinsPrice(totalEV, currency)}

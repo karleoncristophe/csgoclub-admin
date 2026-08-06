@@ -116,7 +116,7 @@ export const ECONOMY_PANEL_FIELDS: DocumentationEnumGroup = {
     {
       code: 'Preço sugerido',
       label: 'Sugestão automática',
-      hint: 'Baseado no VE + margem alvo que você definiu.',
+      hint: 'Baseado no VE × (1 + margem alvo) que você definiu.',
     },
     {
       code: 'Pool elegível',
@@ -153,7 +153,7 @@ export const CASE_EDITOR_FIELDS: DocumentationEnumGroup = {
     {
       code: 'Margem alvo',
       label: 'Lucro desejado da caixa',
-      hint: 'Sugere o preço e define quanto entra no banco por abertura (preço − margem).',
+      hint: 'Sugere o preço e define quanto entra no banco por abertura (preço ÷ (1 + margem)).',
     },
     {
       code: 'Elegível',

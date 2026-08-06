@@ -81,7 +81,7 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'Como o preço da caixa é definido?',
     answer:
-      'Você escolhe uma margem alvo (ex.: 30% de lucro). O sistema sugere um preço com base no VE.\n\nNa prática: preço sugerido = VE ÷ (1 − margem). Com VE de $0,15 e margem de 30%, a sugestão fica em torno de $0,21.\n\nVocê ainda pode aplicar desconto sobre o preço de tabela para chegar no preço final da vitrine.',
+      'Você escolhe uma margem alvo (ex.: 30% de lucro). O sistema sugere um preço com base no VE.\n\nNa prática: preço sugerido = VE × (1 + margem). Com VE de $0,15 e margem de 30%, a sugestão fica em $0,195.\n\nVocê ainda pode aplicar desconto sobre o preço de tabela para chegar no preço final da vitrine.',
     bullets: [
       'Preço de tabela = referência “de catálogo”.',
       'Preço final = o que o jogador paga de verdade.',
@@ -123,9 +123,9 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'O que é o banco virtual da caixa?',
     answer:
-      'É a reserva que decide quais itens podem sair. A cada abertura o sistema injeta nele apenas o valor esperado — o preço pago menos a margem alvo da casa (numa margem de 30%, os 70% restantes).\n\nO saldo é acumulativo: conforme sobe, os itens mais caros que o preço da abertura vão sendo liberados, do mais barato para o mais caro, assim que o saldo alcança o valor de mercado exato de cada um.\n\nQuando alguém ganha um item, o valor exato dele sai do banco. Se o saldo cair abaixo do preço de outros itens caros, eles voltam a travar na hora e só liberam quando novas aberturas recompuserem o saldo.\n\nNo painel do influencer o banco de teste é separado do banco real.',
+      'É a reserva que decide quais itens podem sair. A cada abertura o sistema injeta nele o valor esperado — o preço pago dividido por (1 + margem alvo). Com margem de 30%, injeta preço ÷ 1,30.\n\nO saldo é acumulativo: conforme sobe, os itens mais caros que o preço da abertura vão sendo liberados, do mais barato para o mais caro, assim que o saldo alcança o valor de mercado exato de cada um.\n\nQuando alguém ganha um item, o valor exato dele sai do banco. Se o saldo cair abaixo do preço de outros itens caros, eles voltam a travar na hora e só liberam quando novas aberturas recompuserem o saldo.\n\nNo painel do influencer o banco de teste é separado do banco real.',
     bullets: [
-      'Injeção por abertura = preço × (1 − margem alvo).',
+      'Injeção por abertura = preço ÷ (1 + margem alvo).',
       'Item até o preço da abertura sai sempre; mais caro exige saldo ≥ valor dele.',
       'Ganhar um item retira o valor exato do banco.',
       'Bot de battle só retira do banco (não paga abertura); o saldo para em zero.',

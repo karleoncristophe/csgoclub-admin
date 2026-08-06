@@ -75,11 +75,8 @@ export function estimateJapaSkinsPresetPricing(
       0,
     ),
   )
-  const margin = targetMarginPercent / 100
-  const divisor = 1 - margin
-  const listPrice = roundPrice(
-    divisor > 0 ? expectedValue / divisor : expectedValue,
-  )
+  const margin = Math.max(0, targetMarginPercent) / 100
+  const listPrice = roundPrice(expectedValue * (1 + margin))
   const finalPrice = roundPrice(
     listPrice * (1 - Math.min(100, Math.max(0, discountPercent)) / 100),
   )

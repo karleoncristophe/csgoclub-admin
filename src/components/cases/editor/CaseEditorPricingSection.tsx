@@ -32,8 +32,8 @@ export function CaseEditorPricingSection({
         </ThemeText>
       )}
       <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-        Com base no VE total dos itens ({formatSkinsPrice(totalEV, currency)}), a margem define o
-        preço de tabela e o desconto ajusta o valor final na vitrine.
+        Com base no VE total dos itens ({formatSkinsPrice(totalEV, currency)}), a margem soma em
+        cima do VE para formar o preço de tabela e o desconto ajusta o valor final na vitrine.
       </ThemeText>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Input
@@ -76,7 +76,7 @@ export function CaseEditorPricingSection({
           value={values.listPrice}
           onChange={() => {}}
           disabled
-          hint="Calculado: VE + margem alvo"
+          hint="Calculado: VE × (1 + margem)"
           {...caseFieldProps('listPrice')}
         />
         <Input

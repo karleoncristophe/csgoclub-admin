@@ -138,7 +138,7 @@ export function CaseEconomicsPanel({
               {formatSkinsPrice(suggestedPrice, currency)}
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
-              VE ÷ {(1 - targetMargin).toFixed(2)}
+              VE × {(1 + targetMargin).toFixed(2)}
             </ThemeText>
           </div>
           <div>

@@ -79,14 +79,13 @@ export function computeTotalExpectedValue(
   )
 }
 
+/** Preço de tabela = VE × (1 + margem%). Ex.: VE 10 e margem 20% → 12. */
 export function computeSuggestedSalePrice(
   totalExpectedValue: number,
   targetMarginPercent: number,
 ): number {
-  const targetMargin = targetMarginPercent / 100
-  const divisor = 1 - targetMargin
-  if (divisor <= 0) return totalExpectedValue
-  return totalExpectedValue / divisor
+  const targetMargin = Math.max(0, targetMarginPercent) / 100
+  return totalExpectedValue * (1 + targetMargin)
 }
 
 export function computePriceAfterDiscount(
@@ -97,28 +96,35 @@ export function computePriceAfterDiscount(
   return listPrice * (1 - discount)
 }
 
+/**
+ * Margem real em cima do VE: (preço − VE) / VE.
+ * Com preço = VE × (1 + margem) e sem desconto, bate a margem alvo.
+ */
 export function computeRealMargin(
   finalPrice: number,
   totalExpectedValue: number,
 ): number {
-  if (!Number.isFinite(finalPrice) || finalPrice <= 0) return 0
-  return (finalPrice - totalExpectedValue) / finalPrice
+  if (!Number.isFinite(finalPrice) || !Number.isFinite(totalExpectedValue)) {
+    return 0
+  }
+  if (totalExpectedValue <= 0) return 0
+  return (finalPrice - totalExpectedValue) / totalExpectedValue
 }
 
 /** Tolerância para comparar saldo com preço sem ruído de ponto flutuante. */
 const BANK_EPSILON = 1e-9
 
 /**
- * Valor Esperado injetado no banco virtual a cada abertura: o preço pago menos
- * a margem alvo da casa.
+ * Valor Esperado injetado no banco por abertura.
+ * Com preço = VE × (1 + margem), o VE equivalente é preço ÷ (1 + margem).
  */
 export function computeBankInjection(
   openPrice: number,
   targetMarginPercent: number,
 ): number {
   if (!Number.isFinite(openPrice) || openPrice <= 0) return 0
-  const margin = Math.min(100, Math.max(0, targetMarginPercent)) / 100
-  return roundPrice(openPrice * (1 - margin))
+  const margin = Math.max(0, targetMarginPercent) / 100
+  return roundPrice(openPrice / (1 + margin))
 }
 
 export function evaluateDropEligibility(input: {
@@ -201,7 +207,7 @@ export function computeBankTargetForFullPool(
 }
 
 /**
- * Preço de tabela é sempre VE ÷ (1 − margem). Itens acima do preço não puxam o
+ * Preço de tabela é sempre VE × (1 + margem). Itens acima do preço não puxam o
  * preço para cima: eles são liberados pelo banco virtual conforme ele acumula.
  */
 export function resolveFairCaseListPrice(input: {

@@ -141,7 +141,7 @@ export const CASE_FIELD_HELP = {
         <p>Item que custa <strong>até o preço da abertura</strong> não precisa de banco: a própria abertura paga por ele.</p>
         <HelpSection title="Item acima do preço da caixa">
           <p>Exige que o banco tenha o <strong>valor de mercado exato</strong> do item. Caixa $0,10 e skin $56,76 → o banco precisa alcançar $56,76.</p>
-          <p>A estimativa de aberturas usa o Valor Esperado injetado por abertura (preço − margem alvo). Ex.: $0,07 por abertura → ~811 aberturas.</p>
+          <p>A estimativa de aberturas usa o Valor Esperado injetado por abertura (preço ÷ (1 + margem)). Ex.: $0,07 por abertura → ~811 aberturas.</p>
         </HelpSection>
         <HelpSection title="Depois que alguém ganha">
           <p>O valor exato sai do banco. Se o saldo cair abaixo do preço de outros itens caros, eles voltam a ficar travados na hora.</p>
@@ -167,7 +167,7 @@ export const CASE_FIELD_HELP = {
         <p><strong>Sim</strong> — pode sair no sorteio (respeitando o Drop %).</p>
         <p><strong>Não (banco)</strong> — item mais caro que a abertura e o banco ainda não acumulou o valor dele. Chance zero até liberar.</p>
         <HelpSection title="Como o sistema decide">
-          <p>Cada abertura injeta o <strong>Valor Esperado</strong> (preço − margem alvo) no banco. Item até o preço da abertura sai sempre; item mais caro só quando o saldo alcança o valor de mercado dele.</p>
+          <p>Cada abertura injeta o <strong>Valor Esperado</strong> (preço ÷ (1 + margem)) no banco. Item até o preço da abertura sai sempre; item mais caro só quando o saldo alcança o valor de mercado dele.</p>
           <p>Os mais baratos liberam primeiro, e o saldo é acumulativo — vários itens podem ficar elegíveis ao mesmo tempo.</p>
         </HelpSection>
         <HelpSection title="Resgate e bloqueio">
@@ -199,7 +199,7 @@ export const CASE_FIELD_HELP = {
     description: 'Lucro que você quer ter em cima do VE — usado para sugerir o preço.',
     details: (
       <>
-        <p>Preço sugerido = <strong>VE ÷ (1 − margem)</strong>. Com VE $0,15 e margem 30% → sugerido ≈ $0,21.</p>
+        <p>Preço sugerido = <strong>VE × (1 + margem)</strong>. Com VE $0,15 e margem 30% → sugerido = $0,195.</p>
         <HelpSection title="Não bloqueia drops">
           <p>Isso só ajuda a calcular preço. Quem bloqueia item caro é a <strong>margem mín.</strong> de cada linha.</p>
         </HelpSection>
@@ -220,7 +220,7 @@ export const CASE_FIELD_HELP = {
   },
   listPrice: {
     title: 'Preço de tabela',
-    description: 'Calculado automaticamente: VE + margem alvo.',
+    description: 'Calculado automaticamente: VE × (1 + margem).',
     details: (
       <>
         <p>Valor de referência antes do desconto. Não é salvo no servidor — recalcula sempre que itens ou margem mudam.</p>

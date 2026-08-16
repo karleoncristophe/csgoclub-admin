@@ -2,11 +2,27 @@ import { createApi } from '@reduxjs/toolkit/query/react'
 import { BANNERS } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
 
+export type BannerLocale = 'pt-BR' | 'en-US' | 'es-ES'
+
+export type BannerLocaleTextMap = Partial<Record<BannerLocale, string>>
+
+export const BANNER_LOCALES: BannerLocale[] = ['pt-BR', 'en-US', 'es-ES']
+
+export const BANNER_LOCALE_LABELS: Record<BannerLocale, string> = {
+  'pt-BR': 'Português',
+  'en-US': 'English',
+  'es-ES': 'Español',
+}
+
 export type SiteBanner = {
   _id: string
   eyebrow?: string
   title?: string
   subtitle?: string
+  eyebrowI18n?: BannerLocaleTextMap
+  titleI18n?: BannerLocaleTextMap
+  subtitleI18n?: BannerLocaleTextMap
+  ctaLabelI18n?: BannerLocaleTextMap
   imageUrl: string
   ctaLabel?: string
   ctaHref?: string
@@ -20,6 +36,10 @@ export type CreateBannerPayload = {
   eyebrow?: string
   title?: string
   subtitle?: string
+  eyebrowI18n?: BannerLocaleTextMap
+  titleI18n?: BannerLocaleTextMap
+  subtitleI18n?: BannerLocaleTextMap
+  ctaLabelI18n?: BannerLocaleTextMap
   imageUrl: string
   ctaLabel?: string
   ctaHref?: string
@@ -32,6 +52,10 @@ export type UpdateBannerPayload = {
   eyebrow?: string
   title?: string
   subtitle?: string
+  eyebrowI18n?: BannerLocaleTextMap
+  titleI18n?: BannerLocaleTextMap
+  subtitleI18n?: BannerLocaleTextMap
+  ctaLabelI18n?: BannerLocaleTextMap
   imageUrl?: string
   ctaLabel?: string
   ctaHref?: string

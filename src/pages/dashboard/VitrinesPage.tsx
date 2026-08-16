@@ -17,12 +17,45 @@ import {
   useDeleteCaseVitrineMutation,
   useGetCaseVitrinesQuery,
   useUpdateCaseVitrineMutation,
+  VITRINE_LOCALE_LABELS,
+  VITRINE_LOCALES,
   type CaseVitrine,
+  type VitrineLocale,
+  type VitrineLocaleTextMap,
 } from '@/redux/store/api/case-vitrines/api.case-vitrines'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
 function normalizeName(name: string) {
   return name.trim()
+}
+
+function emptyLocaleMap(): Record<VitrineLocale, string> {
+  return { 'pt-BR': '', 'en-US': '', 'es-ES': '' }
+}
+
+function toLocalePayload(map: Record<VitrineLocale, string>): VitrineLocaleTextMap {
+  const result: VitrineLocaleTextMap = {}
+  for (const locale of VITRINE_LOCALES) {
+    const value = map[locale].trim()
+    if (value) result[locale] = value
+  }
+  return result
+}
+
+function preloadNameI18n(vitrine: CaseVitrine): Record<VitrineLocale, string> {
+  return {
+    'pt-BR': vitrine.nameI18n?.['pt-BR'] ?? vitrine.name ?? '',
+    'en-US': vitrine.nameI18n?.['en-US'] ?? '',
+    'es-ES': vitrine.nameI18n?.['es-ES'] ?? '',
+  }
+}
+
+function preloadDescriptionI18n(vitrine: CaseVitrine): Record<VitrineLocale, string> {
+  return {
+    'pt-BR': vitrine.descriptionI18n?.['pt-BR'] ?? vitrine.description ?? '',
+    'en-US': vitrine.descriptionI18n?.['en-US'] ?? '',
+    'es-ES': vitrine.descriptionI18n?.['es-ES'] ?? '',
+  }
 }
 
 function buildCaseOptions(
@@ -52,15 +85,15 @@ export default function VitrinesPage() {
   const [updateVitrine, updateState] = useUpdateCaseVitrineMutation()
   const [deleteVitrine, deleteState] = useDeleteCaseVitrineMutation()
 
-  const [createName, setCreateName] = useState('')
-  const [createDescription, setCreateDescription] = useState('')
+  const [createNameI18n, setCreateNameI18n] = useState(emptyLocaleMap)
+  const [createDescriptionI18n, setCreateDescriptionI18n] = useState(emptyLocaleMap)
   const [createSortOrder, setCreateSortOrder] = useState('0')
   const [createActive, setCreateActive] = useState(true)
   const [createCaseIds, setCreateCaseIds] = useState<string[]>([])
 
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editName, setEditName] = useState('')
-  const [editDescription, setEditDescription] = useState('')
+  const [editNameI18n, setEditNameI18n] = useState(emptyLocaleMap)
+  const [editDescriptionI18n, setEditDescriptionI18n] = useState(emptyLocaleMap)
   const [editSortOrder, setEditSortOrder] = useState('0')
   const [editActive, setEditActive] = useState(true)
   const [editIsHero, setEditIsHero] = useState(false)
@@ -72,14 +105,30 @@ export default function VitrinesPage() {
     [data],
   )
 
-  const createNameNormalized = normalizeName(createName)
+  const createNameNormalized = normalizeName(createNameI18n['pt-BR'])
   const createNameTaken = createNameNormalized
     ? existingNames.has(createNameNormalized.toLowerCase())
     : false
 
+  const setCreateNameLocale = (locale: VitrineLocale, value: string) => {
+    setCreateNameI18n((prev) => ({ ...prev, [locale]: value }))
+  }
+
+  const setCreateDescriptionLocale = (locale: VitrineLocale, value: string) => {
+    setCreateDescriptionI18n((prev) => ({ ...prev, [locale]: value }))
+  }
+
+  const setEditNameLocale = (locale: VitrineLocale, value: string) => {
+    setEditNameI18n((prev) => ({ ...prev, [locale]: value }))
+  }
+
+  const setEditDescriptionLocale = (locale: VitrineLocale, value: string) => {
+    setEditDescriptionI18n((prev) => ({ ...prev, [locale]: value }))
+  }
+
   const resetCreateForm = () => {
-    setCreateName('')
-    setCreateDescription('')
+    setCreateNameI18n(emptyLocaleMap())
+    setCreateDescriptionI18n(emptyLocaleMap())
     setCreateSortOrder('0')
     setCreateActive(true)
     setCreateCaseIds([])
@@ -87,8 +136,8 @@ export default function VitrinesPage() {
 
   const startEdit = (vitrine: CaseVitrine) => {
     setEditingId(vitrine._id)
-    setEditName(vitrine.name)
-    setEditDescription(vitrine.description ?? '')
+    setEditNameI18n(preloadNameI18n(vitrine))
+    setEditDescriptionI18n(preloadDescriptionI18n(vitrine))
     setEditSortOrder(String(vitrine.sortOrder))
     setEditActive(vitrine.active)
     setEditIsHero(Boolean(vitrine.isHero))
@@ -103,8 +152,8 @@ export default function VitrinesPage() {
 
   const cancelEdit = () => {
     setEditingId(null)
-    setEditName('')
-    setEditDescription('')
+    setEditNameI18n(emptyLocaleMap())
+    setEditDescriptionI18n(emptyLocaleMap())
     setEditSortOrder('0')
     setEditActive(true)
     setEditIsHero(false)
@@ -115,10 +164,16 @@ export default function VitrinesPage() {
     e.preventDefault()
     if (!createNameNormalized || createNameTaken) return
 
+    const nameI18n = toLocalePayload(createNameI18n)
+    const descriptionI18n = toLocalePayload(createDescriptionI18n)
+    const description = createDescriptionI18n['pt-BR'].trim() || undefined
+
     try {
       await createVitrine({
         name: createNameNormalized,
-        description: createDescription.trim() || undefined,
+        description,
+        nameI18n,
+        descriptionI18n,
         sortOrder: Number(createSortOrder) || 0,
         active: createActive,
         caseIds: createCaseIds,
@@ -130,11 +185,20 @@ export default function VitrinesPage() {
   }
 
   const handleSaveEdit = async (id: string) => {
+    const name = normalizeName(editNameI18n['pt-BR'])
+    if (!name) return
+
+    const nameI18n = toLocalePayload(editNameI18n)
+    const descriptionI18n = toLocalePayload(editDescriptionI18n)
+    const description = editDescriptionI18n['pt-BR'].trim() || undefined
+
     try {
       await updateVitrine({
         id,
-        name: normalizeName(editName),
-        description: editDescription.trim() || undefined,
+        name,
+        description,
+        nameI18n,
+        descriptionI18n,
         sortOrder: Number(editSortOrder) || 0,
         active: editActive,
         caseIds: editCaseIds,
@@ -213,6 +277,55 @@ export default function VitrinesPage() {
     )
   }
 
+  const renderLocaleTitleFields = (
+    values: Record<VitrineLocale, string>,
+    onChange: (locale: VitrineLocale, value: string) => void,
+    namePrefix: string,
+  ) => (
+    <div className="grid gap-4 md:grid-cols-3">
+      {VITRINE_LOCALES.map((locale) => (
+        <Input
+          key={`${namePrefix}-title-${locale}`}
+          label={
+            locale === 'pt-BR'
+              ? `Título (${locale})`
+              : `Título (${VITRINE_LOCALE_LABELS[locale]})`
+          }
+          name={`${namePrefix}Name-${locale}`}
+          placeholder={locale === 'pt-BR' ? 'Ex.: Edição Limitada' : undefined}
+          value={values[locale]}
+          onChange={(e) => onChange(locale, e.target.value)}
+          required={locale === 'pt-BR'}
+        />
+      ))}
+    </div>
+  )
+
+  const renderLocaleDescriptionFields = (
+    values: Record<VitrineLocale, string>,
+    onChange: (locale: VitrineLocale, value: string) => void,
+    namePrefix: string,
+  ) => (
+    <div className="grid gap-4 md:grid-cols-3">
+      {VITRINE_LOCALES.map((locale) => (
+        <Input
+          key={`${namePrefix}-desc-${locale}`}
+          label={`Descrição (${VITRINE_LOCALE_LABELS[locale]})`}
+          name={`${namePrefix}Description-${locale}`}
+          placeholder={
+            locale === 'pt-BR'
+              ? 'Texto curto exibido abaixo do título da seção'
+              : undefined
+          }
+          value={values[locale]}
+          onChange={(e) => onChange(locale, e.target.value)}
+        />
+      ))}
+    </div>
+  )
+
+  const editNameNormalized = normalizeName(editNameI18n['pt-BR'])
+
   return (
     <div className="space-y-6">
       <PageTitle subtitle="A vitrine Hero é fixa e alimenta o banner da home. As demais agrupam seções do catálogo.">
@@ -229,14 +342,15 @@ export default function VitrinesPage() {
         </ThemeText>
 
         <form onSubmit={handleCreate} className="space-y-4">
+          {renderLocaleTitleFields(createNameI18n, setCreateNameLocale, 'create')}
+
+          {renderLocaleDescriptionFields(
+            createDescriptionI18n,
+            setCreateDescriptionLocale,
+            'create',
+          )}
+
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Input
-              label="Nome da vitrine"
-              name="createName"
-              placeholder="Ex.: Edição Limitada"
-              value={createName}
-              onChange={(e) => setCreateName(e.target.value)}
-            />
             <Input
               label="Ordem no site"
               name="createSortOrder"
@@ -255,14 +369,6 @@ export default function VitrinesPage() {
             </div>
           </div>
 
-          <Input
-            label="Descrição (opcional)"
-            name="createDescription"
-            placeholder="Texto curto exibido abaixo do título da seção"
-            value={createDescription}
-            onChange={(e) => setCreateDescription(e.target.value)}
-          />
-
           {createNameTaken ? (
             <ThemeText as="p" tone="danger" className="text-sm">
               Já existe uma vitrine com este nome.
@@ -273,7 +379,7 @@ export default function VitrinesPage() {
             renderCasePicker(createCaseIds, setCreateCaseIds, createState.isLoading, {})
           ) : (
             <ThemeText as="p" tone="faint" className="text-sm">
-              Informe o nome da vitrine para buscar e adicionar caixas.
+              Informe o título (pt-BR) da vitrine para buscar e adicionar caixas.
             </ThemeText>
           )}
 
@@ -335,12 +441,17 @@ export default function VitrinesPage() {
                       <tr key={vitrine._id} className={listTable.tr}>
                         <td colSpan={5} className={listTable.td}>
                           <div className="space-y-4 py-2">
+                            {renderLocaleTitleFields(
+                              editNameI18n,
+                              setEditNameLocale,
+                              'edit',
+                            )}
+                            {renderLocaleDescriptionFields(
+                              editDescriptionI18n,
+                              setEditDescriptionLocale,
+                              'edit',
+                            )}
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                              <Input
-                                label="Nome"
-                                value={editName}
-                                onChange={(e) => setEditName(e.target.value)}
-                              />
                               <Input
                                 label="Ordem"
                                 type="number"
@@ -356,11 +467,6 @@ export default function VitrinesPage() {
                                 />
                               </div>
                             </div>
-                            <Input
-                              label="Descrição"
-                              value={editDescription}
-                              onChange={(e) => setEditDescription(e.target.value)}
-                            />
                             {editIsHero ? (
                               <ThemeText as="p" tone="secondary" className="text-sm">
                                 Esta é a vitrine Hero: as caixas abaixo aparecem na faixa do
@@ -382,6 +488,7 @@ export default function VitrinesPage() {
                                 size="sm"
                                 onClick={() => handleSaveEdit(vitrine._id)}
                                 isLoading={updateState.isLoading}
+                                disabled={!editNameNormalized}
                               >
                                 Salvar
                               </Button>

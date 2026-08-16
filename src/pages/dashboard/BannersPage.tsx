@@ -17,30 +17,69 @@ import { PageTitle } from '@/components/ui/Title'
 import { listTable } from '@/components/ui/listTable'
 import { uploadSingleFile } from '@/lib/upload'
 import {
+  BANNER_LOCALE_LABELS,
+  BANNER_LOCALES,
   useCreateBannerMutation,
   useDeleteBannerMutation,
   useGetBannersQuery,
   useUpdateBannerMutation,
+  type BannerLocale,
+  type BannerLocaleTextMap,
   type SiteBanner,
 } from '@/redux/store/api/banners/api.banners'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
+type LocaleTextMap = Record<BannerLocale, string>
+
 type BannerFormState = {
-  eyebrow: string
-  title: string
-  subtitle: string
-  ctaLabel: string
+  eyebrowI18n: LocaleTextMap
+  titleI18n: LocaleTextMap
+  subtitleI18n: LocaleTextMap
+  ctaLabelI18n: LocaleTextMap
   ctaHref: string
   sortOrder: string
   active: boolean
   image: BannerImageValue
 }
 
+function emptyLocaleMap(): LocaleTextMap {
+  return { 'pt-BR': '', 'en-US': '', 'es-ES': '' }
+}
+
+function toLocalePayload(map: LocaleTextMap): BannerLocaleTextMap {
+  const result: BannerLocaleTextMap = {}
+  for (const locale of BANNER_LOCALES) {
+    const value = map[locale].trim()
+    if (value) result[locale] = value
+  }
+  return result
+}
+
+function preloadFieldI18n(
+  banner: SiteBanner,
+  i18nKey: 'eyebrowI18n' | 'titleI18n' | 'subtitleI18n' | 'ctaLabelI18n',
+  fallbackKey: 'eyebrow' | 'title' | 'subtitle' | 'ctaLabel',
+): LocaleTextMap {
+  const i18n = banner[i18nKey]
+  const fallback = banner[fallbackKey] ?? ''
+  const result = emptyLocaleMap()
+  for (const locale of BANNER_LOCALES) {
+    result[locale] = i18n?.[locale] ?? (locale === 'pt-BR' ? fallback : '')
+  }
+  return result
+}
+
+function localeFieldLabel(base: string, locale: BannerLocale) {
+  return locale === 'pt-BR'
+    ? `${base} (${locale})`
+    : `${base} (${BANNER_LOCALE_LABELS[locale]})`
+}
+
 const emptyForm = (): BannerFormState => ({
-  eyebrow: '',
-  title: '',
-  subtitle: '',
-  ctaLabel: '',
+  eyebrowI18n: emptyLocaleMap(),
+  titleI18n: emptyLocaleMap(),
+  subtitleI18n: emptyLocaleMap(),
+  ctaLabelI18n: emptyLocaleMap(),
   ctaHref: '',
   sortOrder: '0',
   active: true,
@@ -49,14 +88,26 @@ const emptyForm = (): BannerFormState => ({
 
 function formFromBanner(banner: SiteBanner): BannerFormState {
   return {
-    eyebrow: banner.eyebrow ?? '',
-    title: banner.title ?? '',
-    subtitle: banner.subtitle ?? '',
-    ctaLabel: banner.ctaLabel ?? '',
+    eyebrowI18n: preloadFieldI18n(banner, 'eyebrowI18n', 'eyebrow'),
+    titleI18n: preloadFieldI18n(banner, 'titleI18n', 'title'),
+    subtitleI18n: preloadFieldI18n(banner, 'subtitleI18n', 'subtitle'),
+    ctaLabelI18n: preloadFieldI18n(banner, 'ctaLabelI18n', 'ctaLabel'),
     ctaHref: banner.ctaHref ?? '',
     sortOrder: String(banner.sortOrder ?? 0),
     active: banner.active,
     image: banner.imageUrl,
+  }
+}
+
+function setLocaleField(
+  form: BannerFormState,
+  field: 'eyebrowI18n' | 'titleI18n' | 'subtitleI18n' | 'ctaLabelI18n',
+  locale: BannerLocale,
+  value: string,
+): BannerFormState {
+  return {
+    ...form,
+    [field]: { ...form[field], [locale]: value },
   }
 }
 
@@ -104,6 +155,24 @@ export default function BannersPage() {
     return previousUrl
   }
 
+  const buildTextPayload = (form: BannerFormState) => {
+    const eyebrowI18n = toLocalePayload(form.eyebrowI18n)
+    const titleI18n = toLocalePayload(form.titleI18n)
+    const subtitleI18n = toLocalePayload(form.subtitleI18n)
+    const ctaLabelI18n = toLocalePayload(form.ctaLabelI18n)
+
+    return {
+      eyebrow: form.eyebrowI18n['pt-BR'].trim() || undefined,
+      title: form.titleI18n['pt-BR'].trim() || undefined,
+      subtitle: form.subtitleI18n['pt-BR'].trim() || undefined,
+      ctaLabel: form.ctaLabelI18n['pt-BR'].trim() || undefined,
+      eyebrowI18n,
+      titleI18n,
+      subtitleI18n,
+      ctaLabelI18n,
+    }
+  }
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormError(null)
@@ -121,10 +190,7 @@ export default function BannersPage() {
       }
 
       await createBanner({
-        eyebrow: createForm.eyebrow.trim() || undefined,
-        title: createForm.title.trim() || undefined,
-        subtitle: createForm.subtitle.trim() || undefined,
-        ctaLabel: createForm.ctaLabel.trim() || undefined,
+        ...buildTextPayload(createForm),
         ctaHref: createForm.ctaHref.trim() || undefined,
         sortOrder: Number(createForm.sortOrder) || 0,
         active: createForm.active,
@@ -149,10 +215,7 @@ export default function BannersPage() {
 
       await updateBanner({
         id,
-        eyebrow: editForm.eyebrow.trim() || undefined,
-        title: editForm.title.trim() || undefined,
-        subtitle: editForm.subtitle.trim() || undefined,
-        ctaLabel: editForm.ctaLabel.trim() || undefined,
+        ...buildTextPayload(editForm),
         ctaHref: editForm.ctaHref.trim() || undefined,
         sortOrder: Number(editForm.sortOrder) || 0,
         active: editForm.active,
@@ -188,6 +251,25 @@ export default function BannersPage() {
     }
   }
 
+  const renderLocaleInputs = (
+    form: BannerFormState,
+    setForm: (next: BannerFormState) => void,
+    disabled: boolean,
+    field: 'eyebrowI18n' | 'titleI18n' | 'subtitleI18n' | 'ctaLabelI18n',
+    baseLabel: string,
+    placeholderPt?: string,
+  ) =>
+    BANNER_LOCALES.map((locale) => (
+      <Input
+        key={`${field}-${locale}`}
+        label={localeFieldLabel(baseLabel, locale)}
+        placeholder={locale === 'pt-BR' ? placeholderPt : undefined}
+        value={form[field][locale]}
+        disabled={disabled}
+        onChange={(e) => setForm(setLocaleField(form, field, locale, e.target.value))}
+      />
+    ))
+
   const renderFields = (
     form: BannerFormState,
     setForm: (next: BannerFormState) => void,
@@ -201,27 +283,30 @@ export default function BannersPage() {
         aspectRatio="21:9"
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <Input
-          label="Texto acima do título (opcional)"
-          placeholder="Ex.: Evento, Passe de Batalha"
-          value={form.eyebrow}
-          disabled={disabled}
-          onChange={(e) => setForm({ ...form, eyebrow: e.target.value })}
-        />
-        <Input
-          label="Título (opcional)"
-          placeholder="Ex.: Campeonato CS2Club"
-          value={form.title}
-          disabled={disabled}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-        />
-        <Input
-          label="Texto do botão (opcional)"
-          placeholder="Ex.: Ir para o evento"
-          value={form.ctaLabel}
-          disabled={disabled}
-          onChange={(e) => setForm({ ...form, ctaLabel: e.target.value })}
-        />
+        {renderLocaleInputs(
+          form,
+          setForm,
+          disabled,
+          'eyebrowI18n',
+          'Eyebrow',
+          'Ex.: Evento, Passe de Batalha',
+        )}
+        {renderLocaleInputs(
+          form,
+          setForm,
+          disabled,
+          'titleI18n',
+          'Título',
+          'Ex.: Campeonato CS2Club',
+        )}
+        {renderLocaleInputs(
+          form,
+          setForm,
+          disabled,
+          'ctaLabelI18n',
+          'Texto do botão',
+          'Ex.: Ir para o evento',
+        )}
         <Input
           label="Link do botão (opcional)"
           placeholder="Ex.: /battles ou https://…"
@@ -247,13 +332,16 @@ export default function BannersPage() {
           />
         </div>
       </div>
-      <Input
-        label="Subtítulo (opcional)"
-        placeholder="Texto curto abaixo do botão"
-        value={form.subtitle}
-        disabled={disabled}
-        onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
-      />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {renderLocaleInputs(
+          form,
+          setForm,
+          disabled,
+          'subtitleI18n',
+          'Subtítulo',
+          'Texto curto abaixo do botão',
+        )}
+      </div>
     </div>
   )
 
@@ -268,8 +356,8 @@ export default function BannersPage() {
           Novo banner
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-          Envie a arte, recorte em 21:9 e defina título/CTA opcionais. A ordem menor aparece
-          primeiro.
+          Envie a arte, recorte em 21:9 e defina título/CTA opcionais nos 3 idiomas. A ordem menor
+          aparece primeiro.
         </ThemeText>
 
         <form onSubmit={handleCreate} className="space-y-4">

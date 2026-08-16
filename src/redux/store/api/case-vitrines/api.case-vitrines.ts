@@ -3,11 +3,25 @@ import { CASE_VITRINES } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
 import { casesApi } from '@/redux/store/api/cases/api.cases'
 
+export type VitrineLocale = 'pt-BR' | 'en-US' | 'es-ES'
+
+export type VitrineLocaleTextMap = Partial<Record<VitrineLocale, string>>
+
+export const VITRINE_LOCALES: VitrineLocale[] = ['pt-BR', 'en-US', 'es-ES']
+
+export const VITRINE_LOCALE_LABELS: Record<VitrineLocale, string> = {
+  'pt-BR': 'Português',
+  'en-US': 'English',
+  'es-ES': 'Español',
+}
+
 export type CaseVitrine = {
   _id: string
   name: string
   slug: string
   description?: string
+  nameI18n?: VitrineLocaleTextMap
+  descriptionI18n?: VitrineLocaleTextMap
   sortOrder: number
   active: boolean
   isHero?: boolean
@@ -24,6 +38,8 @@ export type CaseVitrineDetail = CaseVitrine & {
 export type CreateCaseVitrinePayload = {
   name: string
   description?: string
+  nameI18n?: VitrineLocaleTextMap
+  descriptionI18n?: VitrineLocaleTextMap
   sortOrder?: number
   active?: boolean
   caseIds?: string[]
@@ -33,6 +49,8 @@ export type UpdateCaseVitrinePayload = {
   id: string
   name?: string
   description?: string
+  nameI18n?: VitrineLocaleTextMap
+  descriptionI18n?: VitrineLocaleTextMap
   sortOrder?: number
   active?: boolean
   caseIds?: string[]

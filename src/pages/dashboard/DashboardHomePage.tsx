@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { useGetAdminDashboardMetricsQuery } from '@/redux/store/api/metrics/api.metrics'
+import { useGetAdminDashboardMetricsQuery, useGetAdminOnlineMetricsQuery } from '@/redux/store/api/metrics/api.metrics'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import { Button } from '@/components/ui/Button'
 import {
@@ -115,6 +115,12 @@ export default function DashboardHomePage() {
     skip: !apiRange,
   })
 
+  const { data: onlineMetrics } = useGetAdminOnlineMetricsQuery(undefined, {
+    pollingInterval: 10_000,
+  })
+
+  const liveOnlineCount = onlineMetrics?.onlineCount ?? metrics?.onlineCount
+
   const bucketLabel =
     metrics?.seriesGranularity === 'month' ? 'mês' : 'dia'
 
@@ -190,6 +196,16 @@ export default function DashboardHomePage() {
           <ThemeText as="p" tone="danger" className="mb-4 mt-4 text-sm">
             {getErrorMessage(error)}
           </ThemeText>
+        ) : null}
+
+        {typeof liveOnlineCount === 'number' ? (
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <MetricTile
+              label="Online agora"
+              value={liveOnlineCount}
+              hint="Presença em tempo real no site (Socket.io /presence)"
+            />
+          </div>
         ) : null}
 
         {isLoading && queryOk ? (

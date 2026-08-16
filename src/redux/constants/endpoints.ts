@@ -72,6 +72,7 @@ export const BANNERS = {
 
 export const METRICS = {
   DASHBOARD: '/admin/metrics/dashboard',
+  ONLINE: '/admin/metrics/online',
 } as const
 
 export const COUPONS = {

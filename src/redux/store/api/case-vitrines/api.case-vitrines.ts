@@ -10,6 +10,8 @@ export type CaseVitrine = {
   description?: string
   sortOrder: number
   active: boolean
+  isHero?: boolean
+  heroCaseIds?: string[]
   casesCount: number
   createdAt?: string
   updatedAt?: string

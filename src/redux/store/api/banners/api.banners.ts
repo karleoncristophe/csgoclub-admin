@@ -4,6 +4,7 @@ import { baseQueryWithReauth } from '@/redux/store/api/global.api'
 
 export type SiteBanner = {
   _id: string
+  eyebrow?: string
   title?: string
   subtitle?: string
   imageUrl: string
@@ -16,6 +17,7 @@ export type SiteBanner = {
 }
 
 export type CreateBannerPayload = {
+  eyebrow?: string
   title?: string
   subtitle?: string
   imageUrl: string
@@ -27,6 +29,7 @@ export type CreateBannerPayload = {
 
 export type UpdateBannerPayload = {
   id: string
+  eyebrow?: string
   title?: string
   subtitle?: string
   imageUrl?: string

@@ -27,8 +27,13 @@ export type AdminDashboardMetricsResponse = {
   startDate: string
   endDate: string
   seriesGranularity: AdminMetricsSeriesGranularity
+  onlineCount: number
   totals: AdminDashboardMetricsTotals
   series: AdminDashboardMetricsSeriesRow[]
+}
+
+export type AdminOnlineMetricsResponse = {
+  onlineCount: number
 }
 
 export type AdminDashboardMetricsQuery = {

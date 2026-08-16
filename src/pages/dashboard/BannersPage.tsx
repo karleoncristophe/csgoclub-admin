@@ -26,6 +26,7 @@ import {
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
 type BannerFormState = {
+  eyebrow: string
   title: string
   subtitle: string
   ctaLabel: string
@@ -36,6 +37,7 @@ type BannerFormState = {
 }
 
 const emptyForm = (): BannerFormState => ({
+  eyebrow: '',
   title: '',
   subtitle: '',
   ctaLabel: '',
@@ -47,6 +49,7 @@ const emptyForm = (): BannerFormState => ({
 
 function formFromBanner(banner: SiteBanner): BannerFormState {
   return {
+    eyebrow: banner.eyebrow ?? '',
     title: banner.title ?? '',
     subtitle: banner.subtitle ?? '',
     ctaLabel: banner.ctaLabel ?? '',
@@ -118,6 +121,7 @@ export default function BannersPage() {
       }
 
       await createBanner({
+        eyebrow: createForm.eyebrow.trim() || undefined,
         title: createForm.title.trim() || undefined,
         subtitle: createForm.subtitle.trim() || undefined,
         ctaLabel: createForm.ctaLabel.trim() || undefined,
@@ -145,6 +149,7 @@ export default function BannersPage() {
 
       await updateBanner({
         id,
+        eyebrow: editForm.eyebrow.trim() || undefined,
         title: editForm.title.trim() || undefined,
         subtitle: editForm.subtitle.trim() || undefined,
         ctaLabel: editForm.ctaLabel.trim() || undefined,
@@ -197,8 +202,15 @@ export default function BannersPage() {
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Input
+          label="Texto acima do título (opcional)"
+          placeholder="Ex.: Evento, Passe de Batalha"
+          value={form.eyebrow}
+          disabled={disabled}
+          onChange={(e) => setForm({ ...form, eyebrow: e.target.value })}
+        />
+        <Input
           label="Título (opcional)"
-          placeholder="Ex.: Passe de Batalha EWC 26"
+          placeholder="Ex.: Campeonato CS2Club"
           value={form.title}
           disabled={disabled}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -368,6 +380,11 @@ export default function BannersPage() {
                         <ThemeText as="p" tone="primary" className="font-medium">
                           {banner.title?.trim() || 'Sem título'}
                         </ThemeText>
+                        {banner.eyebrow?.trim() ? (
+                          <ThemeText as="p" tone="faint" className="mt-1 text-xs">
+                            Acima: {banner.eyebrow}
+                          </ThemeText>
+                        ) : null}
                         {banner.ctaLabel ? (
                           <ThemeText as="p" tone="faint" className="mt-1 text-xs">
                             CTA: {banner.ctaLabel}

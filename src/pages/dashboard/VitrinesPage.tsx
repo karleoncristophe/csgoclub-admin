@@ -25,12 +25,16 @@ function normalizeName(name: string) {
   return name.trim()
 }
 
-function buildCaseOptions(cases: LootCase[], currentVitrineId?: string | null) {
+function buildCaseOptions(
+  cases: LootCase[],
+  options: { currentVitrineId?: string | null; allowAny?: boolean },
+) {
   return [...cases]
     .filter((lootCase) => {
+      if (options.allowAny) return true
       if (!lootCase.vitrineId) return true
-      if (!currentVitrineId) return false
-      return String(lootCase.vitrineId) === currentVitrineId
+      if (!options.currentVitrineId) return false
+      return String(lootCase.vitrineId) === options.currentVitrineId
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
     .map((lootCase) => ({
@@ -59,6 +63,7 @@ export default function VitrinesPage() {
   const [editDescription, setEditDescription] = useState('')
   const [editSortOrder, setEditSortOrder] = useState('0')
   const [editActive, setEditActive] = useState(true)
+  const [editIsHero, setEditIsHero] = useState(false)
   const [editCaseIds, setEditCaseIds] = useState<string[]>([])
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -86,8 +91,13 @@ export default function VitrinesPage() {
     setEditDescription(vitrine.description ?? '')
     setEditSortOrder(String(vitrine.sortOrder))
     setEditActive(vitrine.active)
+    setEditIsHero(Boolean(vitrine.isHero))
     setEditCaseIds(
-      cases.filter((item) => item.vitrineId === vitrine._id).map((item) => item._id),
+      vitrine.isHero
+        ? [...(vitrine.heroCaseIds ?? [])]
+        : cases
+            .filter((item) => item.vitrineId === vitrine._id)
+            .map((item) => item._id),
     )
   }
 
@@ -97,6 +107,7 @@ export default function VitrinesPage() {
     setEditDescription('')
     setEditSortOrder('0')
     setEditActive(true)
+    setEditIsHero(false)
     setEditCaseIds([])
   }
 
@@ -135,6 +146,8 @@ export default function VitrinesPage() {
   }
 
   const handleDelete = async (vitrine: CaseVitrine) => {
+    if (vitrine.isHero) return
+
     const confirmed = await confirm({
       title: 'Excluir vitrine',
       description:
@@ -163,28 +176,36 @@ export default function VitrinesPage() {
     selectedIds: string[],
     onChange: (ids: string[]) => void,
     disabled: boolean,
-    currentVitrineId?: string | null,
+    options: { currentVitrineId?: string | null; isHero?: boolean },
   ) => {
-    const options = buildCaseOptions(cases, currentVitrineId)
+    const allowAny = Boolean(options.isHero)
+    const selectOptions = buildCaseOptions(cases, {
+      currentVitrineId: options.currentVitrineId,
+      allowAny,
+    })
     const assignedElsewhereCount = cases.filter(
       (lootCase) =>
         lootCase.vitrineId &&
-        String(lootCase.vitrineId) !== String(currentVitrineId ?? ''),
+        String(lootCase.vitrineId) !== String(options.currentVitrineId ?? ''),
     ).length
 
     return (
       <SearchableMultiSelect
-        label="Caixas nesta vitrine"
+        label={allowAny ? 'Caixas no hero da home' : 'Caixas nesta vitrine'}
         placeholder="Buscar caixa pelo nome…"
-        hint="Digite para filtrar e clique para adicionar. Caixas já vinculadas a outra vitrine não aparecem aqui."
-        options={options}
+        hint={
+          allowAny
+            ? 'Escolha qualquer caixa do catálogo. Elas continuam nas outras vitrines normalmente.'
+            : 'Digite para filtrar e clique para adicionar. Caixas já vinculadas a outra vitrine não aparecem aqui.'
+        }
+        options={selectOptions}
         value={selectedIds}
         onChange={onChange}
         disabled={disabled}
         emptyMessage={
           cases.length === 0
             ? 'Nenhuma caixa cadastrada ainda.'
-            : assignedElsewhereCount === cases.length
+            : !allowAny && assignedElsewhereCount === cases.length
               ? 'Todas as caixas já estão em outras vitrines.'
               : 'Nenhuma caixa encontrada para esta busca.'
         }
@@ -194,7 +215,7 @@ export default function VitrinesPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle subtitle="Agrupe as caixas em seções no site, no estilo csgo.net (ex.: Edição Limitada, Team Spirit).">
+      <PageTitle subtitle="A vitrine Hero é fixa e alimenta o banner da home. As demais agrupam seções do catálogo.">
         Vitrines
       </PageTitle>
 
@@ -203,8 +224,8 @@ export default function VitrinesPage() {
           Nova vitrine
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-          Defina o nome da seção e use a busca para adicionar as caixas. A ordem define a
-          posição no site.
+          Crie seções do catálogo (ex.: Edição Limitada). Para a faixa do banner, edite a
+          vitrine Hero na lista abaixo.
         </ThemeText>
 
         <form onSubmit={handleCreate} className="space-y-4">
@@ -249,7 +270,7 @@ export default function VitrinesPage() {
           ) : null}
 
           {createNameNormalized ? (
-            renderCasePicker(createCaseIds, setCreateCaseIds, createState.isLoading)
+            renderCasePicker(createCaseIds, setCreateCaseIds, createState.isLoading, {})
           ) : (
             <ThemeText as="p" tone="faint" className="text-sm">
               Informe o nome da vitrine para buscar e adicionar caixas.
@@ -340,11 +361,20 @@ export default function VitrinesPage() {
                               value={editDescription}
                               onChange={(e) => setEditDescription(e.target.value)}
                             />
+                            {editIsHero ? (
+                              <ThemeText as="p" tone="secondary" className="text-sm">
+                                Esta é a vitrine Hero: as caixas abaixo aparecem na faixa do
+                                banner da home.
+                              </ThemeText>
+                            ) : null}
                             {renderCasePicker(
                               editCaseIds,
                               setEditCaseIds,
                               updateState.isLoading,
-                              vitrine._id,
+                              {
+                                currentVitrineId: editIsHero ? null : vitrine._id,
+                                isHero: editIsHero,
+                              },
                             )}
                             <div className="flex flex-wrap gap-2">
                               <Button
@@ -378,9 +408,12 @@ export default function VitrinesPage() {
                   return (
                     <tr key={vitrine._id} className={listTable.tr}>
                       <td className={listTable.tdStrong}>
-                        <ThemeText as="p" tone="primary" className="font-medium">
-                          {vitrine.name}
-                        </ThemeText>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <ThemeText as="p" tone="primary" className="font-medium">
+                            {vitrine.name}
+                          </ThemeText>
+                          {vitrine.isHero ? <TextBadge>Hero</TextBadge> : null}
+                        </div>
                         {vitrine.description ? (
                           <ThemeText as="p" tone="faint" className="mt-1 text-xs">
                             {vitrine.description}
@@ -411,15 +444,17 @@ export default function VitrinesPage() {
                           >
                             <Pencil className="h-4 w-4" aria-hidden />
                           </IconButton>
-                          <IconButton
-                            type="button"
-                            label="Excluir vitrine"
-                            variant="danger"
-                            disabled={deletingId === vitrine._id && deleteState.isLoading}
-                            onClick={() => handleDelete(vitrine)}
-                          >
-                            <Trash2 className="h-4 w-4" aria-hidden />
-                          </IconButton>
+                          {!vitrine.isHero ? (
+                            <IconButton
+                              type="button"
+                              label="Excluir vitrine"
+                              variant="danger"
+                              disabled={deletingId === vitrine._id && deleteState.isLoading}
+                              onClick={() => handleDelete(vitrine)}
+                            >
+                              <Trash2 className="h-4 w-4" aria-hidden />
+                            </IconButton>
+                          ) : null}
                         </div>
                       </td>
                     </tr>

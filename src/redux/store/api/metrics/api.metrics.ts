@@ -4,13 +4,14 @@ import { baseQueryWithReauth } from '@/redux/store/api/global.api'
 import type {
   AdminDashboardMetricsQuery,
   AdminDashboardMetricsResponse,
+  AdminOnlineMetricsResponse,
 } from '@/types/adminMetrics'
 import { omitDataEnvironmentQueryArg } from '@/utils/platformDataEnvironmentStorage'
 
 export const metricsApi = createApi({
   reducerPath: 'metricsApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['AdminMetrics'],
+  tagTypes: ['AdminMetrics', 'AdminOnline'],
   endpoints: (builder) => ({
     getAdminDashboardMetrics: builder.query<
       AdminDashboardMetricsResponse,
@@ -26,7 +27,17 @@ export const metricsApi = createApi({
       },
       providesTags: ['AdminMetrics'],
     }),
+    getAdminOnlineMetrics: builder.query<AdminOnlineMetricsResponse, void>({
+      query: () => ({
+        url: METRICS.ONLINE,
+        method: 'GET',
+      }),
+      providesTags: ['AdminOnline'],
+    }),
   }),
 })
 
-export const { useGetAdminDashboardMetricsQuery } = metricsApi
+export const {
+  useGetAdminDashboardMetricsQuery,
+  useGetAdminOnlineMetricsQuery,
+} = metricsApi

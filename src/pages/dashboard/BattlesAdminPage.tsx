@@ -116,9 +116,9 @@ export default function BattlesAdminPage() {
           </Button>
         </div>
         <ThemeText as="p" tone="secondary" className="text-xs">
-          O bot abre a caixa com as mesmas regras do jogador (banco virtual, margem e
-          chances). Tem saldo próprio que começa em 1.000.000 e recarrega quando acaba.
-          Peso = chance de ser escolhido na vaga.
+          O bot sorteia com a mesma elegibilidade do jogador. O prêmio dele não
+          mexe no banco da caixa. Tem saldo próprio que começa em 1.000.000 e
+          recarrega quando acaba. Peso = chance de ser escolhido na vaga.
         </ThemeText>
 
         <div className={listTable.wrap}>

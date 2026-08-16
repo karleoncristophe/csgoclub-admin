@@ -151,12 +151,12 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'Como funciona o bot de case battle?',
     answer:
-      'O bot abre a caixa como um jogador normal: mesmas chances, mesma injeção no banco virtual e mesma retirada do item ganho. Conta nas aberturas reais e na margem da caixa.\n\nEle tem um saldo próprio (começa em 1.000.000). Cada rodada debita o preço da abertura; quando a grana acaba, o saldo volta para 1.000.000 e ele continua jogando.\n\nNão existe mais aggression nem bias — o sorteio é o mesmo do player. Se o bot vencer a battle, o pot humano fica com a casa (o bot não recebe inventário).',
+      'O bot sorteia com a mesma elegibilidade do jogador (mesmo banco virtual e mesmas chances liberadas).\n\nO prêmio do bot não altera o banco da caixa — não injeta, não retira e não zera o saldo. Receita, payout e totalOpens continuam só das aberturas humanas.\n\nEle tem saldo próprio (começa em 1.000.000): cada rodada debita o preço; quando acaba, recarrega para 1.000.000. Se o bot vencer a battle, o pot humano fica com a casa.',
     bullets: [
-      'Bot = mesma regra de drop e banco da abertura normal.',
+      'Elegibilidade igual ao player no sorteio.',
+      'Prêmio do bot não mexe no banco da caixa.',
       'Saldo do bot: paga a abertura; recarrega para 1M quando acaba.',
-      'Conta em totalOpens, receita, payout e banco virtual da caixa.',
-      'Sorteio puro: mesmas probs do player, sem bias.',
+      'Receita / payout / totalOpens só contam abertura humana.',
     ],
     tags: ['battle', 'bot', 'banco virtual', 'saldo', 'caixa'],
   },

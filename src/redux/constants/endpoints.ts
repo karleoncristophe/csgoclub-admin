@@ -64,6 +64,12 @@ export const CASE_VITRINES = {
   CATALOG: '/case-vitrines/catalog',
 } as const
 
+export const BANNERS = {
+  ROOT: '/banners',
+  BY_ID: (id: string) => `/banners/${id}`,
+  CATALOG: '/banners/catalog',
+} as const
+
 export const METRICS = {
   DASHBOARD: '/admin/metrics/dashboard',
 } as const

@@ -47,6 +47,9 @@ const CaseDetailPage = lazy(
 const VitrinesPage = lazy(
   () => import('@/pages/dashboard/VitrinesPage'),
 )
+const BannersPage = lazy(
+  () => import('@/pages/dashboard/BannersPage'),
+)
 const SettingsPage = lazy(
   () => import('@/pages/dashboard/SettingsPage'),
 )
@@ -112,6 +115,7 @@ function ProtectedRoutes() {
         <Route path="cases/:id/details" element={<CaseDetailPage />} />
         <Route path="cases/:id" element={<CaseEditorPage />} />
         <Route path="vitrines" element={<VitrinesPage />} />
+        <Route path="banners" element={<BannersPage />} />
         <Route path="coupons" element={<CouponsPage />} />
         <Route path="battles" element={<BattlesAdminPage />} />
         <Route path="battles/:id" element={<BattleDetailPage />} />

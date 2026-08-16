@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 
-export type CropAspectRatio = '1:1' | '4:3' | '3:4' | '16:9' | '3:1'
+export type CropAspectRatio = '1:1' | '4:3' | '3:4' | '16:9' | '3:1' | '21:9'
 
 type CropOffset = { x: number; y: number }
 type CropImage = {
@@ -23,6 +23,10 @@ type ImageCropperModalProps = {
   quality?: number
 }
 
+/** Zoom relativo ao cover: 1 = preenche o frame inteiro (sem letterbox). */
+const ZOOM_MIN = 1
+const ZOOM_MAX = 4
+
 function parseAspect(ratio: CropAspectRatio) {
   const [w, h] = ratio.split(':').map(Number)
   return w / h
@@ -30,6 +34,15 @@ function parseAspect(ratio: CropAspectRatio) {
 
 function clamp(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v))
+}
+
+function coverBaseScale(
+  canvasW: number,
+  canvasH: number,
+  imgW: number,
+  imgH: number,
+) {
+  return Math.max(canvasW / imgW, canvasH / imgH)
 }
 
 export function ImageCropperModal({
@@ -42,7 +55,7 @@ export function ImageCropperModal({
 }: ImageCropperModalProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imgRef = useRef<CropImage | null>(null)
-  const [zoom, setZoom] = useState(1)
+  const [zoom, setZoom] = useState(ZOOM_MIN)
   const [offset, setOffset] = useState<CropOffset>({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
   const dragStart = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null)
@@ -56,18 +69,16 @@ export function ImageCropperModal({
   const applyLoadedImage = useCallback((image: CropImage) => {
     imgRef.current?.close?.()
     imgRef.current = image
-    const scaleW = CANVAS_W / image.width
-    const scaleH = CANVAS_H / image.height
-    const coverScale = Math.max(scaleW, scaleH)
-    const containScale = Math.min(scaleW, scaleH)
-    setZoom(Math.max(1, coverScale / containScale))
+    setZoom(ZOOM_MIN)
+    setOffset({ x: 0, y: 0 })
     setImgLoaded(true)
-  }, [CANVAS_W, CANVAS_H])
+  }, [])
 
   useEffect(() => {
     if (!open) return
 
     setImgLoaded(false)
+    setZoom(ZOOM_MIN)
     setOffset({ x: 0, y: 0 })
     let cancelled = false
 
@@ -107,28 +118,41 @@ export function ImageCropperModal({
     }
   }, [src, open, applyLoadedImage, onClose])
 
+  const getDrawLayout = useCallback(() => {
+    const img = imgRef.current
+    if (!img) return null
+    const baseScale = coverBaseScale(CANVAS_W, CANVAS_H, img.width, img.height)
+    const scale = baseScale * clamp(zoom, ZOOM_MIN, ZOOM_MAX)
+    const drawW = img.width * scale
+    const drawH = img.height * scale
+    const maxOffX = Math.max(0, (drawW - CANVAS_W) / 2)
+    const maxOffY = Math.max(0, (drawH - CANVAS_H) / 2)
+    const ox = clamp(offset.x, -maxOffX, maxOffX)
+    const oy = clamp(offset.y, -maxOffY, maxOffY)
+    return {
+      img,
+      drawW,
+      drawH,
+      maxOffX,
+      maxOffY,
+      ox,
+      oy,
+      imgX: CANVAS_W / 2 - drawW / 2 + ox,
+      imgY: CANVAS_H / 2 - drawH / 2 + oy,
+    }
+  }, [zoom, offset, CANVAS_W, CANVAS_H])
+
   const draw = useCallback(() => {
     const canvas = canvasRef.current
-    const img = imgRef.current
-    if (!canvas || !img) return
+    const layout = getDrawLayout()
+    if (!canvas || !layout) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     canvas.width = CANVAS_W
     canvas.height = CANVAS_H
 
-    const baseScale = Math.min(CANVAS_W / img.width, CANVAS_H / img.height)
-    const scale = baseScale * zoom
-    const drawW = img.width * scale
-    const drawH = img.height * scale
-    const cx = CANVAS_W / 2
-    const cy = CANVAS_H / 2
-    const maxOffX = Math.max(0, (drawW - CANVAS_W) / 2)
-    const maxOffY = Math.max(0, (drawH - CANVAS_H) / 2)
-    const ox = clamp(offset.x, -maxOffX, maxOffX)
-    const oy = clamp(offset.y, -maxOffY, maxOffY)
-    const imgX = cx - drawW / 2 + ox
-    const imgY = cy - drawH / 2 + oy
+    const { img, drawW, drawH, imgX, imgY } = layout
 
     ctx.clearRect(0, 0, CANVAS_W, CANVAS_H)
     ctx.globalAlpha = 0.35
@@ -143,11 +167,15 @@ export function ImageCropperModal({
     ctx.strokeStyle = 'rgba(255,255,255,0.8)'
     ctx.lineWidth = 2
     ctx.strokeRect(1, 1, CANVAS_W - 2, CANVAS_H - 2)
-  }, [zoom, offset, CANVAS_W, CANVAS_H])
+  }, [getDrawLayout, CANVAS_W, CANVAS_H])
 
   useEffect(() => {
     if (imgLoaded) draw()
   }, [imgLoaded, draw])
+
+  const setZoomClamped = (next: number) => {
+    setZoom(clamp(next, ZOOM_MIN, ZOOM_MAX))
+  }
 
   const onPointerDown = (e: React.PointerEvent) => {
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -156,66 +184,58 @@ export function ImageCropperModal({
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragging || !dragStart.current || !imgRef.current) return
-    const img = imgRef.current
-    const baseScale = Math.min(CANVAS_W / img.width, CANVAS_H / img.height)
-    const scale = baseScale * zoom
-    const drawW = img.width * scale
-    const drawH = img.height * scale
-    const maxOffX = Math.max(0, (drawW - CANVAS_W) / 2)
-    const maxOffY = Math.max(0, (drawH - CANVAS_H) / 2)
+    if (!dragging || !dragStart.current) return
+    const layout = getDrawLayout()
+    if (!layout) return
     const canvas = canvasRef.current
     const cssW = canvas?.getBoundingClientRect().width ?? CANVAS_W
     const pixelRatio = CANVAS_W / cssW
     const dx = (e.clientX - dragStart.current.mx) * pixelRatio
     const dy = (e.clientY - dragStart.current.my) * pixelRatio
     setOffset({
-      x: clamp(dragStart.current.ox + dx, -maxOffX, maxOffX),
-      y: clamp(dragStart.current.oy + dy, -maxOffY, maxOffY),
+      x: clamp(dragStart.current.ox + dx, -layout.maxOffX, layout.maxOffX),
+      y: clamp(dragStart.current.oy + dy, -layout.maxOffY, layout.maxOffY),
     })
   }
 
   const handleCrop = async () => {
-    const img = imgRef.current
-    if (!img) return
+    const layout = getDrawLayout()
+    if (!layout) return
     setSaving(true)
     try {
       const out = document.createElement('canvas')
-      const OUT_W = 1200
+      const OUT_W =
+        aspectRatio === '21:9' || aspectRatio === '3:1'
+          ? 2560
+          : aspectRatio === '16:9'
+            ? 1920
+            : 1200
       const OUT_H = Math.round(OUT_W / aspect)
       out.width = OUT_W
       out.height = OUT_H
       const ctx = out.getContext('2d')
       if (!ctx) return
 
-      const baseScale = Math.min(CANVAS_W / img.width, CANVAS_H / img.height)
-      const scale = baseScale * zoom
-      const drawW = img.width * scale
-      const drawH = img.height * scale
-      const cx = CANVAS_W / 2
-      const cy = CANVAS_H / 2
-      const maxOffX = Math.max(0, (drawW - CANVAS_W) / 2)
-      const maxOffY = Math.max(0, (drawH - CANVAS_H) / 2)
-      const ox = clamp(offset.x, -maxOffX, maxOffX)
-      const oy = clamp(offset.y, -maxOffY, maxOffY)
-      const imgX = cx - drawW / 2 + ox
-      const imgY = cy - drawH / 2 + oy
       const scaleOut = OUT_W / CANVAS_W
       ctx.drawImage(
-        img.source,
-        imgX * scaleOut,
-        imgY * scaleOut,
-        drawW * scaleOut,
-        drawH * scaleOut,
+        layout.img.source,
+        layout.imgX * scaleOut,
+        layout.imgY * scaleOut,
+        layout.drawW * scaleOut,
+        layout.drawH * scaleOut,
       )
 
+      const mime =
+        aspectRatio === '21:9' || aspectRatio === '3:1'
+          ? 'image/jpeg'
+          : 'image/webp'
       out.toBlob(
         (blob) => {
           if (blob) onCrop(blob)
           setSaving(false)
           onClose()
         },
-        'image/webp',
+        mime,
         quality,
       )
     } catch {
@@ -246,7 +266,7 @@ export function ImageCropperModal({
 
         <div className="space-y-4 px-5 py-5">
           <ThemeText tone="secondary" className="text-center text-xs">
-            Arraste para reposicionar e use o zoom para ajustar o enquadramento.
+            Arraste para reposicionar. Zoom só amplia — o frame sempre fica preenchido.
           </ThemeText>
           <div className="mx-auto w-full max-w-[480px] overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
             <canvas
@@ -260,33 +280,47 @@ export function ImageCropperModal({
               onPointerCancel={() => setDragging(false)}
               onWheel={(e) => {
                 e.preventDefault()
-                setZoom((z) => clamp(z - e.deltaY * 0.001, 1, 4))
+                setZoomClamped(zoom - e.deltaY * 0.001)
               }}
             />
           </div>
           <div className="mx-auto flex max-w-sm items-center gap-3">
-            <button type="button" onClick={() => setZoom((z) => clamp(z - 0.1, 1, 4))} className={surfaceClass('ghostIconButton')}>
+            <button
+              type="button"
+              onClick={() => setZoomClamped(zoom - 0.1)}
+              disabled={zoom <= ZOOM_MIN}
+              className={surfaceClass('ghostIconButton')}
+              aria-label="Diminuir zoom"
+            >
               <ZoomOut className="h-4 w-4" />
             </button>
             <input
               type="range"
-              min={1}
-              max={4}
+              min={ZOOM_MIN}
+              max={ZOOM_MAX}
               step={0.01}
               value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
+              onChange={(e) => setZoomClamped(Number(e.target.value))}
               className="flex-1"
+              aria-label="Zoom"
             />
-            <button type="button" onClick={() => setZoom((z) => clamp(z + 0.1, 1, 4))} className={surfaceClass('ghostIconButton')}>
+            <button
+              type="button"
+              onClick={() => setZoomClamped(zoom + 0.1)}
+              disabled={zoom >= ZOOM_MAX}
+              className={surfaceClass('ghostIconButton')}
+              aria-label="Aumentar zoom"
+            >
               <ZoomIn className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={() => {
-                setZoom(1)
+                setZoom(ZOOM_MIN)
                 setOffset({ x: 0, y: 0 })
               }}
               className={surfaceClass('ghostIconButton')}
+              aria-label="Resetar enquadramento"
             >
               <RotateCcw className="h-4 w-4" />
             </button>

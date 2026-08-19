@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import type { LucideIcon } from 'lucide-react'
 import {
+  ArrowLeftRight,
   BookOpenText,
   Gem,
   History,
@@ -42,6 +43,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
       { href: '/dashboard/skins', label: 'Skins', Icon: Gem },
       { href: '/dashboard/cases', label: 'Caixas', Icon: Package },
       { href: '/dashboard/case-opens', label: 'Aberturas', Icon: History },
+      { href: '/dashboard/trades', label: 'Trades', Icon: ArrowLeftRight },
       { href: '/dashboard/coupons', label: 'Cupons', Icon: TicketPercent },
       { href: '/dashboard/battles', label: 'Battles', Icon: Swords },
       { href: '/dashboard/vitrines', label: 'Vitrines', Icon: LayoutGrid },

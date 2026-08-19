@@ -38,6 +38,9 @@ const CasesPage = lazy(
 const CaseOpensPage = lazy(
   () => import('@/pages/dashboard/CaseOpensPage'),
 )
+const TradesPage = lazy(
+  () => import('@/pages/dashboard/TradesPage'),
+)
 const CaseEditorPage = lazy(
   () => import('@/pages/dashboard/CaseEditorPage'),
 )
@@ -111,6 +114,7 @@ function ProtectedRoutes() {
         <Route path="cases" element={<CasesPage />} />
         <Route path="case-opens" element={<CaseOpensPage />} />
         <Route path="case-opens/:openId" element={<UserCaseOpenDetailPage />} />
+        <Route path="trades" element={<TradesPage />} />
         <Route path="cases/new" element={<CaseEditorPage />} />
         <Route path="cases/:id/details" element={<CaseDetailPage />} />
         <Route path="cases/:id" element={<CaseEditorPage />} />

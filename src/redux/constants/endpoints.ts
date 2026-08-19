@@ -58,6 +58,10 @@ export const CASE_OPENS = {
   BY_ID: (openId: string) => `/admin/case-opens/${openId}`,
 } as const
 
+export const TRADES = {
+  ROOT: '/admin/trades',
+} as const
+
 export const CASE_VITRINES = {
   ROOT: '/case-vitrines',
   BY_ID: (id: string) => `/case-vitrines/${id}`,

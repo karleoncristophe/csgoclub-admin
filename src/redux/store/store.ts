@@ -4,6 +4,7 @@ import { authApi } from '@/redux/store/api/auth/api.auth'
 import { battlesAdminApi } from '@/redux/store/api/battles/api.battles'
 import { casesApi } from '@/redux/store/api/cases/api.cases'
 import { caseOpensApi } from '@/redux/store/api/case-opens/api.case-opens'
+import { tradesApi } from '@/redux/store/api/trades/api.trades'
 import { bannersApi } from '@/redux/store/api/banners/api.banners'
 import { caseVitrinesApi } from '@/redux/store/api/case-vitrines/api.case-vitrines'
 import { couponsApi } from '@/redux/store/api/coupons/api.coupons'
@@ -24,6 +25,7 @@ export const store = configureStore({
     [skinsApi.reducerPath]: skinsApi.reducer,
     [casesApi.reducerPath]: casesApi.reducer,
     [caseOpensApi.reducerPath]: caseOpensApi.reducer,
+    [tradesApi.reducerPath]: tradesApi.reducer,
     [caseVitrinesApi.reducerPath]: caseVitrinesApi.reducer,
     [bannersApi.reducerPath]: bannersApi.reducer,
     [couponsApi.reducerPath]: couponsApi.reducer,
@@ -39,6 +41,7 @@ export const store = configureStore({
       skinsApi.middleware,
       casesApi.middleware,
       caseOpensApi.middleware,
+      tradesApi.middleware,
       caseVitrinesApi.middleware,
       bannersApi.middleware,
       couponsApi.middleware,

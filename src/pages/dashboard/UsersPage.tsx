@@ -14,6 +14,7 @@ import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import { labelFilterBoolean, labelUserAppRole } from '@/i18n/enumLabels'
 import { useGetUsersQuery } from '@/redux/store/api/users/api.users'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+import { SteamIdLink } from '@/components/users/SteamIdLink'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100] as const
 const DEFAULT_PAGE_SIZE = 20
@@ -263,7 +264,9 @@ export default function UsersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className={listTable.tdMuted}>{user.steamId}</td>
+                      <td className={listTable.tdMuted}>
+                        <SteamIdLink steamId={user.steamId} className="text-xs" />
+                      </td>
                       <td className={listTable.td}>
                         <div className="flex flex-wrap gap-1.5">
                           <TextBadge>{labelUserAppRole(user.role)}</TextBadge>

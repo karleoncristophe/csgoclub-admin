@@ -15,6 +15,7 @@ import {
   type AdminCaseOpenGlobalItem,
 } from '@/redux/store/api/case-opens/api.case-opens'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+import { SteamIdLink } from '@/components/users/SteamIdLink'
 import { filterChipClasses, userStatCardSpaciousClass } from '@/components/users/userPanelClasses'
 
 function formatMoney(value: number, currency = 'USD') {
@@ -304,26 +305,28 @@ export default function CaseOpensPage() {
                       </ThemeText>
 
                       {open.user ? (
-                        <div className="mt-2 flex min-w-0 items-center gap-2">
-                          {avatar ? (
-                            <img
-                              src={avatar}
-                              alt=""
-                              className="h-6 w-6 rounded-full object-cover"
-                            />
-                          ) : (
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-200">
-                              {open.user.name?.[0]?.toUpperCase() ?? '?'}
-                            </span>
-                          )}
-                          <ThemeText as="p" tone="secondary" className="truncate text-xs">
-                            {open.user.name}
-                            {open.user.steamId ? (
-                              <span className="ml-1.5 font-mono text-[10px] text-zinc-400">
-                                {open.user.steamId}
+                        <div className="mt-2 min-w-0">
+                          <div className="flex min-w-0 items-center gap-2">
+                            {avatar ? (
+                              <img
+                                src={avatar}
+                                alt=""
+                                className="h-6 w-6 rounded-full object-cover"
+                              />
+                            ) : (
+                              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-200">
+                                {open.user.name?.[0]?.toUpperCase() ?? '?'}
                               </span>
-                            ) : null}
-                          </ThemeText>
+                            )}
+                            <ThemeText as="p" tone="secondary" className="truncate text-xs">
+                              {open.user.name}
+                            </ThemeText>
+                          </div>
+                          {open.user.steamId ? (
+                            <div className="mt-1 pl-8">
+                              <SteamIdLink steamId={open.user.steamId} />
+                            </div>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>

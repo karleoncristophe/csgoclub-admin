@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
+  ArrowLeftRight,
   Calendar,
   Check,
   Clock,
@@ -20,6 +21,7 @@ import { UserInfluencerCaseOpenPanel } from '@/components/users/UserInfluencerCa
 import { UserInventoryPanel } from '@/components/users/UserInventoryPanel'
 import { UserKycPanel } from '@/components/users/UserKycPanel'
 import { UserSiteInventoryPanel } from '@/components/users/UserSiteInventoryPanel'
+import { steamCommunityProfileUrl } from '@/components/users/SteamIdLink'
 import { labelUserAppRole } from '@/i18n/enumLabels'
 import { useGetUserByIdQuery } from '@/redux/store/api/users/api.users'
 import { getErrorMessage } from '@/utils/getErrorMessage'
@@ -53,10 +55,12 @@ function CopyableField({
   label,
   value,
   mono = true,
+  href,
 }: {
   label: string
   value?: string
   mono?: boolean
+  href?: string
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -78,25 +82,51 @@ function CopyableField({
         {label}
       </ThemeText>
       <div className="mt-2 flex items-start justify-between gap-3">
-        <ThemeText
-          as="p"
-          tone="primary"
-          className={`min-w-0 break-all text-sm ${mono ? 'font-mono text-[13px]' : 'font-medium'}`}
-        >
-          {value}
-        </ThemeText>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="shrink-0 rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 transition hover:border-brand-300 hover:text-brand-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-brand-700 dark:hover:text-brand-400"
-          aria-label={`Copiar ${label}`}
-        >
-          {copied ? (
-            <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-          ) : (
-            <Copy className="h-4 w-4" />
-          )}
-        </button>
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className={`min-w-0 break-all text-sm text-brand-600 hover:underline dark:text-brand-400 ${
+              mono ? 'font-mono text-[13px]' : 'font-medium'
+            }`}
+          >
+            {value}
+          </a>
+        ) : (
+          <ThemeText
+            as="p"
+            tone="primary"
+            className={`min-w-0 break-all text-sm ${mono ? 'font-mono text-[13px]' : 'font-medium'}`}
+          >
+            {value}
+          </ThemeText>
+        )}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {href ? (
+            <a
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`Abrir ${label}`}
+              className="rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 transition hover:border-brand-300 hover:text-brand-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-brand-700 dark:hover:text-brand-400"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 transition hover:border-brand-300 hover:text-brand-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-brand-700 dark:hover:text-brand-400"
+            aria-label={`Copiar ${label}`}
+          >
+            {copied ? (
+              <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -266,6 +296,12 @@ export default function UserDetailPage() {
               </div>
 
               <div className="flex flex-wrap gap-2 lg:justify-end">
+                <Link to={`/dashboard/trades?userId=${data._id}`} className="inline-flex">
+                  <Button variant="secondary" size="sm">
+                    <ArrowLeftRight className="h-4 w-4" />
+                    Trades
+                  </Button>
+                </Link>
                 {data.profileUrl ? (
                   <a
                     href={data.profileUrl}
@@ -311,10 +347,14 @@ export default function UserDetailPage() {
           <Surface variant="card" className="!p-6">
             <SectionTitle className="mb-5">Identidade Steam</SectionTitle>
             <div className="grid gap-3 sm:grid-cols-2">
-              <CopyableField label="Steam ID" value={data.steamId} />
+              <CopyableField
+                label="Steam ID"
+                value={data.steamId}
+                href={data.steamId ? steamCommunityProfileUrl(data.steamId) : undefined}
+              />
               <CopyableField label="ID interno" value={data._id} />
               <CopyableField label="Nome exibido" value={data.name} mono={false} />
-              <CopyableField label="URL do perfil" value={data.profileUrl} />
+              <CopyableField label="URL do perfil" value={data.profileUrl} href={data.profileUrl} />
             </div>
           </Surface>
 

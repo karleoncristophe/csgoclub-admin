@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bot, ChevronRight, Plus, Trash2 } from 'lucide-react'
+import {
+  CaseImageUploader,
+  isPendingCaseImage,
+  type CaseImageValue,
+} from '@/components/cases/CaseImageUploader'
 import { Button } from '@/components/ui/Button'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { Input } from '@/components/ui/Input'
@@ -9,6 +14,7 @@ import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import { listTable } from '@/components/ui/listTable'
+import { deleteUploadFile, uploadSingleFile } from '@/lib/upload'
 import {
   useCancelAdminBattleMutation,
   useCreateBattleBotMutation,
@@ -16,6 +22,7 @@ import {
   useGetAdminBattlesQuery,
   useGetBattleBotsQuery,
   useUpdateBattleBotMutation,
+  type AdminBattleBot,
 } from '@/redux/store/api/battles/api.battles'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import {
@@ -26,12 +33,84 @@ import {
 } from './battles/battleUi'
 
 const BATTLES_PAGE_SIZE = 20
+const BOT_AVATAR_FOLDER = 'bots'
 
 function formatBotBalance(value: number | undefined) {
   return (value ?? 0).toLocaleString('pt-BR', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   })
+}
+
+async function uploadBotAvatar(
+  image: CaseImageValue,
+  previousUrl?: string,
+): Promise<string | undefined> {
+  if (isPendingCaseImage(image)) {
+    const uploaded = await uploadSingleFile(image.file, BOT_AVATAR_FOLDER)
+    if (previousUrl && previousUrl !== uploaded.url) {
+      void deleteUploadFile(previousUrl)
+    }
+    return uploaded.url
+  }
+  if (typeof image === 'string' && image.trim()) {
+    return image.trim()
+  }
+  if (image == null && previousUrl) {
+    void deleteUploadFile(previousUrl)
+    return undefined
+  }
+  return previousUrl
+}
+
+function BotAvatarEditor({
+  bot,
+  onError,
+}: {
+  bot: AdminBattleBot
+  onError: (message: string | null) => void
+}) {
+  const [updateBot, { isLoading }] = useUpdateBattleBotMutation()
+  const [value, setValue] = useState<CaseImageValue>(bot.avatarUrl ?? null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setValue(bot.avatarUrl ?? null)
+  }, [bot.avatarUrl])
+
+  async function persist(next: CaseImageValue) {
+    setValue(next)
+    if (typeof next === 'string' && next === (bot.avatarUrl || '')) return
+
+    setSaving(true)
+    onError(null)
+    try {
+      const avatarUrl = await uploadBotAvatar(next, bot.avatarUrl)
+      await updateBot({
+        id: bot._id,
+        body: { avatarUrl: avatarUrl ?? '' },
+      }).unwrap()
+      setValue(avatarUrl ?? null)
+    } catch (error) {
+      setValue(bot.avatarUrl ?? null)
+      onError(getErrorMessage(error))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <CaseImageUploader
+      variant="avatar"
+      value={value}
+      onChange={(next) => void persist(next)}
+      disabled={isLoading || saving}
+      label=""
+      description=""
+      emptyLabel=""
+      compactActions
+    />
+  )
 }
 
 export default function BattlesAdminPage() {
@@ -55,7 +134,9 @@ export default function BattlesAdminPage() {
 
   const [name, setName] = useState('')
   const [weight, setWeight] = useState('1')
+  const [createImage, setCreateImage] = useState<CaseImageValue>(null)
   const [error, setError] = useState<string | null>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   useEffect(() => {
     if (page > totalPages) {
@@ -66,15 +147,21 @@ export default function BattlesAdminPage() {
   async function handleCreate() {
     setError(null)
     try {
+      setUploadingAvatar(isPendingCaseImage(createImage))
+      const avatarUrl = await uploadBotAvatar(createImage)
       await createBot({
         name: name.trim(),
         weight: Number(weight) || 1,
         active: true,
+        avatarUrl,
       }).unwrap()
       setName('')
       setWeight('1')
+      setCreateImage(null)
     } catch (e) {
       setError(getErrorMessage(e))
+    } finally {
+      setUploadingAvatar(false)
     }
   }
 
@@ -98,7 +185,13 @@ export default function BattlesAdminPage() {
           </ThemeText>
         </div>
 
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-wrap items-end gap-4">
+          <CaseImageUploader
+            variant="avatar"
+            value={createImage}
+            onChange={setCreateImage}
+            disabled={creating || uploadingAvatar}
+          />
           <Input
             label="Nome"
             value={name}
@@ -110,7 +203,11 @@ export default function BattlesAdminPage() {
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
           />
-          <Button disabled={creating || !name.trim()} onClick={handleCreate}>
+          <Button
+            disabled={creating || uploadingAvatar || !name.trim()}
+            isLoading={creating || uploadingAvatar}
+            onClick={handleCreate}
+          >
             <Plus className="mr-1 h-4 w-4" />
             Criar bot
           </Button>
@@ -125,6 +222,7 @@ export default function BattlesAdminPage() {
           <table className={listTable.table}>
             <thead>
               <tr>
+                <th className={listTable.th}>Foto</th>
                 <th className={listTable.th}>Nome</th>
                 <th className={listTable.th}>Saldo</th>
                 <th className={listTable.th}>Peso</th>
@@ -135,19 +233,22 @@ export default function BattlesAdminPage() {
             <tbody>
               {botsLoading ? (
                 <tr>
-                  <td className={listTable.td} colSpan={5}>
+                  <td className={listTable.td} colSpan={6}>
                     Carregando...
                   </td>
                 </tr>
               ) : bots.length === 0 ? (
                 <tr>
-                  <td className={listTable.td} colSpan={5}>
+                  <td className={listTable.td} colSpan={6}>
                     Nenhum bot
                   </td>
                 </tr>
               ) : (
                 bots.map((bot) => (
                   <tr key={bot._id}>
+                    <td className={listTable.td}>
+                      <BotAvatarEditor bot={bot} onError={setError} />
+                    </td>
                     <td className={listTable.td}>{bot.name}</td>
                     <td className={listTable.td}>
                       {formatBotBalance(bot.balance)}
@@ -200,7 +301,12 @@ export default function BattlesAdminPage() {
                             confirmLabel: 'Excluir',
                             confirmVariant: 'danger',
                           })
-                          if (ok) await deleteBot(bot._id)
+                          if (ok) {
+                            if (bot.avatarUrl) {
+                              void deleteUploadFile(bot.avatarUrl)
+                            }
+                            await deleteBot(bot._id)
+                          }
                         }}
                         type="button"
                       >

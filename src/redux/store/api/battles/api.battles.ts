@@ -54,6 +54,9 @@ export type AdminBattle = {
   slots: number
   caseSequence: AdminBattleCase[]
   priceTotal: number
+  priceUsd?: number | null
+  priceBrl?: number | null
+  priceEur?: number | null
   currency: string
   hostUserId: string
   seats: AdminBattleSeat[]

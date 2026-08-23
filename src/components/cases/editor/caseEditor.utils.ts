@@ -142,10 +142,19 @@ export function updateCaseDropItem(
 
 /** Campos só do formulário — não enviar na API. */
 export function toCaseDropItemPayload(item: CaseDropItem): CaseDropItemPayload {
-  const { expectedValue: _expectedValue, ...payload } = item
   return {
-    ...payload,
+    skinName: item.skinName,
+    image: item.image,
+    rarity: item.rarity
+      ? { name: item.rarity.name, color: item.rarity.color }
+      : undefined,
+    basePrice: item.basePrice,
+    taxPercent: item.taxPercent,
+    priceWithTax: item.priceWithTax,
+    price: item.price,
+    probability: item.probability,
     probabilityTolerance: DEFAULT_ITEM_PROBABILITY_TOLERANCE,
+    enabled: item.enabled,
   }
 }
 

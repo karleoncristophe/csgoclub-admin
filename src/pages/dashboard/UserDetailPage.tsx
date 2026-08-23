@@ -17,8 +17,6 @@ import { SectionTitle } from '@/components/ui/Title'
 import { StatusPill, TextBadge } from '@/components/StatusPill'
 import { UserCaseOpensPanel } from '@/components/users/UserCaseOpensPanel'
 import { UserEditPanel } from '@/components/users/UserEditPanel'
-import { UserInfluencerCaseOpenPanel } from '@/components/users/UserInfluencerCaseOpenPanel'
-import { UserInventoryPanel } from '@/components/users/UserInventoryPanel'
 import { UserKycPanel } from '@/components/users/UserKycPanel'
 import { UserSiteInventoryPanel } from '@/components/users/UserSiteInventoryPanel'
 import { steamCommunityProfileUrl } from '@/components/users/SteamIdLink'
@@ -362,13 +360,6 @@ export default function UserDetailPage() {
 
           <UserEditPanel user={data} onUpdated={() => refetch()} />
 
-          {isInfluencer ? (
-            <UserInfluencerCaseOpenPanel
-              userId={data._id}
-              walletCurrency={data.walletCurrency}
-            />
-          ) : null}
-
           <UserCaseOpensPanel userId={data._id} />
 
           <UserSiteInventoryPanel
@@ -377,8 +368,6 @@ export default function UserDetailPage() {
             walletCurrency={data.walletCurrency}
             onConverted={() => refetch()}
           />
-
-          <UserInventoryPanel userId={data._id} />
         </>
       ) : null}
     </div>

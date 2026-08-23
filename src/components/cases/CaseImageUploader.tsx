@@ -35,15 +35,36 @@ type CaseImageUploaderProps = {
   disabled?: boolean
   label?: string
   description?: string
+  emptyLabel?: string
+  variant?: 'cover' | 'avatar'
+  compactActions?: boolean
 }
 
 export function CaseImageUploader({
   value,
   onChange,
   disabled = false,
-  label = 'Capa da caixa',
-  description = 'Arraste uma imagem ou clique para enviar. Recomendado 1:1.',
+  variant = 'cover',
+  label,
+  description,
+  emptyLabel,
+  compactActions = false,
 }: CaseImageUploaderProps) {
+  const resolvedLabel =
+    label === undefined
+      ? variant === 'avatar'
+        ? 'Foto de perfil'
+        : 'Capa da caixa'
+      : label
+  const resolvedDescription =
+    description === undefined
+      ? variant === 'avatar'
+        ? 'Imagem quadrada 1:1, igual à capa de caixa.'
+        : 'Arraste uma imagem ou clique para enviar. Recomendado 1:1.'
+      : description
+  const resolvedEmptyLabel =
+    emptyLabel ?? (variant === 'avatar' ? 'Foto' : 'Enviar capa')
+  const isAvatar = variant === 'avatar'
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragActive, setDragActive] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -100,12 +121,14 @@ export function CaseImageUploader({
 
   return (
     <div className="space-y-2">
-      <ThemeText tone="label" className="text-sm font-medium">
-        {label}
-      </ThemeText>
-      {description ? (
+      {resolvedLabel ? (
+        <ThemeText tone="label" className="text-sm font-medium">
+          {resolvedLabel}
+        </ThemeText>
+      ) : null}
+      {resolvedDescription ? (
         <ThemeText tone="secondary" className="text-xs">
-          {description}
+          {resolvedDescription}
         </ThemeText>
       ) : null}
 
@@ -134,7 +157,9 @@ export function CaseImageUploader({
           onClick={() => {
             if (!disabled) inputRef.current?.click()
           }}
-          className={`flex h-40 w-40 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-colors ${
+          className={`flex shrink-0 items-center justify-center overflow-hidden border-2 border-dashed transition-colors ${
+            isAvatar ? 'h-20 w-20 rounded-full' : 'h-40 w-40 rounded-2xl'
+          } ${
             dragActive
               ? 'border-brand-400 bg-brand-50/50 dark:bg-brand-950/30'
               : 'border-zinc-300 bg-zinc-50 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600'
@@ -156,23 +181,26 @@ export function CaseImageUploader({
             <img src={preview} alt="" className="h-full w-full object-cover" />
           ) : (
             <div className="flex flex-col items-center gap-2 px-3 text-center">
-              <ImagePlus className="h-8 w-8 text-zinc-400" />
-              <ThemeText tone="faint" className="text-xs">
-                Enviar capa
-              </ThemeText>
+              <ImagePlus className={`${isAvatar ? 'h-5 w-5' : 'h-8 w-8'} text-zinc-400`} />
+              {resolvedEmptyLabel ? (
+                <ThemeText tone="faint" className="text-xs">
+                  {resolvedEmptyLabel}
+                </ThemeText>
+              ) : null}
             </div>
           )}
         </div>
 
-        <div className="flex flex-col gap-2 pt-2">
+        <div className={`flex flex-col gap-2 ${isAvatar ? 'pt-1' : 'pt-2'}`}>
           {hasImage && !disabled && cropSrc ? (
             <button
               type="button"
               onClick={() => setCropOpen(true)}
               className="inline-flex items-center gap-2 text-sm text-brand-700 hover:underline dark:text-brand-400"
+              aria-label="Recortar"
             >
               <Crop className="h-4 w-4" />
-              Recortar
+              {compactActions ? null : 'Recortar'}
             </button>
           ) : null}
           {hasImage && !disabled ? (
@@ -184,9 +212,10 @@ export function CaseImageUploader({
                 onChange(null)
               }}
               className="inline-flex items-center gap-2 text-sm text-red-600 hover:underline dark:text-red-400"
+              aria-label="Remover"
             >
               <X className="h-4 w-4" />
-              Remover
+              {compactActions ? null : 'Remover'}
             </button>
           ) : null}
         </div>

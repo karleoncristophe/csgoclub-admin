@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   ArrowLeftRight,
   BookOpenText,
+  Crosshair,
   Gem,
   History,
   Image,
@@ -46,6 +47,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
       { href: '/dashboard/trades', label: 'Trades', Icon: ArrowLeftRight },
       { href: '/dashboard/coupons', label: 'Cupons', Icon: TicketPercent },
       { href: '/dashboard/battles', label: 'Battles', Icon: Swords },
+      { href: '/dashboard/arena', label: 'Arena', Icon: Crosshair },
       { href: '/dashboard/vitrines', label: 'Vitrines', Icon: LayoutGrid },
       { href: '/dashboard/banners', label: 'Banners', Icon: Image },
       { href: '/dashboard/categorias', label: 'Categorias', Icon: Layers },

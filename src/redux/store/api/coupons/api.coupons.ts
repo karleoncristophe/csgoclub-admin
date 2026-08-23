@@ -10,6 +10,7 @@ export type AdminCouponRewardType =
   | 'CASE_PRICE_PERCENT'
   | 'CASE_PRICE_FIXED'
   | 'FREE_CASE_OPEN'
+  | 'ARENA_TICKET'
   | 'UPGRADE_PERCENT'
   | 'UPGRADE_BONUS_CHANCE'
   | 'WITHDRAW_FEE_DISCOUNT_PERCENT'
@@ -17,18 +18,32 @@ export type AdminCouponRewardType =
   | 'BATTLEPASS_XP_BOOST'
   | 'CUSTOM'
 export type AdminCouponCampaignType = 'INFLUENCER' | 'PUBLIC'
+export type AdminCouponCurrency = 'BRL' | 'USD' | 'EUR'
 
 export type CouponRewardPreset = {
   type: AdminCouponRewardType
   label: string
   description: string
-  category: 'deposit' | 'case' | 'upgrade' | 'withdraw' | 'loyalty' | 'battlepass' | 'custom'
+  category: 'deposit' | 'case' | 'arena' | 'upgrade' | 'withdraw' | 'loyalty' | 'battlepass' | 'custom'
   valueKind: 'percent' | 'fixed' | 'multiplier' | 'count' | 'custom'
   minValue: number
   maxValue: number
   step: number
   defaultValue: number
   futureUse: boolean
+}
+
+export type AdminCouponCurrencyAmounts = {
+  minimumAmount?: number
+  maximumAmount?: number
+  maximumDiscount?: number
+  rewardValue?: number
+}
+
+export type AdminCouponAmounts = {
+  BRL?: AdminCouponCurrencyAmounts
+  USD?: AdminCouponCurrencyAmounts
+  EUR?: AdminCouponCurrencyAmounts
 }
 
 export type AdminCoupon = {
@@ -40,7 +55,13 @@ export type AdminCoupon = {
   campaignType: AdminCouponCampaignType
   rewardType: AdminCouponRewardType
   rewardValue: number
+  currencies?: AdminCouponCurrency[]
+  amounts?: AdminCouponAmounts
+  minimumAmount?: number
+  maximumAmount?: number
+  maximumDiscount?: number
   maxUses?: number
+  maxUsesPerUser?: number
   active: boolean
   validFrom: string
   validTo: string
@@ -74,7 +95,10 @@ export type CreateCouponPayload = {
   campaignType?: AdminCouponCampaignType
   rewardType?: AdminCouponRewardType
   rewardValue?: number
+  currencies?: AdminCouponCurrency[]
+  amounts?: AdminCouponAmounts
   maxUses?: number
+  maxUsesPerUser?: number
   active?: boolean
   validFrom?: string
   validTo: string

@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { aiAssistantApi } from '@/redux/store/api/ai/api.ai'
 import { authApi } from '@/redux/store/api/auth/api.auth'
+import { arenaApi } from '@/redux/store/api/arena/api.arena'
 import { battlesAdminApi } from '@/redux/store/api/battles/api.battles'
 import { casesApi } from '@/redux/store/api/cases/api.cases'
 import { caseOpensApi } from '@/redux/store/api/case-opens/api.case-opens'
@@ -30,6 +31,7 @@ export const store = configureStore({
     [bannersApi.reducerPath]: bannersApi.reducer,
     [couponsApi.reducerPath]: couponsApi.reducer,
     [battlesAdminApi.reducerPath]: battlesAdminApi.reducer,
+    [arenaApi.reducerPath]: arenaApi.reducer,
     [metricsApi.reducerPath]: metricsApi.reducer,
     [usersApi.reducerPath]: usersApi.reducer,
     [weaponCategoriesApi.reducerPath]: weaponCategoriesApi.reducer,
@@ -46,6 +48,7 @@ export const store = configureStore({
       bannersApi.middleware,
       couponsApi.middleware,
       battlesAdminApi.middleware,
+      arenaApi.middleware,
       metricsApi.middleware,
       usersApi.middleware,
       weaponCategoriesApi.middleware,

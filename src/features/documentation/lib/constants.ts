@@ -199,7 +199,7 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'usuarios-inventario',
     question: 'Qual a diferença entre usuário padrão e influencer?',
     answer:
-      'Usuário padrão joga com saldo real — o que deposita e o que ganha segue as regras normais de saque.\n\nInfluencer é conta de teste/demo: abre caixas com saldo bônus fake, não saca, e serve para gravar, mostrar a plataforma ou testar economia sem dinheiro real.',
+      'Usuário padrão joga com saldo real — o que deposita e o que ganha segue as regras normais de saque.\n\nInfluencer é conta de teste/demo: joga com saldo bônus, não saca, e serve para gravar ou mostrar a plataforma sem dinheiro real.',
     enumGroups: [USER_TYPE_ENUMS],
     tags: ['usuário', 'influencer', 'afiliado', 'teste'],
   },
@@ -242,23 +242,23 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
   {
     id: 'users-5',
     category: 'usuarios-inventario',
-    question: 'Como testar aberturas em lote para influencer?',
+    question: 'Como funcionam as três carteiras na ficha do usuário?',
     answer:
-      'Na ficha do usuário influencer, use o painel “Abrir caixa de teste”. Escolha a caixa, quantidade (até 100) e destino:\n\n• Inventário — itens vão para o inventário do site.\n• Converter — valor credita direto no saldo bônus.\n\nO resultado mostra resumo de drops, margem fake, banco de teste e lista agrupada dos itens.',
+      'Cada usuário tem saldo separado em BRL, USD e EUR. Trocar a moeda no perfil só escolhe qual carteira está ativa — o dinheiro não é convertido.\n\nNa ficha do admin você vê as três carteiras (saldo real, bônus e total). Influencer recebe bônus na moeda que você escolher no crédito.',
     bullets: [
-      'Só influencers têm abertura em lote.',
-      'O banco virtual de teste é separado do banco real da caixa.',
-      'Útil para simular sessões longas de abertura.',
+      'Compras debitam só a carteira ativa.',
+      'Bônus de influencer entra na moeda selecionada.',
+      'Saldo bônus não pode ser sacado.',
     ],
-    tags: ['influencer', 'lote', 'teste', 'abertura'],
+    tags: ['carteira', 'moeda', 'bônus', 'influencer'],
   },
   {
     id: 'users-6',
     category: 'usuarios-inventario',
-    question: 'Inventário Steam e inventário do site são a mesma coisa?',
+    question: 'O que aparece no inventário do usuário no admin?',
     answer:
-      'Não. O inventário Steam mostra o que a pessoa tem na conta Steam, com preços de referência da SkinsBack.\n\nO inventário do site mostra apenas skins ganhas em aberturas de caixa na plataforma — e só entram no saldo quando o jogador converte.\n\nSão duas listas com propósitos diferentes na ficha do usuário.',
-    tags: ['steam', 'inventário', 'skins', 'usuário'],
+      'Só o inventário do site: skins ganhas em aberturas de caixa na plataforma. Elas entram no saldo quando o jogador (ou o admin, no caso de influencer) converte.\n\nO inventário Steam do usuário não é listado na ficha.',
+    tags: ['inventário', 'skins', 'usuário', 'site'],
   },
   {
     id: 'skins-1',

@@ -1,9 +1,13 @@
 import type { AdminBattleSeat } from '@/redux/store/api/battles/api.battles'
 
 export function formatBattleMoney(value: number, currency = 'USD') {
+  const code =
+    currency === 'BRL' || currency === 'EUR' || currency === 'USD'
+      ? currency
+      : 'USD'
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency,
+    currency: code,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)

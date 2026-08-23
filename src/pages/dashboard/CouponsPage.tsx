@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Checkbox } from '@/components/ui/Checkbox'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { IconButton } from '@/components/ui/IconButton'
 import { Input } from '@/components/ui/Input'
@@ -15,11 +16,97 @@ import {
   useGetCouponRewardPresetsQuery,
   useGetCouponsQuery,
   useUpdateCouponMutation,
-  type AdminCouponRewardType,
   type AdminCoupon,
+  type AdminCouponAmounts,
+  type AdminCouponCurrencyAmounts,
+  type AdminCouponRewardType,
 } from '@/redux/store/api/coupons/api.coupons'
 import { useGetUsersQuery } from '@/redux/store/api/users/api.users'
+import {
+  formatSkinsPrice,
+  SKINS_CURRENCY_OPTIONS,
+  SkinsCurrency,
+} from '@/constants/skinsCurrency'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+
+type CouponAmountFormSlice = {
+  minimumAmount: string
+  maximumAmount: string
+  maximumDiscount: string
+  rewardValue: string
+}
+
+function emptyAmountFormSlice(): CouponAmountFormSlice {
+  return {
+    minimumAmount: '',
+    maximumAmount: '',
+    maximumDiscount: '',
+    rewardValue: '',
+  }
+}
+
+function emptyAmountsForm(): Record<SkinsCurrency, CouponAmountFormSlice> {
+  return {
+    [SkinsCurrency.BRL]: emptyAmountFormSlice(),
+    [SkinsCurrency.USD]: emptyAmountFormSlice(),
+    [SkinsCurrency.EUR]: emptyAmountFormSlice(),
+  }
+}
+
+function parseOptionalAmount(value: string): number | undefined {
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  const parsed = Number(trimmed)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+function buildCouponAmountsPayload(
+  currencies: SkinsCurrency[],
+  formAmounts: Record<SkinsCurrency, CouponAmountFormSlice>,
+  valueKind?: string,
+): AdminCouponAmounts {
+  const amounts: AdminCouponAmounts = {}
+  for (const currency of currencies) {
+    const slice = formAmounts[currency]
+    const next: AdminCouponCurrencyAmounts = {
+      minimumAmount: parseOptionalAmount(slice.minimumAmount),
+      maximumAmount: parseOptionalAmount(slice.maximumAmount),
+    }
+    if (valueKind === 'percent') {
+      next.maximumDiscount = parseOptionalAmount(slice.maximumDiscount)
+    }
+    if (valueKind === 'fixed') {
+      next.rewardValue = parseOptionalAmount(slice.rewardValue)
+    }
+    amounts[currency] = next
+  }
+  return amounts
+}
+
+function formatCouponAmountsLine(coupon: AdminCoupon): string | null {
+  const currencies = coupon.currencies?.length
+    ? coupon.currencies
+    : ([SkinsCurrency.BRL, SkinsCurrency.USD, SkinsCurrency.EUR] as const)
+  const parts = currencies.flatMap((currency) => {
+    const slice = coupon.amounts?.[currency]
+    if (!slice) return []
+    const bits: string[] = []
+    if (slice.rewardValue != null) {
+      bits.push(formatSkinsPrice(slice.rewardValue, currency))
+    }
+    if (slice.minimumAmount != null) {
+      bits.push(`min ${formatSkinsPrice(slice.minimumAmount, currency)}`)
+    }
+    if (slice.maximumAmount != null) {
+      bits.push(`máx ${formatSkinsPrice(slice.maximumAmount, currency)}`)
+    }
+    if (slice.maximumDiscount != null) {
+      bits.push(`teto ${formatSkinsPrice(slice.maximumDiscount, currency)}`)
+    }
+    return bits.length ? [`${currency} ${bits.join(' · ')}`] : []
+  })
+  return parts.length ? parts.join(' · ') : null
+}
 
 function toDateTimeLocal(value?: string) {
   if (!value) return ''
@@ -47,6 +134,7 @@ const FALLBACK_REWARD_TYPE_OPTIONS: Array<{ value: AdminCouponRewardType; label:
   { value: 'CASE_PRICE_PERCENT', label: 'Desconto em abertura de caixa (%)' },
   { value: 'CASE_PRICE_FIXED', label: 'Desconto fixo em abertura de caixa' },
   { value: 'FREE_CASE_OPEN', label: 'Abertura grátis de caixa' },
+  { value: 'ARENA_TICKET', label: 'Tickets de Arena' },
   { value: 'UPGRADE_PERCENT', label: 'Desconto no upgrade (%)' },
   { value: 'UPGRADE_BONUS_CHANCE', label: 'Chance extra no upgrade (%)' },
   { value: 'WITHDRAW_FEE_DISCOUNT_PERCENT', label: 'Desconto em taxa de saque (%)' },
@@ -100,7 +188,14 @@ export default function CouponsPage() {
   const [formValidTo, setFormValidTo] = useState('')
   const [formRewardType, setFormRewardType] = useState<AdminCouponRewardType>('DEPOSIT_PERCENT')
   const [formRewardValue, setFormRewardValue] = useState('10')
+  const [formCurrencies, setFormCurrencies] = useState<SkinsCurrency[]>([
+    SkinsCurrency.BRL,
+    SkinsCurrency.USD,
+    SkinsCurrency.EUR,
+  ])
+  const [formAmounts, setFormAmounts] = useState(emptyAmountsForm)
   const [formMaxUses, setFormMaxUses] = useState('')
+  const [formMaxUsesPerUser, setFormMaxUsesPerUser] = useState('1')
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editActive, setEditActive] = useState(true)
@@ -149,7 +244,21 @@ export default function CouponsPage() {
     setFormValidTo('')
     setFormRewardType('DEPOSIT_PERCENT')
     setFormRewardValue('10')
+    setFormCurrencies([SkinsCurrency.BRL, SkinsCurrency.USD, SkinsCurrency.EUR])
+    setFormAmounts(emptyAmountsForm())
     setFormMaxUses('')
+    setFormMaxUsesPerUser('1')
+  }
+
+  const patchFormAmount = (
+    currency: SkinsCurrency,
+    field: keyof CouponAmountFormSlice,
+    value: string,
+  ) => {
+    setFormAmounts((current) => ({
+      ...current,
+      [currency]: { ...current[currency], [field]: value },
+    }))
   }
 
   const openCreateModal = () => {
@@ -161,15 +270,24 @@ export default function CouponsPage() {
     event.preventDefault()
     if (!formCode.trim() || !formOwnerId || !formValidTo) return
 
+    const valueKind = selectedRewardPreset?.valueKind
     await createCoupon({
       code: formCode.trim().toUpperCase(),
       description: formDescription.trim() || undefined,
       ownerUserId: formOwnerId,
       rewardType: formRewardType,
-      rewardValue: Math.max(0, Number(formRewardValue) || 0),
+      rewardValue:
+        valueKind === 'fixed'
+          ? undefined
+          : Math.max(0, Number(formRewardValue) || 0),
+      currencies: formCurrencies,
+      amounts: buildCouponAmountsPayload(formCurrencies, formAmounts, valueKind),
       validFrom: formValidFrom ? new Date(formValidFrom).toISOString() : undefined,
       validTo: new Date(formValidTo).toISOString(),
       maxUses: formMaxUses ? Math.max(1, Number(formMaxUses)) : undefined,
+      maxUsesPerUser: formMaxUsesPerUser
+        ? Math.max(1, Number(formMaxUsesPerUser))
+        : undefined,
     }).unwrap()
 
     resetForm()
@@ -214,7 +332,7 @@ export default function CouponsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageTitle subtitle="Crie cupons de influencer para link de cadastro e vínculo no perfil do usuário.">
+        <PageTitle subtitle="Percentual e tickets são iguais em todas as carteiras. Valores em dinheiro são definidos por moeda — sem câmbio.">
           Cupons
         </PageTitle>
         <Button type="button" className="gap-2 px-5 py-3 text-base" onClick={openCreateModal}>
@@ -276,13 +394,25 @@ export default function CouponsPage() {
                 ) : (
                   list.map((coupon) => {
                     const isEditing = editingId === coupon._id
+                    const amountsLine = formatCouponAmountsLine(coupon)
+                    const rewardKind = rewardPresetByType.get(coupon.rewardType)?.valueKind
                     return (
                       <tr key={coupon._id} className={listTable.tr}>
                         <td className={listTable.tdStrong}>{coupon.code}</td>
                         <td className={listTable.td}>{coupon.ownerUserName || coupon.ownerUserId}</td>
                         <td className={listTable.td}>
-                          {rewardLabelByType.get(coupon.rewardType) ?? coupon.rewardType} ·{' '}
-                          {coupon.rewardValue}
+                          {rewardLabelByType.get(coupon.rewardType) ?? coupon.rewardType}
+                          {rewardKind === 'fixed' ? null : ` · ${coupon.rewardValue}`}
+                          {coupon.currencies?.length ? (
+                            <span className="mt-0.5 block text-xs text-zinc-500">
+                              {coupon.currencies.join(' · ')}
+                            </span>
+                          ) : null}
+                          {amountsLine ? (
+                            <span className="mt-0.5 block text-xs text-zinc-500">
+                              {amountsLine}
+                            </span>
+                          ) : null}
                         </td>
                         <td className={listTable.td}>
                           {isEditing ? (
@@ -374,14 +504,14 @@ export default function CouponsPage() {
 
       {createModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-5xl rounded-2xl border border-zinc-700 bg-zinc-950 p-5 shadow-2xl sm:p-6">
+          <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-950 p-5 shadow-2xl sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-3">
               <div>
                 <ThemeText as="h2" tone="primary" className="text-xl font-semibold">
                   Criar cupom
                 </ThemeText>
                 <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
-                  Configure o cupom e vincule a um influencer dono.
+                  Moedas, percentual ou tickets. Valores em dinheiro são por carteira.
                 </ThemeText>
               </div>
               <button
@@ -490,20 +620,128 @@ export default function CouponsPage() {
                 ))}
               </Select>
 
-              <Input
-                label="Valor da recompensa"
-                name="couponRewardValue"
-                type="number"
-                min={0}
-                step={String(selectedRewardPreset?.step ?? 1)}
-                value={formRewardValue}
-                onChange={(e) => setFormRewardValue(e.target.value)}
-                hint={
-                  selectedRewardPreset
-                    ? `Faixa: ${selectedRewardPreset.minValue} - ${selectedRewardPreset.maxValue} · passo ${selectedRewardPreset.step}`
-                    : undefined
-                }
-              />
+              {selectedRewardPreset?.valueKind === 'fixed' ? null : (
+                <Input
+                  label={
+                    selectedRewardPreset?.valueKind === 'percent'
+                      ? 'Percentual (%)'
+                      : selectedRewardPreset?.valueKind === 'count'
+                        ? 'Tickets / quantidade'
+                        : 'Valor da recompensa'
+                  }
+                  name="couponRewardValue"
+                  type="number"
+                  min={0}
+                  step={String(selectedRewardPreset?.step ?? 1)}
+                  value={formRewardValue}
+                  onChange={(e) => setFormRewardValue(e.target.value)}
+                  hint={
+                    selectedRewardPreset
+                      ? `Faixa: ${selectedRewardPreset.minValue} - ${selectedRewardPreset.maxValue}`
+                      : undefined
+                  }
+                />
+              )}
+
+              <div className="xl:col-span-3">
+                <ThemeText as="p" tone="label" className="mb-2 text-sm font-medium">
+                  Moedas
+                </ThemeText>
+                <div className="flex flex-wrap gap-4">
+                  {SKINS_CURRENCY_OPTIONS.map((option) => (
+                    <Checkbox
+                      key={option.value}
+                      id={`coupon-currency-${option.value}`}
+                      name={`couponCurrency-${option.value}`}
+                      label={option.label}
+                      checked={formCurrencies.includes(option.value)}
+                      onChange={(event) => {
+                        const checked = event.target.checked
+                        setFormCurrencies((current) => {
+                          if (checked) {
+                            return current.includes(option.value)
+                              ? current
+                              : [...current, option.value]
+                          }
+                          const next = current.filter((code) => code !== option.value)
+                          return next.length > 0 ? next : current
+                        })
+                      }}
+                    />
+                  ))}
+                </div>
+                <ThemeText as="p" tone="faint" className="mt-1 text-xs">
+                  O cupom só vale nessas carteiras. Cada uma tem min, máx e valor
+                  fixo próprios — R$ 50 não é US$ 50.
+                </ThemeText>
+              </div>
+
+              {formCurrencies.map((currency) => {
+                const option = SKINS_CURRENCY_OPTIONS.find((item) => item.value === currency)
+                const slice = formAmounts[currency]
+                return (
+                  <div
+                    key={currency}
+                    className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
+                  >
+                    <ThemeText as="h3" tone="primary" className="text-sm font-semibold">
+                      {option?.label ?? currency}
+                    </ThemeText>
+                    {selectedRewardPreset?.valueKind === 'fixed' ? (
+                      <Input
+                        label="Valor fixo"
+                        name={`couponRewardValue-${currency}`}
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        placeholder="Obrigatório"
+                        value={slice.rewardValue}
+                        onChange={(e) =>
+                          patchFormAmount(currency, 'rewardValue', e.target.value)
+                        }
+                      />
+                    ) : null}
+                    <Input
+                      label="Compra mínima"
+                      name={`couponMinimumAmount-${currency}`}
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="Sem mínimo"
+                      value={slice.minimumAmount}
+                      onChange={(e) =>
+                        patchFormAmount(currency, 'minimumAmount', e.target.value)
+                      }
+                    />
+                    <Input
+                      label="Compra máxima"
+                      name={`couponMaximumAmount-${currency}`}
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="Sem máximo"
+                      value={slice.maximumAmount}
+                      onChange={(e) =>
+                        patchFormAmount(currency, 'maximumAmount', e.target.value)
+                      }
+                    />
+                    {selectedRewardPreset?.valueKind === 'percent' ? (
+                      <Input
+                        label="Teto de desconto"
+                        name={`couponMaximumDiscount-${currency}`}
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        placeholder="Sem teto"
+                        value={slice.maximumDiscount}
+                        onChange={(e) =>
+                          patchFormAmount(currency, 'maximumDiscount', e.target.value)
+                        }
+                      />
+                    ) : null}
+                  </div>
+                )
+              })}
 
               <Input
                 label="Máx. contas vinculadas"
@@ -513,6 +751,15 @@ export default function CouponsPage() {
                 placeholder="Sem limite"
                 value={formMaxUses}
                 onChange={(e) => setFormMaxUses(e.target.value)}
+              />
+
+              <Input
+                label="Máx. usos por usuário"
+                name="couponMaxUsesPerUser"
+                type="number"
+                min={1}
+                value={formMaxUsesPerUser}
+                onChange={(e) => setFormMaxUsesPerUser(e.target.value)}
               />
 
               <div className="flex items-end justify-end gap-2 xl:col-span-3">

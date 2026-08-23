@@ -10,16 +10,21 @@ import {
 } from '@/components/ui/DateRangePickerModal'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
+import { filterChipClasses } from '@/components/users/userPanelClasses'
 import {
   ChartTypeSelector,
   DualSeriesMetricsChart,
   useChartVariant,
 } from '@/components/charts/AnalyticsCharts'
 import {
+  loadStoredMetricsCurrency,
+  saveStoredMetricsCurrency,
+} from '@/utils/dashboardMetricsCurrencyStorage'
+import {
   loadStoredMetricsRange,
   saveStoredMetricsRange,
 } from '@/utils/dashboardMetricsRangeStorage'
-import { formatCentsUSD } from '@/utils/formatDisplay'
+import { formatCentsAxisTick, formatCentsMoney } from '@/utils/formatDisplay'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import {
   applyPreset,
@@ -27,21 +32,28 @@ import {
   isRangeWithinMaxYear,
   startOfLocalDay,
 } from '@/utils/metricsDateRange'
+import {
+  ADMIN_DASHBOARD_CURRENCIES,
+  metricsMoneyKeys,
+  type AdminDashboardCurrency,
+} from '@/types/adminMetrics'
 
 function MetricTile({
   label,
   value,
   hint,
   format = 'count',
+  currency = 'USD',
 }: {
   label: string
   value: number
   hint?: string
   format?: 'count' | 'currency'
+  currency?: AdminDashboardCurrency
 }) {
   const display =
     format === 'currency'
-      ? formatCentsUSD(value)
+      ? formatCentsMoney(value, currency)
       : value.toLocaleString('pt-BR')
 
   return (
@@ -81,6 +93,10 @@ export default function DashboardHomePage() {
   const [rangeStart, setRangeStart] = useState(() => initial.start)
   const [rangeEnd, setRangeEnd] = useState(() => initial.end)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [currency, setCurrency] = useState<AdminDashboardCurrency>(
+    () => loadStoredMetricsCurrency(),
+  )
+  const moneyKeys = metricsMoneyKeys(currency)
 
   const chartReg = useChartVariant('cs2-m-reg')
   const chartOpens = useChartVariant('cs2-m-opens')
@@ -157,7 +173,7 @@ export default function DashboardHomePage() {
               {isSandbox
                 ? 'Visão Dev: influencers, aberturas de teste, créditos bônus e faturamento fake — nada se mistura com produção.'
                 : 'Visão Produção: cadastros reais, aberturas reais, depósitos e faturamento. Influencers e testes ficam de fora.'}{' '}
-              Acima de 30 dias o gráfico agrupa por mês.
+              Dinheiro é nativo da carteira (BRL, USD ou EUR) — sem conversão. Acima de 30 dias o gráfico agrupa por mês.
             </ThemeText>
           </div>
           <Button
@@ -272,37 +288,64 @@ export default function DashboardHomePage() {
                   </>
                 ) : null}
               </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <ThemeText as="p" tone="label" className="text-sm font-medium">
+                  Carteira
+                </ThemeText>
+                <div className="flex flex-wrap gap-2">
+                  {ADMIN_DASHBOARD_CURRENCIES.map((code) => (
+                    <button
+                      key={code}
+                      type="button"
+                      className={filterChipClasses(currency === code)}
+                      onClick={() => {
+                        setCurrency(code)
+                        saveStoredMetricsCurrency(code)
+                      }}
+                    >
+                      {code}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <MetricTile
                   label={isSandbox ? 'Gasto em aberturas teste' : 'Faturamento das caixas'}
-                  value={metrics.totals.revenueUsdCents}
+                  value={metrics.totals[moneyKeys.revenue]}
                   format="currency"
+                  currency={currency}
                   hint={
                     isSandbox
-                      ? 'Gasto em aberturas de teste (USD)'
-                      : 'Gasto em aberturas reais (USD)'
+                      ? `Gasto em aberturas de teste (${currency})`
+                      : `Gasto na carteira ${currency} — sem conversão`
                   }
                 />
                 <MetricTile
                   label="Valor dos drops"
-                  value={metrics.totals.payoutUsdCents}
+                  value={metrics.totals[moneyKeys.payout]}
                   format="currency"
-                  hint="Valor dos itens sorteados (USD)"
+                  currency={currency}
+                  hint={`Valor dos itens sorteados na mesma moeda (${currency})`}
                 />
                 <MetricTile
                   label="Margem bruta"
-                  value={metrics.totals.marginUsdCents}
+                  value={metrics.totals[moneyKeys.margin]}
                   format="currency"
-                  hint="Faturamento − valor dos drops"
+                  currency={currency}
+                  hint="Faturamento − valor dos drops, na carteira selecionada"
                 />
                 <MetricTile
                   label={isSandbox ? 'Volume de bônus' : 'Volume depositado'}
-                  value={metrics.totals.depositsVolumeCents}
+                  value={
+                    metrics.totals[moneyKeys.depositsVolume] ??
+                    (currency === 'USD' ? metrics.totals.depositsVolumeCents : 0)
+                  }
                   format="currency"
+                  currency={currency}
                   hint={
                     isSandbox
-                      ? 'Soma dos créditos bônus no período'
-                      : 'Soma dos depósitos creditados'
+                      ? `Soma dos créditos bônus em ${currency}`
+                      : `Depósitos creditados na carteira ${currency}`
                   }
                 />
               </div>
@@ -316,7 +359,7 @@ export default function DashboardHomePage() {
                       Faturamento e drops por {bucketLabel}
                     </ThemeText>
                     <ThemeText as="p" tone="secondary" className="text-sm">
-                      Quanto entrou nas caixas vs. valor dos prêmios entregues
+                      Quanto entrou nas caixas vs. valor dos prêmios, em {currency}
                     </ThemeText>
                   </div>
                   <ChartTypeSelector
@@ -328,11 +371,13 @@ export default function DashboardHomePage() {
                   data={metrics.series}
                   seriesGranularity={metrics.seriesGranularity}
                   variant={chartRevenue.variant}
-                  keys={['revenueUsdCents', 'payoutUsdCents']}
+                  keys={[moneyKeys.revenue, moneyKeys.payout]}
                   names={['Faturamento', 'Drops']}
                   colors={['#059669', '#6366f1']}
                   gradientIds={['cs2Revenue', 'cs2Payout']}
                   valueFormat="currency"
+                  formatValue={(value) => formatCentsMoney(value, currency)}
+                  formatAxisTick={(value) => formatCentsAxisTick(value, currency)}
                 />
               </article>
 
@@ -400,7 +445,7 @@ export default function DashboardHomePage() {
                       Margem e faturamento por {bucketLabel}
                     </ThemeText>
                     <ThemeText as="p" tone="secondary" className="text-sm">
-                      Resultado bruto da operação de caixas
+                      Resultado bruto das caixas na carteira {currency}
                     </ThemeText>
                   </div>
                   <ChartTypeSelector
@@ -412,11 +457,13 @@ export default function DashboardHomePage() {
                   data={metrics.series}
                   seriesGranularity={metrics.seriesGranularity}
                   variant={chartOpens.variant}
-                  keys={['marginUsdCents', 'revenueUsdCents']}
+                  keys={[moneyKeys.margin, moneyKeys.revenue]}
                   names={['Margem', 'Faturamento']}
                   colors={['#ea580c', '#5c6fff']}
                   gradientIds={['cs2Margin', 'cs2Rev']}
                   valueFormat="currency"
+                  formatValue={(value) => formatCentsMoney(value, currency)}
+                  formatAxisTick={(value) => formatCentsAxisTick(value, currency)}
                 />
               </article>
             </div>

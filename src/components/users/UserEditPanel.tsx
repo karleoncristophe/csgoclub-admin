@@ -51,8 +51,8 @@ export function UserEditPanel({ user, onUpdated }: UserEditPanelProps) {
           Editar usuário
         </SectionTitle>
         <ThemeText as="p" tone="secondary" className="mb-5 text-sm">
-          Influencers usam saldo bônus (fake), abrem caixas com margem de teste separada e não
-          podem sacar. Tudo fora do fluxo principal da plataforma.
+          Influencers jogam com saldo bônus (não sacável) nas três carteiras e ficam
+          fora do fluxo real de depósito e saque.
         </ThemeText>
 
         <div className="grid gap-4 md:grid-cols-[minmax(0,280px)_auto] md:items-end">
@@ -84,8 +84,8 @@ export function UserEditPanel({ user, onUpdated }: UserEditPanelProps) {
               Modo influencer ativo
             </ThemeText>
             <ThemeText as="p" tone="secondary" className="mt-1 text-xs leading-relaxed">
-              Aberturas debitam saldo bônus, acumulam margem fake na caixa e permitem guardar itens
-              no inventário do site — sem impacto no ledger real nem em saques.
+              Débitos de caixa, battle, arena e upgrade saem do bônus da carteira
+              ativa. Sem impacto no saldo real nem em saques.
             </ThemeText>
           </div>
         ) : null}

@@ -7,6 +7,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Select } from '@/components/ui/Select'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
+import { SkinTripleCurrencyPrices } from '@/components/skins/SkinTripleCurrencyPrices'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import useDebounce from '@/hooks/useDebounce'
 import {
@@ -17,12 +18,21 @@ import { useGetWeaponCategoriesQuery } from '@/redux/store/api/weapon-categories
 
 const SKIN_SEARCH_PAGE_SIZE = 12
 
+function parseOptionalPrice(value: string): number | undefined {
+  if (!value) return undefined
+  const amount = Number(value.replace(',', '.'))
+  if (!Number.isFinite(amount) || amount < 0) return undefined
+  return amount
+}
+
 type CaseEditorSkinSearchSectionProps = {
   currency: SkinsCurrency
   addedSkinNames: Set<string>
   onAddSkin: (skin: SkinsCatalogItem) => void
   /** Renderiza sem o card externo e sem título (uso dentro de modal) */
   embedded?: boolean
+  /** Arena: mostra BRL + USD + EUR e filtro por valor da skin. */
+  showPrizeValues?: boolean
 }
 
 export function CaseEditorSkinSearchSection({
@@ -30,20 +40,39 @@ export function CaseEditorSkinSearchSection({
   addedSkinNames,
   onAddSkin,
   embedded = false,
+  showPrizeValues = false,
 }: CaseEditorSkinSearchSectionProps) {
   const [searchInput, setSearchInput] = useState('')
   const [skinWeaponType, setSkinWeaponType] = useState('')
   const [skinRarity, setSkinRarity] = useState('')
+  const [minPriceInput, setMinPriceInput] = useState('')
+  const [maxPriceInput, setMaxPriceInput] = useState('')
+  const [priceSort, setPriceSort] = useState<'price_desc' | 'price_asc'>(
+    'price_desc',
+  )
   const [skinSearchPage, setSkinSearchPage] = useState(1)
   const skinSearchAnchorRef = useRef<HTMLDivElement>(null)
 
   const debouncedSearch = useDebounce(searchInput.trim(), 350)
+  const debouncedMinPrice = useDebounce(minPriceInput.trim(), 350)
+  const debouncedMaxPrice = useDebounce(maxPriceInput.trim(), 350)
   const [searchCatalog, searchState] = useLazyGetSkinsCatalogQuery()
   const { data: weaponCategories = [] } = useGetWeaponCategoriesQuery()
 
+  const minPrice = showPrizeValues ? parseOptionalPrice(debouncedMinPrice) : undefined
+  const maxPrice = showPrizeValues ? parseOptionalPrice(debouncedMaxPrice) : undefined
+
   useEffect(() => {
     setSkinSearchPage(1)
-  }, [debouncedSearch, skinWeaponType, skinRarity, currency])
+  }, [
+    debouncedSearch,
+    skinWeaponType,
+    skinRarity,
+    currency,
+    minPrice,
+    maxPrice,
+    priceSort,
+  ])
 
   useEffect(() => {
     void searchCatalog({
@@ -51,6 +80,13 @@ export function CaseEditorSkinSearchSection({
       currency,
       weaponType: skinWeaponType || undefined,
       rarity: skinRarity || undefined,
+      ...(showPrizeValues
+        ? {
+            sort: priceSort,
+            ...(typeof minPrice === 'number' ? { minPrice } : {}),
+            ...(typeof maxPrice === 'number' ? { maxPrice } : {}),
+          }
+        : {}),
       limit: SKIN_SEARCH_PAGE_SIZE,
       offset: (skinSearchPage - 1) * SKIN_SEARCH_PAGE_SIZE,
     })
@@ -61,6 +97,10 @@ export function CaseEditorSkinSearchSection({
     skinRarity,
     skinSearchPage,
     searchCatalog,
+    showPrizeValues,
+    priceSort,
+    minPrice,
+    maxPrice,
   ])
 
   const searchResults = searchState.data?.items ?? []
@@ -136,6 +176,49 @@ export function CaseEditorSkinSearchSection({
             </option>
           ))}
         </Select>
+        {showPrizeValues ? (
+          <>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Preço mín. ({currency})
+              </label>
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                value={minPriceInput}
+                onChange={(e) => setMinPriceInput(e.target.value)}
+                placeholder="0"
+                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20 dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Preço máx. ({currency})
+              </label>
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                value={maxPriceInput}
+                onChange={(e) => setMaxPriceInput(e.target.value)}
+                placeholder="Sem limite"
+                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20 dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </div>
+            <Select
+              label="Ordenar por preço"
+              name="skinPriceSort"
+              value={priceSort}
+              onChange={(e) =>
+                setPriceSort(e.target.value as 'price_desc' | 'price_asc')
+              }
+            >
+              <option value="price_desc">Mais cara primeiro</option>
+              <option value="price_asc">Mais barata primeiro</option>
+            </Select>
+          </>
+        ) : null}
       </div>
 
       {skinTypeCounters.length > 0 ? (
@@ -241,9 +324,18 @@ export function CaseEditorSkinSearchSection({
                     <ThemeText tone="primary" className="line-clamp-2 text-xs font-medium">
                       {skin.name}
                     </ThemeText>
-                    <ThemeText tone="label" className="mt-1 text-[11px]">
-                      {formatSkinsPrice(skin.priceWithTax, currency)} · taxa {skin.taxPercent}%
-                    </ThemeText>
+                    {showPrizeValues ? (
+                      <SkinTripleCurrencyPrices
+                        compact
+                        valueBrl={skin.valueBrl}
+                        valueUsd={skin.valueUsd}
+                        valueEur={skin.valueEur}
+                      />
+                    ) : (
+                      <ThemeText tone="label" className="mt-1 text-[11px]">
+                        {formatSkinsPrice(skin.priceWithTax, currency)} · taxa {skin.taxPercent}%
+                      </ThemeText>
+                    )}
                   </div>
                   <Plus className="h-4 w-4 shrink-0 text-brand-600" />
                 </button>

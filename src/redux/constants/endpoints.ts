@@ -26,15 +26,12 @@ export const WEAPON_CATEGORIES = {
 export const USERS = {
   LIST: '/admin/users',
   BY_ID: (id: string) => `/admin/users/${id}`,
-  INVENTORY: (id: string) => `/admin/users/${id}/inventory`,
   SITE_INVENTORY: (id: string) => `/admin/users/${id}/site-inventory`,
   CASE_OPENS: (id: string) => `/admin/users/${id}/case-opens`,
   CASE_OPEN_BY_ID: (userId: string, openId: string) =>
     `/admin/users/${userId}/case-opens/${openId}`,
   CONVERT_ALL_SITE_INVENTORY: (id: string) =>
     `/admin/users/${id}/site-inventory/convert-all`,
-  OPEN_TEST_CASE: (userId: string, caseId: string) =>
-    `/admin/users/${userId}/cases/${caseId}/open`,
   RESOLVE_TEST_CASE_OPEN: (userId: string, openId: string) =>
     `/admin/users/${userId}/case-opens/${openId}/disposition`,
   KYC: (id: string) => `/admin/users/${id}/kyc`,
@@ -96,4 +93,9 @@ export const BATTLES_ADMIN = {
   CANCEL: (id: string) => `/admin/battles/${id}/cancel`,
   BOTS: '/admin/battles/bots',
   BOT_BY_ID: (id: string) => `/admin/battles/bots/${id}`,
+} as const
+
+export const ARENA = {
+  CRATES: '/admin/arena/crates',
+  CRATE_BY_ID: (id: string) => `/admin/arena/crates/${id}`,
 } as const

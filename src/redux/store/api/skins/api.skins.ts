@@ -9,6 +9,9 @@ export type SkinsCatalogItem = {
   priceWithTax: number
   taxPercent: number
   currency: string
+  valueUsd?: number
+  valueBrl?: number
+  valueEur?: number
   classId?: string
   availableCount?: number
   image?: string
@@ -72,6 +75,9 @@ export type GetSkinsCatalogParams = {
   rarity?: string
   minPricePercent?: number
   maxPricePercent?: number
+  minPrice?: number
+  maxPrice?: number
+  sort?: 'price_desc' | 'price_asc'
   limit?: number
   offset?: number
 }
@@ -96,6 +102,9 @@ export const skinsApi = createApi({
           ...(typeof params?.maxPricePercent === 'number'
             ? { maxPricePercent: params.maxPricePercent }
             : {}),
+          ...(typeof params?.minPrice === 'number' ? { minPrice: params.minPrice } : {}),
+          ...(typeof params?.maxPrice === 'number' ? { maxPrice: params.maxPrice } : {}),
+          ...(params?.sort ? { sort: params.sort } : {}),
           ...(typeof params?.limit === 'number' ? { limit: params.limit } : {}),
           ...(typeof params?.offset === 'number' ? { offset: params.offset } : {}),
         },

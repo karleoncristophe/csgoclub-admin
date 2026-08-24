@@ -167,7 +167,7 @@ export const caseEditorSchema = Yup.object({
     })),
     values.valueMode as CaseValueMode,
   )
-  if (values.price >= totalEV) return true
+  if ((values.price ?? 0) >= totalEV) return true
   return this.createError({
     path: 'price',
     message: `Preço final não pode ser menor que o valor esperado (${totalEV.toFixed(2)})`,

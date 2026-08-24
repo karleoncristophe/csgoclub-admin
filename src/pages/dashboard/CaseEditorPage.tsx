@@ -154,7 +154,7 @@ export default function CaseEditorPage() {
 
         const payload = {
           name: values.name.trim(),
-          description: values.description.trim() || undefined,
+          description: (values.description ?? '').trim() || undefined,
           imageUrl,
           currency: values.currency as SkinsCurrency,
           valueMode: values.valueMode as CaseValueMode,
@@ -235,7 +235,10 @@ export default function CaseEditorPage() {
   )
 
   const priceFromDiscount = useMemo(
-    () => roundPrice(computePriceAfterDiscount(values.listPrice, values.discountPercent)),
+    () =>
+      roundPrice(
+        computePriceAfterDiscount(values.listPrice ?? 0, values.discountPercent),
+      ),
     [values.listPrice, values.discountPercent],
   )
 
@@ -523,7 +526,7 @@ export default function CaseEditorPage() {
         items={values.items}
         currency={currency}
         valueMode={values.valueMode as CaseValueMode}
-        openPrice={values.price}
+        openPrice={values.price ?? 0}
         targetMarginPercent={values.targetMarginPercent}
         ledger={economyLedger}
         itemsError={itemsError}
@@ -580,8 +583,8 @@ export default function CaseEditorPage() {
           currency={currency}
           valueMode={values.valueMode as CaseValueMode}
           config={economicsConfig}
-          listPrice={values.listPrice}
-          finalPrice={values.price}
+          listPrice={values.listPrice ?? 0}
+          finalPrice={values.price ?? 0}
           ledger={economyLedger}
           sharedLedger={(values.sharedCaseIds?.length ?? 0) > 0}
         />

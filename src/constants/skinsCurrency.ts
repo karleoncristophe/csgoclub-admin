@@ -1,8 +1,10 @@
-export enum SkinsCurrency {
-  BRL = 'BRL',
-  USD = 'USD',
-  EUR = 'EUR',
-}
+export const SkinsCurrency = {
+  BRL: 'BRL',
+  USD: 'USD',
+  EUR: 'EUR',
+} as const
+
+export type SkinsCurrency = (typeof SkinsCurrency)[keyof typeof SkinsCurrency]
 
 export const SKINS_CURRENCY_OPTIONS = [
   { value: SkinsCurrency.BRL, label: 'Real (BRL)' },

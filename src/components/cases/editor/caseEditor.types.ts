@@ -1,5 +1,5 @@
 import type { CaseImageValue } from '@/components/cases/CaseImageUploader'
-import type { CaseDropItem, LootCase } from '@/redux/store/api/cases/api.cases'
+import type { CaseDropItem } from '@/redux/store/api/cases/api.cases'
 import type { CaseEditorFormValues } from '@/validators/caseEditorSchema'
 
 export type CaseFormState = Omit<CaseEditorFormValues, 'items'> & {

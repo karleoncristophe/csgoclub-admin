@@ -77,6 +77,7 @@ export type UserKycDetail = {
   verifiedAt?: string
   declinedAt?: string
   updatedAt?: string
+  decisionSummary?: Record<string, unknown>
   sessions: Array<{
     sessionId: string
     status: UserKycDetail['status']

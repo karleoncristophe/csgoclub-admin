@@ -242,6 +242,7 @@ export default function WeaponCategoriesPage() {
                         <td className={listTable.tdStrong}>
                           {isEditing ? (
                             <Input
+                              label="Nome"
                               name={`edit-name-${category._id}`}
                               value={editName}
                               onChange={(e) => setEditName(e.target.value)}
@@ -254,6 +255,7 @@ export default function WeaponCategoriesPage() {
                         <td className={listTable.td}>
                           {isEditing ? (
                             <Input
+                              label="Taxa (%)"
                               name={`edit-tax-${category._id}`}
                               type="number"
                               min={0}

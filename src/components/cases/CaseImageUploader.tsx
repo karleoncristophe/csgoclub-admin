@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Crop, ImagePlus, X } from 'lucide-react'
 import { ImageCropperModal } from '@/components/upload/ImageCropperModal'
-import { Surface, surfaceClass } from '@/components/ui/Surface'
+import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import {
   ACCEPT_IMAGE_ATTRIBUTE,

@@ -4,7 +4,6 @@ import {
   Coins,
   Gem,
   HelpCircle,
-  Layers,
   Package,
   Settings,
   Users,

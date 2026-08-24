@@ -180,15 +180,24 @@ export default function UserCaseOpenDetailPage() {
                         : '—'
                     }
                   />
-                  <ValueTile label="USD" value={formatMoney(data.valueUsd, 'USD')} />
+                  <ValueTile
+                    label="USD"
+                    value={
+                      data.valueUsd != null ? formatMoney(data.valueUsd, 'USD') : '—'
+                    }
+                  />
                   <ValueTile
                     label="BRL"
-                    value={formatMoney(data.valueBrl, 'BRL')}
+                    value={
+                      data.valueBrl != null ? formatMoney(data.valueBrl, 'BRL') : '—'
+                    }
                     hint={data.rateBrl != null ? `Taxa ${data.rateBrl}` : undefined}
                   />
                   <ValueTile
                     label="EUR"
-                    value={formatMoney(data.valueEur, 'EUR')}
+                    value={
+                      data.valueEur != null ? formatMoney(data.valueEur, 'EUR') : '—'
+                    }
                     hint={data.rateEur != null ? `Taxa ${data.rateEur}` : undefined}
                   />
                 </div>

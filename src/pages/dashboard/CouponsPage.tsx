@@ -417,6 +417,7 @@ export default function CouponsPage() {
                         <td className={listTable.td}>
                           {isEditing ? (
                             <Input
+                              label="Válido até"
                               name={`edit-valid-to-${coupon._id}`}
                               type="datetime-local"
                               value={editValidTo}

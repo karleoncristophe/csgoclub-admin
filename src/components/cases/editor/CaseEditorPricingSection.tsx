@@ -85,7 +85,7 @@ export function CaseEditorPricingSection({
           label="Preço de tabela"
           name="listPrice"
           currency={currency}
-          value={values.listPrice}
+          value={values.listPrice ?? 0}
           onChange={() => {}}
           disabled
           hint="Calculado: VE × (1 + margem)"
@@ -114,7 +114,7 @@ export function CaseEditorPricingSection({
           label="Preço final (vitrine)"
           name="price"
           currency={currency}
-          value={values.price}
+          value={values.price ?? 0}
           onChange={() => {}}
           disabled
           hint="Tabela com desconto aplicado"

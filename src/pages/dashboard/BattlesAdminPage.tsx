@@ -47,7 +47,9 @@ async function uploadBotAvatar(
   previousUrl?: string,
 ): Promise<string | undefined> {
   if (isPendingCaseImage(image)) {
-    const uploaded = await uploadSingleFile(image.file, BOT_AVATAR_FOLDER)
+    const uploaded = await uploadSingleFile(image.file, BOT_AVATAR_FOLDER, {
+      crop: image.crop,
+    })
     if (previousUrl && previousUrl !== uploaded.url) {
       void deleteUploadFile(previousUrl)
     }

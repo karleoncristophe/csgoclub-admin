@@ -1,3 +1,4 @@
+import type { ImageCropRect } from '@/components/upload/image-crop'
 import { store } from '@/redux/store/store'
 
 function getApiBaseUrl() {
@@ -13,7 +14,7 @@ export type UploadSingleResponse = {
 export async function uploadSingleFile(
   file: File,
   folder = 'cases',
-  customName?: string,
+  options?: { customName?: string; crop?: ImageCropRect },
 ): Promise<UploadSingleResponse> {
   const token = store.getState().security.accessToken?.trim()
   if (!token) {
@@ -23,7 +24,8 @@ export async function uploadSingleFile(
   const formData = new FormData()
   formData.append('file', file)
   if (folder) formData.set('folder', folder)
-  if (customName) formData.set('customName', customName)
+  if (options?.customName) formData.set('customName', options.customName)
+  if (options?.crop) formData.set('crop', JSON.stringify(options.crop))
 
   const res = await fetch(`${getApiBaseUrl()}/upload/single`, {
     method: 'POST',

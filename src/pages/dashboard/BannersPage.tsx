@@ -146,7 +146,9 @@ export default function BannersPage() {
     previousUrl?: string,
   ): Promise<string | undefined> => {
     if (isPendingBannerImage(image)) {
-      const uploaded = await uploadSingleFile(image.file, 'banners')
+      const uploaded = await uploadSingleFile(image.file, 'banners', {
+        crop: image.crop,
+      })
       return uploaded.url
     }
     if (typeof image === 'string' && image.trim()) {
@@ -347,7 +349,7 @@ export default function BannersPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle subtitle="Carrossel widescreen no topo da home (estilo csgo.net). Imagens em JPEG no server (pasta banners).">
+      <PageTitle subtitle="Carrossel widescreen no topo da home (estilo csgo.net).">
         Banners
       </PageTitle>
 

@@ -140,7 +140,9 @@ export default function CaseEditorPage() {
       try {
         if (isPendingCaseImage(values.caseImage)) {
           try {
-            const uploaded = await uploadSingleFile(values.caseImage.file, 'cases')
+            const uploaded = await uploadSingleFile(values.caseImage.file, 'cases', {
+              crop: values.caseImage.crop,
+            })
             imageUrl = uploaded.url
           } catch (err) {
             setUploadError(getErrorMessage(err))

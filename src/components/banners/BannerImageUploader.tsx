@@ -3,7 +3,9 @@ import { Crop, ImagePlus, X } from 'lucide-react'
 import {
   ImageCropperModal,
   type CropAspectRatio,
+  type CropResult,
 } from '@/components/upload/ImageCropperModal'
+import type { ImageCropRect } from '@/components/upload/image-crop'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import {
@@ -17,6 +19,8 @@ import {
 export type PendingBannerImage = {
   _pending: true
   file: File
+  previewFile?: File
+  crop?: ImageCropRect
   id: string
 }
 
@@ -50,6 +54,7 @@ export function BannerImageUploader({
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragActive, setDragActive] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null)
   const [sizeError, setSizeError] = useState(false)
   const [typeError, setTypeError] = useState(false)
   const [cropOpen, setCropOpen] = useState(false)
@@ -61,7 +66,7 @@ export function BannerImageUploader({
       ? value
       : null
   const cropSrc = isPendingBannerImage(value)
-    ? previewUrl
+    ? sourceUrl
     : typeof value === 'string'
       ? value
       : null
@@ -69,11 +74,19 @@ export function BannerImageUploader({
   useEffect(() => {
     if (!isPendingBannerImage(value)) {
       setPreviewUrl(null)
+      setSourceUrl(null)
       return () => {}
     }
-    const url = URL.createObjectURL(value.file)
-    setPreviewUrl(url)
-    return () => URL.revokeObjectURL(url)
+    const source = URL.createObjectURL(value.file)
+    const nextPreview = value.previewFile
+      ? URL.createObjectURL(value.previewFile)
+      : source
+    setSourceUrl(source)
+    setPreviewUrl(nextPreview)
+    return () => {
+      URL.revokeObjectURL(source)
+      if (value.previewFile) URL.revokeObjectURL(nextPreview)
+    }
   }, [value])
 
   const addFile = (file: File) => {
@@ -94,14 +107,27 @@ export function BannerImageUploader({
   }
 
   const handleCropDone = useCallback(
-    (blob: Blob) => {
-      const file = new File([blob], 'banner.jpg', {
-        type: blob.type || 'image/jpeg',
+    ({ blob, crop }: CropResult) => {
+      const previewFile = new File([blob], 'banner.webp', {
+        type: blob.type || 'image/webp',
       })
-      onChange({ _pending: true, file, id: generateId() })
+      if (isPendingBannerImage(value)) {
+        onChange({
+          ...value,
+          crop,
+          previewFile,
+          id: generateId(),
+        })
+      } else {
+        onChange({
+          _pending: true,
+          file: previewFile,
+          id: generateId(),
+        })
+      }
       setCropOpen(false)
     },
-    [onChange],
+    [onChange, value],
   )
 
   return (
@@ -110,7 +136,7 @@ export function BannerImageUploader({
         Imagem do banner
       </ThemeText>
       <ThemeText tone="secondary" className="text-xs">
-        Recorte widescreen {aspectRatio}. O server grava em JPEG (até 2560×900).
+        Recorte widescreen {aspectRatio} (até 2560×900).
       </ThemeText>
 
       <div
@@ -212,6 +238,7 @@ export function BannerImageUploader({
           onClose={() => setCropOpen(false)}
           onCrop={handleCropDone}
           aspectRatio={aspectRatio}
+          outputWidth={2560}
         />
       ) : null}
     </div>

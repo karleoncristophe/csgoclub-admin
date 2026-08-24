@@ -153,7 +153,9 @@ export default function ArenaCrateEditorPage() {
       try {
         if (isPendingCaseImage(values.caseImage)) {
           try {
-            const uploaded = await uploadSingleFile(values.caseImage.file, 'arena')
+            const uploaded = await uploadSingleFile(values.caseImage.file, 'arena', {
+              crop: values.caseImage.crop,
+            })
             imageUrl = uploaded.url
           } catch (err) {
             setUploadError(getErrorMessage(err))

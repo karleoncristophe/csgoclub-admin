@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Crop, ImagePlus, X } from 'lucide-react'
-import { ImageCropperModal } from '@/components/upload/ImageCropperModal'
+import {
+  ImageCropperModal,
+  type CropResult,
+} from '@/components/upload/ImageCropperModal'
+import type { ImageCropRect } from '@/components/upload/image-crop'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import {
@@ -14,6 +18,8 @@ import {
 export type PendingCaseImage = {
   _pending: true
   file: File
+  previewFile?: File
+  crop?: ImageCropRect
   id: string
 }
 
@@ -68,6 +74,7 @@ export function CaseImageUploader({
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragActive, setDragActive] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null)
   const [sizeError, setSizeError] = useState(false)
   const [typeError, setTypeError] = useState(false)
   const [cropOpen, setCropOpen] = useState(false)
@@ -79,16 +86,28 @@ export function CaseImageUploader({
       ? value
       : null
 
-  const cropSrc = isPendingCaseImage(value) ? previewUrl : typeof value === 'string' ? value : null
+  const cropSrc = isPendingCaseImage(value)
+    ? sourceUrl
+    : typeof value === 'string'
+      ? value
+      : null
 
   useEffect(() => {
     if (!isPendingCaseImage(value)) {
       setPreviewUrl(null)
+      setSourceUrl(null)
       return () => {}
     }
-    const url = URL.createObjectURL(value.file)
-    setPreviewUrl(url)
-    return () => URL.revokeObjectURL(url)
+    const source = URL.createObjectURL(value.file)
+    const preview = value.previewFile
+      ? URL.createObjectURL(value.previewFile)
+      : source
+    setSourceUrl(source)
+    setPreviewUrl(preview)
+    return () => {
+      URL.revokeObjectURL(source)
+      if (value.previewFile) URL.revokeObjectURL(preview)
+    }
   }, [value])
 
   const addFile = (file: File) => {
@@ -108,15 +127,27 @@ export function CaseImageUploader({
   }
 
   const handleCropDone = useCallback(
-    (blob: Blob) => {
-      const extension = blob.type === 'image/webp' ? 'webp' : 'png'
-      const file = new File([blob], `case-cover.${extension}`, {
-        type: blob.type || 'image/png',
+    ({ blob, crop }: CropResult) => {
+      const previewFile = new File([blob], 'case-cover.webp', {
+        type: blob.type || 'image/webp',
       })
-      onChange({ _pending: true, file, id: generateId() })
+      if (isPendingCaseImage(value)) {
+        onChange({
+          ...value,
+          crop,
+          previewFile,
+          id: generateId(),
+        })
+      } else {
+        onChange({
+          _pending: true,
+          file: previewFile,
+          id: generateId(),
+        })
+      }
       setCropOpen(false)
     },
-    [onChange],
+    [onChange, value],
   )
 
   return (
@@ -239,6 +270,7 @@ export function CaseImageUploader({
           onClose={() => setCropOpen(false)}
           onCrop={handleCropDone}
           aspectRatio="1:1"
+          outputWidth={1200}
         />
       ) : null}
     </div>

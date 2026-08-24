@@ -1,4 +1,4 @@
-# CS2Club Admin
+# CS2Club Admin 
 
 CS2Club Admin is the internal back-office application used to operate and monitor the CS2Club platform. It gives the admin team a single place to authenticate, review platform activity, and manage the most important operational areas of the business.
 

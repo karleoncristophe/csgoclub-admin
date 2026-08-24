@@ -26,6 +26,9 @@ const WeaponCategoriesPage = lazy(
 const UsersPage = lazy(
   () => import('@/pages/dashboard/UsersPage'),
 )
+const AdminsPage = lazy(
+  () => import('@/pages/dashboard/AdminsPage'),
+)
 const UserDetailPage = lazy(
   () => import('@/pages/dashboard/UserDetailPage'),
 )
@@ -112,6 +115,7 @@ function ProtectedRoutes() {
         <Route path="skins/item" element={<SkinDetailPage />} />
         <Route path="categorias" element={<WeaponCategoriesPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="admins" element={<AdminsPage />} />
         <Route path="users/:id" element={<UserDetailPage />} />
         <Route
           path="users/:id/case-opens/:openId"

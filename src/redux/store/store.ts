@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { aiAssistantApi } from '@/redux/store/api/ai/api.ai'
 import { authApi } from '@/redux/store/api/auth/api.auth'
+import { adminAccountsApi } from '@/redux/store/api/admins/api.admins'
 import { arenaApi } from '@/redux/store/api/arena/api.arena'
 import { battlesAdminApi } from '@/redux/store/api/battles/api.battles'
 import { casesApi } from '@/redux/store/api/cases/api.cases'
@@ -23,6 +24,7 @@ export const store = configureStore({
     me: meReducer,
     platformDataEnvironment: platformDataEnvironmentReducer,
     [authApi.reducerPath]: authApi.reducer,
+    [adminAccountsApi.reducerPath]: adminAccountsApi.reducer,
     [skinsApi.reducerPath]: skinsApi.reducer,
     [casesApi.reducerPath]: casesApi.reducer,
     [caseOpensApi.reducerPath]: caseOpensApi.reducer,
@@ -40,6 +42,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       authApi.middleware,
+      adminAccountsApi.middleware,
       skinsApi.middleware,
       casesApi.middleware,
       caseOpensApi.middleware,

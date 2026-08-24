@@ -18,6 +18,7 @@ import {
   Swords,
   TicketPercent,
   Settings,
+  ShieldCheck,
   Users,
 } from 'lucide-react'
 import { useGetMeQuery } from '@/redux/store/api/auth/api.auth'
@@ -32,7 +33,7 @@ import {
   PlatformDataEnvironmentToggle,
 } from '@/components/ui/PlatformDataEnvironmentToggle'
 
-type NavItem = { href: string; label: string; Icon: LucideIcon }
+type NavItem = { href: string; label: string; Icon: LucideIcon; masterOnly?: boolean }
 type NavSection = { title: string; items: readonly NavItem[] }
 
 const NAV_SECTIONS: readonly NavSection[] = [
@@ -41,6 +42,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
     items: [
       { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
       { href: '/dashboard/users', label: 'Usuários', Icon: Users },
+      { href: '/dashboard/admins', label: 'Admins', Icon: ShieldCheck, masterOnly: true },
       { href: '/dashboard/skins', label: 'Skins', Icon: Gem },
       { href: '/dashboard/cases', label: 'Caixas', Icon: Package },
       { href: '/dashboard/case-opens', label: 'Aberturas', Icon: History },
@@ -78,7 +80,9 @@ function initialsFromName(name?: string) {
 function roleLabel(role?: string) {
   if (!role) return 'Administrador'
   const r = role.toLowerCase()
-  if (r.includes('super') || r.includes('platform')) return 'Admin da plataforma'
+  if (r === 'master' || r.includes('super') || r.includes('platform')) {
+    return 'Master'
+  }
   if (r.includes('admin')) return 'Administrador'
   return role
 }
@@ -156,6 +160,7 @@ export default function DashboardLayout() {
               </ThemeText>
               <div className="space-y-1">
                 {section.items
+                  .filter((item) => !item.masterOnly || me.role === 'MASTER')
                   .map(({ href, label, Icon }) => {
                   const active = navItemActive(location.pathname, href)
                   return (

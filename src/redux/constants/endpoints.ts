@@ -12,6 +12,11 @@ export const ME = {
   PROFILE: '/admin/me',
 } as const
 
+export const ADMIN_ACCOUNTS = {
+  ROOT: '/admin/accounts',
+  BY_ID: (id: string) => `/admin/accounts/${id}`,
+} as const
+
 export const SKINSBACK = {
   CATALOG: '/skinsback/catalog',
   CATALOG_ITEM: '/skinsback/catalog/item',

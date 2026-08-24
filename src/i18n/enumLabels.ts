@@ -13,6 +13,8 @@ function pick(
 
 /** Papéis de administrador da plataforma (CreateAdminDto / Admin.role) */
 export const ADMIN_ROLE_LABELS: Readonly<Record<string, string>> = {
+  MASTER: 'Master',
+  ADMIN: 'Administrador',
   PLATFORM_ADMIN: 'Administrador da plataforma (master)',
   EVENT_MODERATOR: 'Moderador de eventos',
   CONTENT_MANAGER: 'Gestão de conteúdo',

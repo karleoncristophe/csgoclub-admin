@@ -1,10 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { IconButton } from '@/components/ui/IconButton'
 import { Input } from '@/components/ui/Input'
+import {
+  SearchableSelect,
+  type SearchableSelectOption,
+} from '@/components/ui/SearchableSelect'
 import { Select } from '@/components/ui/Select'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
@@ -157,23 +161,43 @@ export default function CouponsPage() {
   })
   const { data: rewardPresetsData } = useGetCouponRewardPresetsQuery()
 
-  const { data: influencerList } = useGetUsersQuery({
+  const [influencerSearch, setInfluencerSearch] = useState('')
+  const [selectedInfluencer, setSelectedInfluencer] =
+    useState<SearchableSelectOption | null>(null)
+
+  const { data: influencerList, isFetching: influencersLoading } = useGetUsersQuery({
     page: 1,
-    limit: 100,
+    limit: 20,
+    search: influencerSearch.trim() || undefined,
     dataEnvironment: 'SANDBOX',
   })
 
-  const influencers = useMemo(
-    () => (influencerList?.data ?? []).filter((user) => user.userType === 'influencer'),
+  const influencerOptions = useMemo(
+    () =>
+      (influencerList?.data ?? []).map((user) => ({
+        value: user._id,
+        label: user.name,
+        description: user.steamId,
+        imageUrl: user.avatarMedium || user.avatar || user.avatarFull || undefined,
+      })),
     [influencerList],
   )
 
-  const influencerById = useMemo(
-    () =>
-      new Map(
-        influencers.map((user) => [user._id, `${user.name} (${user.steamId})`] as const),
-      ),
-    [influencers],
+  const handleInfluencerSearch = useCallback((query: string) => {
+    setInfluencerSearch(query)
+  }, [])
+
+  const handleInfluencerChange = useCallback(
+    (nextId: string) => {
+      setFormOwnerId(nextId)
+      if (!nextId) {
+        setSelectedInfluencer(null)
+        return
+      }
+      const fromList = influencerOptions.find((option) => option.value === nextId)
+      if (fromList) setSelectedInfluencer(fromList)
+    },
+    [influencerOptions],
   )
 
   const [createCoupon, createState] = useCreateCouponMutation()
@@ -183,7 +207,6 @@ export default function CouponsPage() {
   const [formCode, setFormCode] = useState('')
   const [formDescription, setFormDescription] = useState('')
   const [formOwnerId, setFormOwnerId] = useState('')
-  const [ownerSearch, setOwnerSearch] = useState('')
   const [formValidFrom, setFormValidFrom] = useState('')
   const [formValidTo, setFormValidTo] = useState('')
   const [formRewardType, setFormRewardType] = useState<AdminCouponRewardType>('DEPOSIT_PERCENT')
@@ -225,21 +248,13 @@ export default function CouponsPage() {
     [rewardPresets],
   )
   const selectedRewardPreset = rewardPresetByType.get(formRewardType)
-  const ownerMatches = useMemo(() => {
-    const query = ownerSearch.trim().toLowerCase()
-    if (!query) return influencers.slice(0, 8)
-    return influencers
-      .filter((user) =>
-        `${user.name} ${user.steamId}`.toLowerCase().includes(query),
-      )
-      .slice(0, 8)
-  }, [ownerSearch, influencers])
 
   const resetForm = () => {
     setFormCode('')
     setFormDescription('')
     setFormOwnerId('')
-    setOwnerSearch('')
+    setSelectedInfluencer(null)
+    setInfluencerSearch('')
     setFormValidFrom('')
     setFormValidTo('')
     setFormRewardType('DEPOSIT_PERCENT')
@@ -534,48 +549,24 @@ export default function CouponsPage() {
                 onChange={(e) => setFormCode(e.target.value.toUpperCase())}
               />
 
-              <div className="relative">
-                <Input
-                  label="Influencer dono"
-                  name="couponOwnerAutocomplete"
-                  placeholder="Busque por nome ou Steam ID..."
-                  value={ownerSearch}
-                  onChange={(event) => {
-                    setOwnerSearch(event.target.value)
-                    setFormOwnerId('')
-                  }}
-                />
-                {ownerSearch.trim() ? (
-                  <div className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-zinc-700 bg-zinc-900 p-1 shadow-xl">
-                    {ownerMatches.length === 0 ? (
-                      <div className="px-3 py-2 text-xs text-zinc-400">
-                        Nenhum influencer encontrado.
-                      </div>
-                    ) : (
-                      ownerMatches.map((user) => {
-                        const label = `${user.name} (${user.steamId})`
-                        return (
-                          <button
-                            key={user._id}
-                            type="button"
-                            onClick={() => {
-                              setFormOwnerId(user._id)
-                              setOwnerSearch(label)
-                            }}
-                            className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm text-zinc-200 transition hover:bg-zinc-800"
-                          >
-                            <span className="truncate">{user.name}</span>
-                            <span className="truncate text-xs text-zinc-400">{user.steamId}</span>
-                          </button>
-                        )
-                      })
-                    )}
-                  </div>
-                ) : null}
-                {formOwnerId && !ownerSearch.trim() ? (
-                  <p className="mt-1 text-xs text-zinc-500">{influencerById.get(formOwnerId)}</p>
-                ) : null}
-              </div>
+              <SearchableSelect
+                label="Influencer dono"
+                placeholder="Selecionar influencer…"
+                searchPlaceholder="Filtrar por nome ou Steam ID…"
+                modalTitle="Escolher influencer"
+                modalDescription="Mostra os influencers do servidor (independente da visão Prod/Dev). Primeiros 20; filtre por nome ou Steam ID."
+                options={influencerOptions}
+                value={formOwnerId}
+                onChange={handleInfluencerChange}
+                selectedOption={selectedInfluencer}
+                serverSearch
+                onSearchChange={handleInfluencerSearch}
+                loading={influencersLoading}
+                totalCount={influencerList?.total ?? influencerOptions.length}
+                resultNoun="influencer"
+                emptyMessage="Nenhum influencer encontrado para essa busca."
+                hint="Lista sempre os influencers do servidor, mesmo em visão Produção."
+              />
 
               <Input
                 label="Expira em"

@@ -3,6 +3,7 @@ import { SkinsCurrency } from '@/constants/skinsCurrency'
 import { USERS } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
 import {
+  ADMIN_DATA_ENVIRONMENT_HEADER,
   omitDataEnvironmentQueryArg,
   type WithPlatformDataEnvironment,
 } from '@/utils/platformDataEnvironmentStorage'
@@ -339,6 +340,7 @@ export const usersApi = createApi({
     getUsers: builder.query<UserListPaginatedDto, GetUsersParams | void>({
       query: (params) => {
         const clean = params ? omitDataEnvironmentQueryArg(params) : undefined
+        const dataEnvironment = params?.dataEnvironment
         return {
           url: USERS.LIST,
           method: 'GET',
@@ -352,6 +354,9 @@ export const usersApi = createApi({
               ? { includeDeleted: clean.includeDeleted }
               : {}),
           },
+          ...(dataEnvironment
+            ? { headers: { [ADMIN_DATA_ENVIRONMENT_HEADER]: dataEnvironment } }
+            : {}),
         }
       },
       providesTags: ['Users'],

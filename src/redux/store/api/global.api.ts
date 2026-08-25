@@ -18,7 +18,10 @@ const baseQuery = fetchBaseQuery({
     const token = state.security.accessToken
     const dataEnvironment = state.platformDataEnvironment?.value ?? 'PRODUCTION'
     headers.set('accept', 'application/json')
-    headers.set(ADMIN_DATA_ENVIRONMENT_HEADER, dataEnvironment)
+    // Permite override por request (ex.: listar influencers no cupom em visão Produção).
+    if (!headers.has(ADMIN_DATA_ENVIRONMENT_HEADER)) {
+      headers.set(ADMIN_DATA_ENVIRONMENT_HEADER, dataEnvironment)
+    }
     if (token) {
       headers.set('authorization', `Bearer ${token}`)
     }

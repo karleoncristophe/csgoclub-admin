@@ -35,12 +35,14 @@ export type ArenaCrate = {
   description?: string
   imageUrl?: string
   rarity: ArenaRarity
-  value: number
-  valueBrl?: number
-  valueUsd?: number
-  valueEur?: number
   color?: string
   items: ArenaCrateItem[]
+  economyLedger?: {
+    bankBalanceBrl?: number
+    bankBalanceUsd?: number
+    bankBalanceEur?: number
+    totalOpens?: number
+  }
   active: boolean
   createdAt?: string
   updatedAt?: string
@@ -51,10 +53,6 @@ export type CreateArenaCratePayload = {
   description?: string
   imageUrl?: string
   rarity: ArenaRarity
-  value?: number
-  valueBrl?: number
-  valueUsd?: number
-  valueEur?: number
   color?: string
   items?: ArenaCrateItem[]
   active?: boolean
@@ -62,10 +60,45 @@ export type CreateArenaCratePayload = {
 
 export type UpdateArenaCratePayload = Partial<CreateArenaCratePayload>
 
+export type ArenaPlayPricing = {
+  listPriceBrl: number
+  listPriceUsd: number
+  listPriceEur: number
+  discountPercent: number
+  valueBrl: number
+  valueUsd: number
+  valueEur: number
+  updatedAt?: string
+  updatedBy?: string
+}
+
+export type ArenaPlayPricingHistoryItem = {
+  id: string
+  changedAt?: string
+  changedBy?: string
+  from: Omit<ArenaPlayPricing, 'updatedAt' | 'updatedBy'>
+  to: Omit<ArenaPlayPricing, 'updatedAt' | 'updatedBy'>
+  reason?: string
+}
+
+export type ArenaPlayPricingHistoryResponse = {
+  items: ArenaPlayPricingHistoryItem[]
+  total: number
+  page: number
+  limit: number
+}
+
+export type UpdateArenaPlayPricingPayload = {
+  listPriceBrl: number
+  listPriceUsd: number
+  listPriceEur: number
+  discountPercent: number
+}
+
 export const arenaApi = createApi({
   reducerPath: 'arenaApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['ArenaCrates', 'ArenaCrate'],
+  tagTypes: ['ArenaCrates', 'ArenaCrate', 'ArenaPlayPricing'],
   refetchOnMountOrArgChange: true,
   endpoints: (builder) => ({
     getArenaCrates: builder.query<ArenaCrate[], void>({
@@ -101,6 +134,31 @@ export const arenaApi = createApi({
       }),
       invalidatesTags: ['ArenaCrates'],
     }),
+    getArenaPlayPricing: builder.query<ArenaPlayPricing, void>({
+      query: () => ({ url: ARENA.PRICING, method: 'GET' }),
+      providesTags: ['ArenaPlayPricing'],
+    }),
+    updateArenaPlayPricing: builder.mutation<
+      ArenaPlayPricing,
+      UpdateArenaPlayPricingPayload
+    >({
+      query: (body) => ({ url: ARENA.PRICING, method: 'PATCH', body }),
+      invalidatesTags: ['ArenaPlayPricing', 'ArenaCrates', 'ArenaCrate'],
+    }),
+    getArenaPlayPricingHistory: builder.query<
+      ArenaPlayPricingHistoryResponse,
+      { page?: number; limit?: number } | void
+    >({
+      query: (args) => ({
+        url: ARENA.PRICING_HISTORY,
+        method: 'GET',
+        params: {
+          page: args && 'page' in args ? args.page : 1,
+          limit: args && 'limit' in args ? args.limit : 8,
+        },
+      }),
+      providesTags: ['ArenaPlayPricing'],
+    }),
   }),
 })
 
@@ -110,4 +168,7 @@ export const {
   useCreateArenaCrateMutation,
   useUpdateArenaCrateMutation,
   useDeleteArenaCrateMutation,
+  useGetArenaPlayPricingQuery,
+  useUpdateArenaPlayPricingMutation,
+  useGetArenaPlayPricingHistoryQuery,
 } = arenaApi

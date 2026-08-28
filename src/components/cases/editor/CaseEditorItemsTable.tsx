@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Trash2 } from 'lucide-react'
+import { BankProgressBar } from '@/components/cases/BankProgressBar'
 import { caseFieldProps } from '@/components/cases/editor/caseFieldHelp'
 import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
 import { FieldLabelWithHelp } from '@/components/ui/FieldLabelWithHelp'
@@ -247,17 +248,30 @@ export function CaseEditorItemsTable({
                         <ThemeText tone="faint" className="text-xs">
                           Off
                         </ThemeText>
-                      ) : eligibility.eligible ? (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
-                          Sim
-                        </span>
                       ) : (
-                        <span
-                          className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
-                          title={`Banco em ${formatSkinsPrice(eligibility.bankBalance, currency)} · exige ${formatSkinsPrice(eligibility.requiredBankBalance, currency)} · faltam ${formatSkinsPrice(eligibility.bankShortfall, currency)}`}
-                        >
-                          {describeDropEligibility(eligibility)}
-                        </span>
+                        <div className="min-w-[8.5rem] space-y-1.5">
+                          {eligibility.eligible ? (
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
+                              Sim
+                            </span>
+                          ) : (
+                            <span
+                              className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                              title={`Banco em ${formatSkinsPrice(eligibility.bankBalance, currency)} · exige ${formatSkinsPrice(eligibility.requiredBankBalance, currency)} · faltam ${formatSkinsPrice(eligibility.bankShortfall, currency)}`}
+                            >
+                              {describeDropEligibility(eligibility)}
+                            </span>
+                          )}
+                          <BankProgressBar
+                            ratio={
+                              eligibility.coveredByOpenPrice ||
+                              eligibility.requiredBankBalance <= 0
+                                ? 1
+                                : eligibility.bankBalance /
+                                  eligibility.requiredBankBalance
+                            }
+                          />
+                        </div>
                       )}
                     </td>
                     <td className="px-3 py-3">

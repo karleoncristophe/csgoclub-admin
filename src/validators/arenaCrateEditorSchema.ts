@@ -27,15 +27,6 @@ export const arenaCrateEditorSchema = Yup.object({
   rarity: Yup.string()
     .oneOf([...ARENA_RARITIES])
     .required('Selecione a raridade'),
-  valueBrl: Yup.number()
-    .min(0, 'Valor em BRL inválido')
-    .required('Informe o valor em BRL'),
-  valueUsd: Yup.number()
-    .min(0, 'Valor em USD inválido')
-    .required('Informe o valor em USD'),
-  valueEur: Yup.number()
-    .min(0, 'Valor em EUR inválido')
-    .required('Informe o valor em EUR'),
   color: Yup.string().trim(),
   active: Yup.boolean().required(),
   items: Yup.array()
@@ -72,9 +63,6 @@ export type ArenaCrateEditorFormValues = {
   name: string
   description: string
   rarity: ArenaRarity
-  valueBrl: number
-  valueUsd: number
-  valueEur: number
   color: string
   active: boolean
   items: ArenaCrateItem[]
@@ -84,9 +72,6 @@ export const arenaCrateEditorInitialValues: ArenaCrateEditorFormValues = {
   name: '',
   description: '',
   rarity: 'epic',
-  valueBrl: 50,
-  valueUsd: 10,
-  valueEur: 10,
   color: '#d32ce6',
   active: false,
   items: [],

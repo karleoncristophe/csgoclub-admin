@@ -3,11 +3,9 @@ import { useFormik } from 'formik'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { ArenaCrateItemsTable } from '@/components/arena/ArenaCrateItemsTable'
+import { ArenaCrateBankPanel } from '@/components/arena/ArenaCrateBankPanel'
 import {
   ARENA_RARITY_COLOR,
-  ARENA_RARITY_DEFAULT_VALUE_BRL,
-  ARENA_RARITY_DEFAULT_VALUE_EUR,
-  ARENA_RARITY_DEFAULT_VALUE_USD,
   ARENA_RARITY_OPTIONS,
 } from '@/components/arena/arenaRarity'
 import {
@@ -28,6 +26,7 @@ import { uploadSingleFile } from '@/lib/upload'
 import {
   useCreateArenaCrateMutation,
   useGetArenaCrateByIdQuery,
+  useGetArenaPlayPricingQuery,
   useUpdateArenaCrateMutation,
   type ArenaCrate,
   type ArenaCrateItem,
@@ -35,6 +34,11 @@ import {
 } from '@/redux/store/api/arena/api.arena'
 import type { SkinsCatalogItem } from '@/redux/store/api/skins/api.skins'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+import {
+  arenaBankBalance,
+  arenaBankInjection,
+  countArenaEligibleItems,
+} from '@/utils/arenaCrateEconomics'
 import {
   arenaCrateEditorInitialValues,
   arenaCrateEditorSchema,
@@ -74,9 +78,6 @@ function mapCrateToForm(crate: ArenaCrate): ArenaCrateFormState {
     name: crate.name ?? '',
     description: crate.description ?? '',
     rarity,
-    valueBrl: crate.valueBrl ?? crate.value ?? ARENA_RARITY_DEFAULT_VALUE_BRL[rarity],
-    valueUsd: crate.valueUsd ?? ARENA_RARITY_DEFAULT_VALUE_USD[rarity],
-    valueEur: crate.valueEur ?? ARENA_RARITY_DEFAULT_VALUE_EUR[rarity],
     color: crate.color || ARENA_RARITY_COLOR[rarity],
     active: crate.active,
     items: (crate.items ?? []).map((item) => ({
@@ -122,6 +123,7 @@ export default function ArenaCrateEditorPage() {
 
   const { data: existingCrate, isLoading: isLoadingCrate } =
     useGetArenaCrateByIdQuery(id ?? '', { skip: !id })
+  const { data: playPricing } = useGetArenaPlayPricingQuery()
   const [createCrate, createState] = useCreateArenaCrateMutation()
   const [updateCrate, updateState] = useUpdateArenaCrateMutation()
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -172,9 +174,6 @@ export default function ArenaCrateEditorPage() {
           description: values.description.trim() || undefined,
           imageUrl,
           rarity: values.rarity,
-          valueBrl: Number(values.valueBrl),
-          valueUsd: Number(values.valueUsd),
-          valueEur: Number(values.valueEur),
           color: values.color.trim() || ARENA_RARITY_COLOR[values.rarity],
           active: values.active,
           items: values.items.map((item) => ({
@@ -218,19 +217,21 @@ export default function ArenaCrateEditorPage() {
   )
   const probabilitySum = enabledProbabilitySum(values.items)
   const itemsError = typeof errors.items === 'string' ? errors.items : undefined
+  const playValueBrl = Number(playPricing?.valueBrl) || 0
+  const playValueUsd = Number(playPricing?.valueUsd) || 0
+  const playValueEur = Number(playPricing?.valueEur) || 0
+  const eligibleCount = countArenaEligibleItems({
+    items: values.items,
+    openPrice: playValueBrl,
+    bankBalance:
+      arenaBankBalance(existingCrate?.economyLedger, SkinsCurrency.BRL) +
+      arenaBankInjection(playValueBrl),
+    currency: SkinsCurrency.BRL,
+  })
 
   const handleRarityChange = (next: ArenaRarity) => {
     const previous = values.rarity
     void setFieldValue('rarity', next)
-    if (Number(values.valueBrl) === ARENA_RARITY_DEFAULT_VALUE_BRL[previous]) {
-      void setFieldValue('valueBrl', ARENA_RARITY_DEFAULT_VALUE_BRL[next])
-    }
-    if (Number(values.valueUsd) === ARENA_RARITY_DEFAULT_VALUE_USD[previous]) {
-      void setFieldValue('valueUsd', ARENA_RARITY_DEFAULT_VALUE_USD[next])
-    }
-    if (Number(values.valueEur) === ARENA_RARITY_DEFAULT_VALUE_EUR[previous]) {
-      void setFieldValue('valueEur', ARENA_RARITY_DEFAULT_VALUE_EUR[next])
-    }
     if (
       !values.color.trim() ||
       values.color === ARENA_RARITY_COLOR[previous]
@@ -252,9 +253,6 @@ export default function ArenaCrateEditorPage() {
         name: true,
         description: true,
         rarity: true,
-        valueBrl: true,
-        valueUsd: true,
-        valueEur: true,
         color: true,
         active: true,
       })
@@ -316,16 +314,20 @@ export default function ArenaCrateEditorPage() {
             value={`${probabilitySum.toFixed(2)}%`}
           />
           <SummaryChip
-            label="BRL"
-            value={formatSkinsPrice(Number(values.valueBrl) || 0, SkinsCurrency.BRL)}
+            label="Elegíveis"
+            value={String(eligibleCount)}
           />
           <SummaryChip
-            label="USD"
-            value={formatSkinsPrice(Number(values.valueUsd) || 0, SkinsCurrency.USD)}
+            label="Jogada BRL"
+            value={formatSkinsPrice(playValueBrl, SkinsCurrency.BRL)}
           />
           <SummaryChip
-            label="EUR"
-            value={formatSkinsPrice(Number(values.valueEur) || 0, SkinsCurrency.EUR)}
+            label="Jogada USD"
+            value={formatSkinsPrice(playValueUsd, SkinsCurrency.USD)}
+          />
+          <SummaryChip
+            label="Jogada EUR"
+            value={formatSkinsPrice(playValueEur, SkinsCurrency.EUR)}
           />
         </div>
       </div>
@@ -351,8 +353,8 @@ export default function ArenaCrateEditorPage() {
           Informações gerais
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mb-6 text-sm">
-          Só uma crate ativa por raridade. Informe o valor fixo em cada moeda da
-          carteira — o jogador paga o valor da moeda dele, sem conversão.
+          Só uma crate ativa por raridade. O preço da jogada é global — ajuste
+          na listagem da Arena. Aqui ficam nome, raridade e as skins.
         </ThemeText>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -380,39 +382,6 @@ export default function ArenaCrateEditorPage() {
               </option>
             ))}
           </Select>
-          <Input
-            label="Valor BRL"
-            name="valueBrl"
-            type="number"
-            min={0}
-            step={0.01}
-            value={values.valueBrl}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={fieldError(touched.valueBrl, errors.valueBrl)}
-          />
-          <Input
-            label="Valor USD"
-            name="valueUsd"
-            type="number"
-            min={0}
-            step={0.01}
-            value={values.valueUsd}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={fieldError(touched.valueUsd, errors.valueUsd)}
-          />
-          <Input
-            label="Valor EUR"
-            name="valueEur"
-            type="number"
-            min={0}
-            step={0.01}
-            value={values.valueEur}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={fieldError(touched.valueEur, errors.valueEur)}
-          />
           <Input
             label="Cor"
             name="color"
@@ -456,8 +425,20 @@ export default function ArenaCrateEditorPage() {
         </div>
       </Surface>
 
+      <ArenaCrateBankPanel
+        items={values.items}
+        valueBrl={playValueBrl}
+        valueUsd={playValueUsd}
+        valueEur={playValueEur}
+        ledger={existingCrate?.economyLedger}
+        currency={SkinsCurrency.BRL}
+      />
+
       <ArenaCrateItemsTable
         items={values.items}
+        crateValue={playValueBrl}
+        currency={SkinsCurrency.BRL}
+        ledger={existingCrate?.economyLedger}
         itemsError={itemsError}
         onItemsChange={(items) => void setFieldValue('items', items, false)}
         headerAction={

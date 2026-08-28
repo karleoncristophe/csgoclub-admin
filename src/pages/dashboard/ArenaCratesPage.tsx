@@ -5,6 +5,7 @@ import {
   ARENA_RARITY_COLOR,
   ARENA_RARITY_LABEL,
 } from '@/components/arena/arenaRarity'
+import { ArenaPlayPricingPanel } from '@/components/arena/ArenaPlayPricingPanel'
 import { CaseListNameCell } from '@/components/cases/CaseListImage'
 import { IconButton } from '@/components/ui/IconButton'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
@@ -13,7 +14,6 @@ import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import { StatusPill } from '@/components/StatusPill'
 import { listTable } from '@/components/ui/listTable'
-import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import {
   useDeleteArenaCrateMutation,
   useGetArenaCratesQuery,
@@ -39,7 +39,7 @@ export default function ArenaCratesPage() {
       subjectName: crate.name,
       confirmLabel: 'Excluir',
       confirmVariant: 'danger',
-      warning: 'Nome, imagem, valor e skins desta crate serão perdidos.',
+      warning: 'Nome, imagem e skins desta crate serão perdidos.',
     })
     if (!confirmed) return
 
@@ -56,7 +56,7 @@ export default function ArenaCratesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageTitle subtitle="Crates da Arena com valor fixo em BRL, USD e EUR. O jogador escolhe uma crate, paga o valor da moeda da carteira e joga. Sem VE, taxa ou margem.">
+        <PageTitle subtitle="Preço da jogada é global. As crates só definem as skins de cada raridade. O jogador inicia no jogo e paga o valor da carteira.">
           Arena
         </PageTitle>
         <Link
@@ -67,6 +67,8 @@ export default function ArenaCratesPage() {
           Nova crate
         </Link>
       </div>
+
+      <ArenaPlayPricingPanel />
 
       <Surface variant="card" className="!p-6">
         {isLoading ? (
@@ -98,7 +100,6 @@ export default function ArenaCratesPage() {
                 <tr className={listTable.theadRow}>
                   <th className={listTable.th}>Crate</th>
                   <th className={listTable.th}>Raridade</th>
-                  <th className={listTable.th}>Valor (BRL / USD / EUR)</th>
                   <th className={listTable.th}>Itens</th>
                   <th className={listTable.th}>Status</th>
                   <th className={listTable.th} />
@@ -130,21 +131,6 @@ export default function ArenaCratesPage() {
                         />
                         {ARENA_RARITY_LABEL[crate.rarity] ?? crate.rarity}
                       </span>
-                    </td>
-                    <td className={listTable.td}>
-                      <div className="flex flex-col gap-0.5">
-                        <ThemeText tone="primary" className="text-sm font-medium">
-                          {formatSkinsPrice(
-                            crate.valueBrl ?? crate.value,
-                            SkinsCurrency.BRL,
-                          )}
-                        </ThemeText>
-                        <ThemeText tone="faint" className="text-xs">
-                          {formatSkinsPrice(crate.valueUsd ?? 0, SkinsCurrency.USD)}
-                          {' · '}
-                          {formatSkinsPrice(crate.valueEur ?? 0, SkinsCurrency.EUR)}
-                        </ThemeText>
-                      </div>
                     </td>
                     <td className={listTable.td}>{crate.items?.length ?? 0}</td>
                     <td className={listTable.td}>

@@ -14,6 +14,7 @@ import {
   DualSeriesMetricsChart,
   useChartVariant,
 } from '@/components/charts/AnalyticsCharts'
+import { BankProgressBar } from '@/components/cases/BankProgressBar'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { TextBadge } from '@/components/StatusPill'
 import { Surface } from '@/components/ui/Surface'
@@ -106,18 +107,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function BankProgress({ ratio }: { ratio: number }) {
-  const percent = Math.min(100, Math.max(0, ratio * 100))
-  return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-      <div
-        className={`h-full rounded-full ${percent >= 100 ? 'bg-emerald-500' : 'bg-amber-500'}`}
-        style={{ width: `${percent}%` }}
-      />
-    </div>
-  )
-}
-
 function EligibilityCell({
   item,
   currency,
@@ -137,11 +126,12 @@ function EligibilityCell({
 
   if (item.coveredByOpenPrice) {
     return (
-      <div className="space-y-1">
+      <div className="min-w-[11rem] space-y-1.5">
         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
           <Unlock className="h-3 w-3" aria-hidden />
           Sempre
         </span>
+        <BankProgressBar ratio={1} />
         <ThemeText tone="faint" className="text-xs">
           Cabe no preço da abertura
         </ThemeText>
@@ -165,7 +155,7 @@ function EligibilityCell({
           Travado
         </span>
       )}
-      <BankProgress ratio={ratio} />
+      <BankProgressBar ratio={ratio} />
       <ThemeText tone="secondary" className="text-xs tabular-nums">
         Precisa {formatSkinsPrice(item.requiredBankBalance, currency)}
       </ThemeText>

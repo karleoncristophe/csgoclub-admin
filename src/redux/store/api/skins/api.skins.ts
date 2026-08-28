@@ -68,6 +68,8 @@ export type SkinsCatalogResponse = {
   rarityOptions?: SkinsCatalogRarityOption[]
 }
 
+export type CatalogSort = 'price_desc' | 'price_asc' | 'name_asc' | 'name_desc'
+
 export type GetSkinsCatalogParams = {
   currency?: SkinsCurrency
   search?: string
@@ -77,7 +79,7 @@ export type GetSkinsCatalogParams = {
   maxPricePercent?: number
   minPrice?: number
   maxPrice?: number
-  sort?: 'price_desc' | 'price_asc'
+  sort?: CatalogSort
   limit?: number
   offset?: number
 }

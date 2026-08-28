@@ -105,4 +105,6 @@ export const ARENA = {
   CRATE_BY_ID: (id: string) => `/admin/arena/crates/${id}`,
   PRICING: '/admin/arena/pricing',
   PRICING_HISTORY: '/admin/arena/pricing/history',
+  MATCHES: '/admin/arena/matches',
+  MATCH_BY_ID: (id: string) => `/admin/arena/matches/${id}`,
 } as const

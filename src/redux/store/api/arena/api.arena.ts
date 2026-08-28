@@ -95,10 +95,133 @@ export type UpdateArenaPlayPricingPayload = {
   discountPercent: number
 }
 
+export type ArenaMatchStatus =
+  | 'playing'
+  | 'settling'
+  | 'finished'
+  | 'lost'
+  | 'disconnected'
+
+export type ArenaPaymentMethod = 'balance' | 'ticket'
+
+export type ArenaScriptGroup = 'common' | 'rare' | 'jackpot'
+
+export type ArenaMatchUser = {
+  _id?: string
+  id: string
+  name: string
+  steamId: string
+  avatar?: string
+}
+
+export type ArenaMatchCrateRef = {
+  id: string
+  name: string
+  slug: string
+  rarity?: ArenaRarity
+  imageUrl?: string
+  color?: string
+}
+
+export type ArenaMatchScriptRef = {
+  id: string
+  name: string
+  group?: ArenaScriptGroup
+}
+
+export type ArenaMatchAwarded = {
+  rarity: ArenaRarity
+  name: string
+  image?: string
+  crateId?: string
+  crateSlug?: string
+  crateName?: string
+  unopened?: boolean
+  itemRarityName?: string
+  itemRarityColor?: string
+  value: number
+  currency: string
+  valueUsd?: number
+  valueBrl?: number
+  valueEur?: number
+  inventoryItemId?: string
+}
+
+export type ArenaMatchBox = {
+  id: string
+  index: number
+  rarity: ArenaRarity
+}
+
+export type ArenaMatchPricingSnapshot = {
+  listPriceBrl: number
+  listPriceUsd: number
+  listPriceEur: number
+  discountPercent: number
+  valueBrl: number
+  valueUsd: number
+  valueEur: number
+}
+
+export type ArenaMatchListItem = {
+  _id: string
+  id: string
+  status: ArenaMatchStatus
+  paymentMethod: ArenaPaymentMethod
+  chargedAmount: number
+  currency: string
+  crateRarity?: ArenaRarity | null
+  group?: ArenaScriptGroup
+  user: ArenaMatchUser | null
+  crate: ArenaMatchCrateRef | null
+  script: ArenaMatchScriptRef | null
+  awarded: ArenaMatchAwarded[]
+  startedAt?: string | null
+  expiresAt?: string | null
+  finishedAt?: string | null
+  createdAt?: string | null
+}
+
+export type ArenaMatchDetail = ArenaMatchListItem & {
+  pricingSnapshot?: ArenaMatchPricingSnapshot | null
+  boxes: ArenaMatchBox[]
+  destroyedBoxIds: string[]
+  destroyedCounts: Record<ArenaRarity, number>
+  progressBefore: Record<ArenaRarity, number>
+  progressAfter: Record<ArenaRarity, number>
+  idempotencyKey?: string | null
+  updatedAt?: string | null
+}
+
+export type ArenaMatchSummary = {
+  total: number
+  finished: number
+  lost: number
+  withPrizes: number
+}
+
+export type ArenaMatchesResponse = {
+  items: ArenaMatchListItem[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  summary: ArenaMatchSummary
+}
+
+export type GetArenaMatchesParams = {
+  page?: number
+  limit?: number
+  status?: ArenaMatchStatus | ''
+  paymentMethod?: ArenaPaymentMethod | ''
+  search?: string
+  crateId?: string
+}
+
 export const arenaApi = createApi({
   reducerPath: 'arenaApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['ArenaCrates', 'ArenaCrate', 'ArenaPlayPricing'],
+  tagTypes: ['ArenaCrates', 'ArenaCrate', 'ArenaPlayPricing', 'ArenaMatches', 'ArenaMatch'],
   refetchOnMountOrArgChange: true,
   endpoints: (builder) => ({
     getArenaCrates: builder.query<ArenaCrate[], void>({
@@ -159,6 +282,35 @@ export const arenaApi = createApi({
       }),
       providesTags: ['ArenaPlayPricing'],
     }),
+    getArenaMatches: builder.query<ArenaMatchesResponse, GetArenaMatchesParams | void>({
+      query: (args) => ({
+        url: ARENA.MATCHES,
+        method: 'GET',
+        params: {
+          page: args && 'page' in args ? args.page : 1,
+          limit: args && 'limit' in args ? args.limit : 20,
+          ...(args && 'status' in args && args.status ? { status: args.status } : {}),
+          ...(args && 'paymentMethod' in args && args.paymentMethod
+            ? { paymentMethod: args.paymentMethod }
+            : {}),
+          ...(args && 'search' in args && args.search ? { search: args.search } : {}),
+          ...(args && 'crateId' in args && args.crateId ? { crateId: args.crateId } : {}),
+        },
+      }),
+      transformResponse: (response: ArenaMatchesResponse) => ({
+        ...response,
+        items: (response.items ?? []).map((item) => {
+          const raw = item as ArenaMatchListItem & { _id?: string; id?: string }
+          const matchId = raw._id || raw.id || ''
+          return { ...raw, _id: matchId, id: matchId }
+        }),
+      }),
+      providesTags: ['ArenaMatches'],
+    }),
+    getArenaMatchById: builder.query<ArenaMatchDetail, string>({
+      query: (id) => ({ url: ARENA.MATCH_BY_ID(id), method: 'GET' }),
+      providesTags: (_result, _error, id) => [{ type: 'ArenaMatch', id }],
+    }),
   }),
 })
 
@@ -171,4 +323,6 @@ export const {
   useGetArenaPlayPricingQuery,
   useUpdateArenaPlayPricingMutation,
   useGetArenaPlayPricingHistoryQuery,
+  useGetArenaMatchesQuery,
+  useGetArenaMatchByIdQuery,
 } = arenaApi

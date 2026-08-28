@@ -327,8 +327,14 @@ export default function CaseEditorPage() {
     await setFieldValue('items', refreshed, false)
   }
 
-  const handleAddSkin = (skin: SkinsCatalogItem) => {
-    if (addedSkinNames.has(skin.name)) return
+  const handleToggleSkin = (skin: SkinsCatalogItem) => {
+    if (addedSkinNames.has(skin.name)) {
+      void setFieldValue(
+        'items',
+        values.items.filter((item) => item.skinName !== skin.name),
+      )
+      return
+    }
     void setFieldValue('items', [
       ...values.items,
       catalogSkinToCaseItem(skin, values.valueMode as CaseValueMode, 0),
@@ -656,7 +662,7 @@ export default function CaseEditorPage() {
         open={skinsModalOpen}
         onOpenChange={setSkinsModalOpen}
         title="Adicionar skins"
-        description={`${values.items.length} item(ns) na caixa. Clique na skin para adicionar — ela entra com drop 0% e você ajusta na tabela.`}
+        description={`${values.items.length} item(ns) na caixa. Clique na skin para adicionar; clique de novo para remover. Ela entra com drop 0% e você ajusta na tabela.`}
         size="full"
         footer={
           <Button type="button" onClick={() => setSkinsModalOpen(false)}>
@@ -668,7 +674,7 @@ export default function CaseEditorPage() {
           embedded
           currency={currency}
           addedSkinNames={addedSkinNames}
-          onAddSkin={handleAddSkin}
+          onToggleSkin={handleToggleSkin}
         />
       </Modal>
 

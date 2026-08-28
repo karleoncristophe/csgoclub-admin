@@ -59,13 +59,21 @@ export default function ArenaCratesPage() {
         <PageTitle subtitle="Preço da jogada é global. As crates só definem as skins de cada raridade. O jogador inicia no jogo e paga o valor da carteira.">
           Arena
         </PageTitle>
-        <Link
-          to="/dashboard/arena/new"
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-medium text-white shadow-md shadow-brand-600/25 transition hover:bg-brand-700"
-        >
-          <Plus className="h-4 w-4" />
-          Nova crate
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/dashboard/arena/plays"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 text-sm font-medium text-zinc-700 transition hover:border-brand-300 hover:text-brand-700 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-brand-500 dark:hover:text-brand-300"
+          >
+            Histórico de jogadas
+          </Link>
+          <Link
+            to="/dashboard/arena/new"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-medium text-white shadow-md shadow-brand-600/25 transition hover:bg-brand-700"
+          >
+            <Plus className="h-4 w-4" />
+            Nova crate
+          </Link>
+        </div>
       </div>
 
       <ArenaPlayPricingPanel />

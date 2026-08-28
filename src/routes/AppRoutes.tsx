@@ -74,6 +74,12 @@ const ArenaCratesPage = lazy(
 const ArenaCrateEditorPage = lazy(
   () => import('@/pages/dashboard/ArenaCrateEditorPage'),
 )
+const ArenaPlaysPage = lazy(
+  () => import('@/pages/dashboard/ArenaPlaysPage'),
+)
+const ArenaPlayDetailPage = lazy(
+  () => import('@/pages/dashboard/ArenaPlayDetailPage'),
+)
 const BattleDetailPage = lazy(
   () => import('@/pages/dashboard/battles/BattleDetailPage'),
 )
@@ -135,6 +141,8 @@ function ProtectedRoutes() {
         <Route path="battles/:id" element={<BattleDetailPage />} />
         <Route path="arena" element={<ArenaCratesPage />} />
         <Route path="arena/new" element={<ArenaCrateEditorPage />} />
+        <Route path="arena/plays" element={<ArenaPlaysPage />} />
+        <Route path="arena/plays/:id" element={<ArenaPlayDetailPage />} />
         <Route path="arena/:id" element={<ArenaCrateEditorPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="documentation" element={<DocumentationPage />} />

@@ -17,6 +17,7 @@ import {
   Package,
   Swords,
   TicketPercent,
+  Target,
   Settings,
   ShieldCheck,
   Users,
@@ -50,6 +51,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
       { href: '/dashboard/coupons', label: 'Cupons', Icon: TicketPercent },
       { href: '/dashboard/battles', label: 'Battles', Icon: Swords },
       { href: '/dashboard/arena', label: 'Arena', Icon: Crosshair },
+      { href: '/dashboard/arena/plays', label: 'Jogadas', Icon: Target },
       { href: '/dashboard/vitrines', label: 'Vitrines', Icon: LayoutGrid },
       { href: '/dashboard/banners', label: 'Banners', Icon: Image },
       { href: '/dashboard/categorias', label: 'Categorias', Icon: Layers },
@@ -66,6 +68,13 @@ const NAV_SECTIONS: readonly NavSection[] = [
 
 function navItemActive(pathname: string, href: string) {
   if (href === '/dashboard') return pathname === '/dashboard'
+  if (href === '/dashboard/arena') {
+    if (pathname === '/dashboard/arena' || pathname.startsWith('/dashboard/arena/new')) {
+      return true
+    }
+    if (pathname.startsWith('/dashboard/arena/plays')) return false
+    return pathname.startsWith('/dashboard/arena/')
+  }
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 

@@ -40,9 +40,6 @@ export function ArenaPlayPricingPanel() {
   }, [data])
 
   const discount = Math.min(100, Math.max(0, Number(discountPercent) || 0))
-  const valueBrl = Math.round(listPriceBrl * (1 - discount / 100) * 100) / 100
-  const valueUsd = Math.round(listPriceUsd * (1 - discount / 100) * 100) / 100
-  const valueEur = Math.round(listPriceEur * (1 - discount / 100) * 100) / 100
 
   const handleSave = async () => {
     setFormError(null)
@@ -132,32 +129,6 @@ export function ArenaPlayPricingPanel() {
                 setDiscountPercent(Number(event.target.value) || 0)
               }
             />
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-zinc-200 px-3 py-2 dark:border-zinc-800">
-              <ThemeText tone="faint" className="text-[10px] uppercase">
-                Final BRL
-              </ThemeText>
-              <ThemeText tone="primary" className="text-sm font-semibold">
-                {money(valueBrl, SkinsCurrency.BRL)}
-              </ThemeText>
-            </div>
-            <div className="rounded-xl border border-zinc-200 px-3 py-2 dark:border-zinc-800">
-              <ThemeText tone="faint" className="text-[10px] uppercase">
-                Final USD
-              </ThemeText>
-              <ThemeText tone="primary" className="text-sm font-semibold">
-                {money(valueUsd, SkinsCurrency.USD)}
-              </ThemeText>
-            </div>
-            <div className="rounded-xl border border-zinc-200 px-3 py-2 dark:border-zinc-800">
-              <ThemeText tone="faint" className="text-[10px] uppercase">
-                Final EUR
-              </ThemeText>
-              <ThemeText tone="primary" className="text-sm font-semibold">
-                {money(valueEur, SkinsCurrency.EUR)}
-              </ThemeText>
-            </div>
           </div>
           {data?.updatedAt ? (
             <ThemeText tone="faint" className="mt-3 block text-xs">

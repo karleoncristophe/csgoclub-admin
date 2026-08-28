@@ -240,8 +240,14 @@ export default function ArenaCrateEditorPage() {
     }
   }
 
-  const handleAddSkin = (skin: SkinsCatalogItem) => {
-    if (addedSkinNames.has(skin.name)) return
+  const handleToggleSkin = (skin: SkinsCatalogItem) => {
+    if (addedSkinNames.has(skin.name)) {
+      void setFieldValue(
+        'items',
+        values.items.filter((item) => item.skinName !== skin.name),
+      )
+      return
+    }
     void setFieldValue('items', [...values.items, catalogSkinToArenaItem(skin)])
   }
 
@@ -453,7 +459,7 @@ export default function ArenaCrateEditorPage() {
         open={skinsModalOpen}
         onOpenChange={setSkinsModalOpen}
         title="Adicionar skins"
-        description={`${values.items.length} item(ns) na crate. Clique na skin para adicionar — ela entra com os 3 valores de prêmio e chance 0%.`}
+        description={`${values.items.length} item(ns) na crate. Clique na skin para adicionar; clique de novo para remover. Ela entra com os 3 valores de prêmio e chance 0%.`}
         size="full"
         footer={
           <Button type="button" onClick={() => setSkinsModalOpen(false)}>
@@ -466,7 +472,7 @@ export default function ArenaCrateEditorPage() {
           showPrizeValues
           currency={SkinsCurrency.BRL}
           addedSkinNames={addedSkinNames}
-          onAddSkin={handleAddSkin}
+          onToggleSkin={handleToggleSkin}
         />
       </Modal>
     </form>

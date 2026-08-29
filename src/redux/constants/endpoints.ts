@@ -108,3 +108,7 @@ export const ARENA = {
   MATCHES: '/admin/arena/matches',
   MATCH_BY_ID: (id: string) => `/admin/arena/matches/${id}`,
 } as const
+
+export const CAMBIO = {
+  SETTINGS: '/admin/cambio/settings',
+} as const

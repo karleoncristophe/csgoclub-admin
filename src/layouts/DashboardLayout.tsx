@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import type { LucideIcon } from 'lucide-react'
 import {
   ArrowLeftRight,
+  Banknote,
   BookOpenText,
   Crosshair,
   Gem,
@@ -55,6 +56,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
       { href: '/dashboard/vitrines', label: 'Vitrines', Icon: LayoutGrid },
       { href: '/dashboard/banners', label: 'Banners', Icon: Image },
       { href: '/dashboard/categorias', label: 'Categorias', Icon: Layers },
+      { href: '/dashboard/cambio', label: 'Câmbio', Icon: Banknote },
       { href: '/dashboard/documentation', label: 'Documentação', Icon: BookOpenText },
     ],
   },

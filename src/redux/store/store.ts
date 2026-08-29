@@ -5,6 +5,7 @@ import { adminAccountsApi } from '@/redux/store/api/admins/api.admins'
 import { arenaApi } from '@/redux/store/api/arena/api.arena'
 import { battlesAdminApi } from '@/redux/store/api/battles/api.battles'
 import { cambioApi } from '@/redux/store/api/cambio/api.cambio'
+import { paymentApi } from '@/redux/store/api/payment/api.payment'
 import { casesApi } from '@/redux/store/api/cases/api.cases'
 import { caseOpensApi } from '@/redux/store/api/case-opens/api.case-opens'
 import { tradesApi } from '@/redux/store/api/trades/api.trades'
@@ -36,6 +37,7 @@ export const store = configureStore({
     [battlesAdminApi.reducerPath]: battlesAdminApi.reducer,
     [arenaApi.reducerPath]: arenaApi.reducer,
     [cambioApi.reducerPath]: cambioApi.reducer,
+    [paymentApi.reducerPath]: paymentApi.reducer,
     [metricsApi.reducerPath]: metricsApi.reducer,
     [usersApi.reducerPath]: usersApi.reducer,
     [weaponCategoriesApi.reducerPath]: weaponCategoriesApi.reducer,
@@ -55,6 +57,7 @@ export const store = configureStore({
       battlesAdminApi.middleware,
       arenaApi.middleware,
       cambioApi.middleware,
+      paymentApi.middleware,
       metricsApi.middleware,
       usersApi.middleware,
       weaponCategoriesApi.middleware,

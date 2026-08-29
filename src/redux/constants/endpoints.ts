@@ -112,3 +112,8 @@ export const ARENA = {
 export const CAMBIO = {
   SETTINGS: '/admin/cambio/settings',
 } as const
+
+export const PAYMENT = {
+  PROVIDERS: '/admin/payment/providers',
+  PROVIDER: (provider: string) => `/admin/payment/providers/${provider}`,
+} as const

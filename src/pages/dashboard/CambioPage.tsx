@@ -8,6 +8,7 @@ import {
   useGetCambioSettingsQuery,
   useUpdateCambioSettingsMutation,
 } from '@/redux/store/api/cambio/api.cambio'
+import { PaymentProvidersPanel } from '@/pages/dashboard/PaymentProvidersPanel'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
 const PROVIDER_COPY: Record<string, { label: string; description: string }> = {
@@ -58,7 +59,7 @@ export default function CambioPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle subtitle="A carteira converte pela SkinsBack. Se ela cair, entra a API de reserva.">
+      <PageTitle subtitle="Câmbio da carteira e chaves das APIs de pagamento (cripto por enquanto).">
         Câmbio
       </PageTitle>
 
@@ -165,6 +166,8 @@ export default function CambioPage() {
           </ThemeText>
         ) : null}
       </Surface>
+
+      <PaymentProvidersPanel />
     </div>
   )
 }

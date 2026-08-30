@@ -9,6 +9,8 @@ import { Select } from '@/components/ui/Select'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
+import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { listTable, linkBrand } from '@/components/ui/listTable'
 import useDebounce from '@/hooks/useDebounce'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import {
@@ -66,7 +68,7 @@ function StatCard({
       <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
         {label}
       </ThemeText>
-      <ThemeText as="p" tone="primary" className="mt-2 text-xl font-bold sm:text-2xl">
+      <ThemeText as="p" tone="primary" className="mt-1 text-lg font-semibold">
         {value}
       </ThemeText>
       <ThemeText as="p" tone="faint" className="mt-2 text-xs leading-relaxed">
@@ -156,7 +158,7 @@ export default function TradesPage() {
         </div>
       ) : null}
 
-      <Surface variant="card" className="!p-6">
+      <Surface variant="card" className="!p-5">
         <div className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="min-w-[220px] md:col-span-2">
             <Input
@@ -211,49 +213,36 @@ export default function TradesPage() {
           </ThemeText>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-2">
-          {(
-            [
-              { value: '', label: 'Todos os status' },
-              { value: 'withdrawn', label: 'Enviados' },
-              { value: 'pending_withdraw', label: 'Pendentes' },
-            ] as const
-          ).map((option) => (
-            <button
-              key={option.value || 'all-status'}
-              type="button"
-              onClick={() => {
-                setStatus(option.value)
-                setPage(1)
-              }}
-              className={filterChipClasses(status === option.value, 'brand')}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className="mb-3 grid gap-2 lg:grid-cols-2">
+          <SegmentedTabs
+            ariaLabel="Status do trade"
+            value={status || 'all'}
+            items={[
+              { id: 'all', label: 'Todos' },
+              { id: 'withdrawn', label: 'Enviados' },
+              { id: 'pending_withdraw', label: 'Pendentes' },
+            ]}
+            onChange={(next) => {
+              setStatus(next === 'all' ? '' : (next as AdminTradeStatus))
+              setPage(1)
+            }}
+          />
+          <SegmentedTabs
+            ariaLabel="Origem do trade"
+            value={source || 'all'}
+            items={[
+              { id: 'all', label: 'Todas' },
+              { id: 'case_open', label: 'Caixa' },
+              { id: 'upgrade', label: 'Upgrade' },
+              { id: 'battle', label: 'Battle' },
+            ]}
+            onChange={(next) => {
+              setSource(next === 'all' ? '' : (next as AdminTradeSource))
+              setPage(1)
+            }}
+          />
         </div>
-
-        <div className="mb-4 flex flex-wrap gap-2">
-          {(
-            [
-              { value: '', label: 'Todas as origens' },
-              { value: 'case_open', label: 'Caixa' },
-              { value: 'upgrade', label: 'Upgrade' },
-              { value: 'battle', label: 'Battle' },
-            ] as const
-          ).map((option) => (
-            <button
-              key={option.value || 'all-source'}
-              type="button"
-              onClick={() => {
-                setSource(option.value)
-                setPage(1)
-              }}
-              className={filterChipClasses(source === option.value, 'amber')}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100">
             {isSandbox ? 'Só teste (Dev)' : 'Só reais (Produção)'}
           </span>
@@ -288,31 +277,42 @@ export default function TradesPage() {
         ) : null}
 
         {trades.length > 0 ? (
-          <div className={`flex flex-col gap-2 ${isFetching ? 'opacity-70' : ''}`}>
+          <div className={`${listTable.wrap} ${isFetching ? 'opacity-70' : ''}`}>
+            <table className={listTable.table}>
+              <thead>
+                <tr className={listTable.theadRow}>
+                  <th className={listTable.th}>Skin</th>
+                  <th className={listTable.th}>Jogador</th>
+                  <th className={listTable.th}>Origem</th>
+                  <th className={listTable.th}>Status</th>
+                  <th className={listTable.th}>Quando</th>
+                  <th className={`${listTable.th} text-right`}>Valor</th>
+                  <th className={`${listTable.th} text-right`}>Ação</th>
+                </tr>
+              </thead>
+              <tbody className={listTable.tbody}>
             {trades.map((trade) => {
               const avatar =
                 trade.user?.avatarFull ?? trade.user?.avatarMedium ?? trade.user?.avatar
               const when = trade.withdrawnAt ?? trade.createdAt
 
               return (
-                <div
-                  key={trade._id}
-                  className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/40 p-3 dark:border-zinc-800 dark:bg-zinc-950/40 sm:flex-row sm:items-center sm:gap-4 sm:p-4"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                <tr key={trade._id} className={listTable.tr}>
+                  <td className={listTable.tdStrong}>
+                    <div className="flex min-w-[260px] items-center gap-2">
                     <SkinRarityVisual
                       rarity={{
                         name: trade.rarityName,
                         color: trade.rarityColor,
                       }}
-                      className="h-16 w-20 shrink-0"
+                      className="h-11 w-16 shrink-0"
                       showStar={false}
                     >
                       {trade.image ? (
                         <img
                           src={trade.image}
                           alt=""
-                          className="max-h-14 max-w-full object-contain"
+                          className="max-h-10 max-w-full object-contain"
                         />
                       ) : (
                         <ThemeText as="span" tone="faint" className="text-[10px]">
@@ -321,26 +321,18 @@ export default function TradesPage() {
                       )}
                     </SkinRarityVisual>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <ThemeText as="p" tone="primary" className="truncate text-sm font-semibold">
-                          {trade.skinName}
-                        </ThemeText>
-                        <TextBadge>{statusLabel(trade.status)}</TextBadge>
-                        <TextBadge>{sourceLabel(trade.source)}</TextBadge>
-                      </div>
-                      <ThemeText as="p" tone="faint" className="mt-0.5 text-xs">
-                        {formatDateTime(when)}
-                        {trade.caseName ? ` · ${trade.caseName}` : ''}
-                      </ThemeText>
+                    <div className="min-w-0">
+                      <span className="block truncate font-medium text-foreground">{trade.skinName}</span>
+                      {trade.caseName ? <span className="block truncate text-xs text-muted">{trade.caseName}</span> : null}
                       {trade.skinsbackCustomId ? (
-                        <ThemeText as="p" tone="faint" className="mt-0.5 font-mono text-[10px]">
-                          {trade.skinsbackCustomId}
-                        </ThemeText>
+                        <span className="block truncate font-mono text-[10px] text-muted">{trade.skinsbackCustomId}</span>
                       ) : null}
-
-                      {trade.user ? (
-                        <div className="mt-2 min-w-0">
+                    </div>
+                    </div>
+                  </td>
+                  <td className={listTable.td}>
+                    {trade.user ? (
+                        <div className="min-w-[170px]">
                           <Link
                             to={`/dashboard/users/${trade.user._id}`}
                             className="flex min-w-0 items-center gap-2 hover:underline"
@@ -356,9 +348,7 @@ export default function TradesPage() {
                                 {trade.user.name?.[0]?.toUpperCase() ?? '?'}
                               </span>
                             )}
-                            <ThemeText as="p" tone="secondary" className="truncate text-xs">
-                              {trade.user.name}
-                            </ThemeText>
+                            <span className="truncate text-sm text-foreground">{trade.user.name}</span>
                           </Link>
                           {trade.user.steamId ? (
                             <div className="mt-1 pl-8">
@@ -366,30 +356,31 @@ export default function TradesPage() {
                             </div>
                           ) : null}
                         </div>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="shrink-0 text-right sm:w-40">
-                    <ThemeText as="p" tone="primary" className="text-sm font-semibold">
-                      {formatMoney(trade.value, trade.currency)}
-                    </ThemeText>
-                    <ThemeText as="p" tone="faint" className="text-[11px]">
-                      {formatMoney(trade.valueUsd, 'USD')}
-                    </ThemeText>
+                      ) : '—'}
+                  </td>
+                  <td className={listTable.td}><TextBadge>{sourceLabel(trade.source)}</TextBadge></td>
+                  <td className={listTable.td}><TextBadge>{statusLabel(trade.status)}</TextBadge></td>
+                  <td className={listTable.tdMuted}>{formatDateTime(when)}</td>
+                  <td className={`${listTable.tdMuted} text-right tabular-nums`}>
+                    <span className="block font-medium text-foreground">{formatMoney(trade.value, trade.currency)}</span>
+                    <span className="text-[11px]">{formatMoney(trade.valueUsd, 'USD')}</span>
+                  </td>
+                  <td className={`${listTable.td} text-right`}>
                     {trade.user?._id ? (
                       <Link
                         to={`/dashboard/users/${trade.user._id}`}
-                        className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline dark:text-brand-400"
+                        className={`${linkBrand} inline-flex items-center gap-1`}
                       >
                         Ver usuário
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Link>
                     ) : null}
-                  </div>
-                </div>
+                  </td>
+                </tr>
               )
             })}
+              </tbody>
+            </table>
           </div>
         ) : null}
 

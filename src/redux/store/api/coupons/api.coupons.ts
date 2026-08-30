@@ -52,6 +52,7 @@ export type AdminCoupon = {
   description?: string
   ownerUserId: string
   ownerUserName?: string
+  ownerAvatar?: string
   campaignType: AdminCouponCampaignType
   rewardType: AdminCouponRewardType
   rewardValue: number

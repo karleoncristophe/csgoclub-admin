@@ -369,7 +369,7 @@ export function ImageCropperModal({
             resolução original.
           </ThemeText>
           <div
-            className="mx-auto w-full max-w-[480px] overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800"
+            className="mx-auto w-full max-w-[480px] overflow-hidden rounded-xl border border-separator"
             style={{
               backgroundColor: '#d4d4d8',
               backgroundImage:

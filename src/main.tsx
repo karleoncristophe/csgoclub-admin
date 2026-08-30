@@ -6,8 +6,11 @@ import { ThemeProvider } from '@/theme/ThemeContext'
 import { AdminPreferencesProvider } from '@/theme/AdminPreferencesContext'
 import { ConfirmModalProvider } from '@/components/ui/ConfirmModalContext'
 import { Surface } from '@/components/ui/Surface'
+import { bootTheme } from '@/theme/applyAppearance'
 import './index.css'
 import App from './App.tsx'
+
+bootTheme()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

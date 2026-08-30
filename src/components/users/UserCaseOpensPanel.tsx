@@ -7,13 +7,14 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
+import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import {
   useGetUserCaseOpensQuery,
   type AdminCaseOpenListItem,
 } from '@/redux/store/api/users/api.users'
 import { getErrorMessage } from '@/utils/getErrorMessage'
-import { filterChipClasses, userStatCardSpaciousClass } from './userPanelClasses'
+import { userStatCardSpaciousClass } from './userPanelClasses'
 
 function formatMoney(value: number, currency = 'USD') {
   return new Intl.NumberFormat('pt-BR', {
@@ -55,7 +56,7 @@ function StatCard({
       <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
         {label}
       </ThemeText>
-      <ThemeText as="p" tone="primary" className="mt-2 text-xl font-bold sm:text-2xl">
+      <ThemeText as="p" tone="primary" className="mt-1 text-lg font-semibold">
         {value}
       </ThemeText>
       <ThemeText as="p" tone="faint" className="mt-2 text-xs leading-relaxed">
@@ -90,7 +91,7 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
   const totalPages = data?.totalPages ?? 1
 
   return (
-    <Surface variant="card" className="!p-6">
+    <Surface variant="card" className="!p-5">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <SectionTitle className="mb-1">Histórico de caixas</SectionTitle>
@@ -132,27 +133,24 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
         </div>
       ) : null}
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {(
-          [
-            { value: '', label: 'Todas' },
-            { value: 'pending', label: 'Pendentes' },
-            { value: 'kept', label: 'Guardados' },
-            { value: 'converted', label: 'Convertidos' },
-          ] as const
-        ).map((option) => (
-          <button
-            key={option.value || 'all'}
-            type="button"
-            onClick={() => {
-              setDisposition(option.value)
-              setPage(1)
-            }}
-            className={filterChipClasses(disposition === option.value, 'brand')}
-          >
-            {option.label}
-          </button>
-        ))}
+      <SegmentedTabs
+        ariaLabel="Destino da abertura"
+        className="mb-3"
+        value={disposition || 'all'}
+        items={[
+          { id: 'all', label: 'Todas' },
+          { id: 'pending', label: 'Pendentes' },
+          { id: 'kept', label: 'Guardados' },
+          { id: 'converted', label: 'Convertidos' },
+        ]}
+        onChange={(next) => {
+          setDisposition(
+            next === 'all' ? '' : (next as AdminCaseOpenListItem['disposition']),
+          )
+          setPage(1)
+        }}
+      />
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100">
           {isSandbox ? 'Só teste (Dev)' : 'Só reais (Produção)'}
         </span>

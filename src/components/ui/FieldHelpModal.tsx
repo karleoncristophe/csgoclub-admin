@@ -63,7 +63,7 @@ export function FieldHelpModal({ open, onOpenChange, title, children }: FieldHel
             {children}
           </ThemeText>
         </div>
-        <div className="flex justify-end border-t border-zinc-200 px-5 py-3 dark:border-zinc-800">
+        <div className="flex justify-end border-t border-separator px-5 py-3">
           <Button type="button" variant="secondary" size="sm" onClick={() => onOpenChange(false)}>
             Entendi
           </Button>

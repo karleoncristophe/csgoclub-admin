@@ -28,7 +28,7 @@ function ValueTile({
   hint?: string
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+    <div className="rounded-xl border border-border bg-surface-secondary p-3">
       <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
         {label}
       </ThemeText>
@@ -150,7 +150,7 @@ export default function BattleDetailPage() {
             />
           </div>
 
-          <Surface variant="card" className="!p-6 space-y-4">
+          <Surface variant="card" className="!p-5 space-y-4">
             <SectionTitle>Jogadores</SectionTitle>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {data.seats.map((seat) => {
@@ -247,7 +247,7 @@ export default function BattleDetailPage() {
             </div>
           </Surface>
 
-          <Surface variant="card" className="!p-6 space-y-4">
+          <Surface variant="card" className="!p-5 space-y-4">
             <SectionTitle>Sequência de caixas</SectionTitle>
             {data.caseSequence.length === 0 ? (
               <ThemeText as="p" tone="secondary" className="text-sm">
@@ -258,7 +258,7 @@ export default function BattleDetailPage() {
                 {data.caseSequence.map((c, idx) => (
                   <div
                     key={`${c.caseId}-${idx}`}
-                    className="flex w-36 flex-col overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800"
+                    className="flex w-36 flex-col overflow-hidden rounded-xl border border-separator"
                   >
                     <div className="flex h-24 items-center justify-center bg-zinc-50 dark:bg-zinc-950">
                       {c.imageUrl ? (
@@ -288,7 +288,7 @@ export default function BattleDetailPage() {
             )}
           </Surface>
 
-          <Surface variant="card" className="!p-6 space-y-4">
+          <Surface variant="card" className="!p-5 space-y-4">
             <SectionTitle>Drops por round</SectionTitle>
             {roundKeys.length === 0 ? (
               <ThemeText as="p" tone="secondary" className="text-sm">
@@ -343,7 +343,7 @@ export default function BattleDetailPage() {
                                       className="h-8 w-8 object-contain"
                                     />
                                   ) : null}
-                                  <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                                  <span className="font-medium text-foreground">
                                     {drop.skinName}
                                   </span>
                                 </div>

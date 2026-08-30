@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   formatSkinsPrice,
@@ -12,6 +12,8 @@ import { Select } from '@/components/ui/Select'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle, SectionTitle } from '@/components/ui/Title'
+import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { listTable, linkBrand } from '@/components/ui/listTable'
 import {
   useGetSkinsCatalogQuery,
 } from '@/redux/store/api/skins/api.skins'
@@ -22,9 +24,7 @@ import {
   getSkinWeaponName,
   getSkinWeaponType,
 } from '@/utils/skinWeaponType'
-import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
-import { filterChipClass } from '@/components/skins/filterChipClass'
 
 const PAGE_SIZE_OPTIONS = [12, 24, 30, 48, 60, 100] as const
 const DEFAULT_PAGE_SIZE = 30
@@ -85,12 +85,6 @@ export default function SkinsPage() {
   const pageLimit = data?.limit ?? itemsPerPage
   const totalPages = Math.max(1, Math.ceil(catalogTotal / pageLimit))
 
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages)
-    }
-  }, [page, totalPages])
-
   const currentPage = Math.min(safePage, totalPages)
 
   const priceRange = data?.priceRange ?? { min: 0, max: 0 }
@@ -119,8 +113,8 @@ export default function SkinsPage() {
         Skins
       </PageTitle>
 
-      <Surface variant="card" className="!p-6 sm:!p-6">
-        <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <Surface variant="card" className="!p-5 sm:!p-5">
+        <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <Select
             label="Moeda"
             name="currency"
@@ -270,71 +264,48 @@ export default function SkinsPage() {
 
         <div className="mb-6">
           <SectionTitle>Tipos no catálogo (após busca)</SectionTitle>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {typeCounters.map(([type, count]) => {
-              const active = weaponTypeFilter === type
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => {
-                    setWeaponTypeFilter(active ? '' : type)
-                    resetPage()
-                  }}
-                  className={active ? filterChipClass.active : filterChipClass.inactive}
-                >
-                  <ThemeText
-                    as="p"
-                    tone="primary"
-                    className={`text-sm font-semibold ${active ? 'dark:text-brand-100' : ''}`}
-                  >
-                    {type}
-                  </ThemeText>
-                  <ThemeText as="p" tone="secondary" className="text-xs">
-                    {count} skin{count === 1 ? '' : 's'}
-                  </ThemeText>
-                </button>
-              )
-            })}
-          </div>
+          <SegmentedTabs
+            ariaLabel="Tipo da arma"
+            className="mt-3"
+            value={weaponTypeFilter || 'all'}
+            items={[
+              { id: 'all', label: 'Todos' },
+              ...typeCounters.map(([type, count]) => ({
+                id: type,
+                label: `${type} (${count})`,
+              })),
+            ]}
+            onChange={(next) => {
+              setWeaponTypeFilter(next === 'all' ? '' : next)
+              resetPage()
+            }}
+          />
         </div>
 
         {rarityOptions.length > 0 ? (
           <div className="mb-6">
             <SectionTitle>Raridades (após busca e tipo)</SectionTitle>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {rarityOptions.map((option) => {
-                const active = rarityFilter === option.name
-                return (
-                  <button
-                    key={option.name}
-                    type="button"
-                    onClick={() => {
-                      setRarityFilter(active ? '' : option.name)
-                      resetPage()
-                    }}
-                    className={active ? filterChipClass.active : filterChipClass.inactive}
-                  >
-                    <SkinRarityBar rarity={option} className="mb-2" />
-                    <ThemeText
-                      as="p"
-                      tone="primary"
-                      className={`text-sm font-semibold ${active ? 'dark:text-brand-100' : ''}`}
-                    >
-                      {option.name}
-                    </ThemeText>
-                    <ThemeText as="p" tone="secondary" className="text-xs">
-                      {option.count} skin{option.count === 1 ? '' : 's'}
-                    </ThemeText>
-                  </button>
-                )
-              })}
-            </div>
+            <SegmentedTabs
+              ariaLabel="Raridade"
+              className="mt-3"
+              value={rarityFilter || 'all'}
+              items={[
+                { id: 'all', label: 'Todas' },
+                ...rarityOptions.map((option) => ({
+                  id: option.name,
+                  label: `${option.name} (${option.count})`,
+                })),
+              ]}
+              onChange={(next) => {
+                setRarityFilter(next === 'all' ? '' : next)
+                resetPage()
+              }}
+            />
           </div>
         ) : null}
 
         {isLoading ? (
-          <div className="flex items-center gap-2 py-10 text-sm text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center gap-2 py-10 text-sm text-muted">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
             Carregando catálogo de skins...
           </div>
@@ -353,60 +324,61 @@ export default function SkinsPage() {
         ) : null}
 
         {!isLoading && !isError && catalogItems.length > 0 ? (
-          <div
-            ref={productsAnchorRef}
-            className="scroll-mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-          >
-            {catalogItems.map((skin) => (
-              <Link
-                key={`${skin.name}-${skin.classId ?? ''}`}
-                to={`/dashboard/skins/item?name=${encodeURIComponent(skin.name)}&currency=${skinsCurrency}`}
-                className="group block rounded-xl transition hover:opacity-95"
-              >
-                <Surface variant="cardInset" className="!p-4">
-                <SkinRarityVisual rarity={skin.rarity} className="mb-3 h-28">
-                  {skin.image ? (
-                    <img
-                      src={skin.image}
-                      alt={skin.name}
-                      loading="lazy"
-                      className="h-full max-h-24 w-auto object-contain transition-[filter] duration-300 group-hover:drop-shadow-[0_4px_16px_color-mix(in_srgb,var(--skin-color)_25%,transparent)]"
-                      style={
-                        skin.rarity?.color
-                          ? ({ '--skin-color': skin.rarity.color } as CSSProperties)
-                          : undefined
-                      }
-                    />
-                  ) : (
-                    <ThemeText as="span" tone="faint" className="text-xs">
-                      Sem imagem
-                    </ThemeText>
-                  )}
-                </SkinRarityVisual>
-                <ThemeText as="p" tone="primary" className="line-clamp-2 text-sm font-semibold">
-                  {skin.name}
-                </ThemeText>
-                <ThemeText as="p" tone="secondary" className="mt-1 text-xs">
-                  {getSkinWeaponType(skin.name)} · {getSkinWeaponName(skin.name)}
-                  {skin.rarity?.name ? ` · ${skin.rarity.name}` : ''}
-                </ThemeText>
-                <div className="mt-3 space-y-1">
-                  <ThemeText as="p" tone="faint" className="text-xs line-through">
-                    {formatSkinsPrice(skin.price, skin.currency)}
-                    {skin.taxPercent > 0 ? ` · taxa ${skin.taxPercent}%` : ''}
-                  </ThemeText>
-                  <div className="flex items-end justify-between gap-3">
-                    <ThemeText as="p" tone="primary" className="text-base font-semibold">
+          <div ref={productsAnchorRef} className={`scroll-mt-6 ${listTable.wrap}`}>
+            <table className={listTable.table}>
+              <thead>
+                <tr className={listTable.theadRow}>
+                  <th className={listTable.th}>Skin</th>
+                  <th className={listTable.th}>Arma</th>
+                  <th className={listTable.th}>Raridade</th>
+                  <th className={`${listTable.th} text-right`}>Preço base</th>
+                  <th className={`${listTable.th} text-right`}>Preço final</th>
+                  <th className={`${listTable.th} text-right`}>Estoque</th>
+                  <th className={`${listTable.th} text-right`}>Ação</th>
+                </tr>
+              </thead>
+              <tbody className={listTable.tbody}>
+                {catalogItems.map((skin) => (
+                  <tr key={`${skin.name}-${skin.classId ?? ''}`} className={listTable.tr}>
+                    <td className={listTable.tdStrong}>
+                      <div className="flex min-w-[260px] items-center gap-3">
+                        <SkinRarityVisual rarity={skin.rarity} className="h-12 w-16 shrink-0" showStar={false}>
+                          {skin.image ? (
+                            <img src={skin.image} alt="" loading="lazy" className="max-h-10 max-w-full object-contain" />
+                          ) : null}
+                        </SkinRarityVisual>
+                        <span className="line-clamp-2">{skin.name}</span>
+                      </div>
+                    </td>
+                    <td className={listTable.td}>
+                      <span className="whitespace-nowrap">{getSkinWeaponType(skin.name)}</span>
+                      <span className="block text-xs text-muted">{getSkinWeaponName(skin.name)}</span>
+                    </td>
+                    <td className={listTable.td}>
+                      <span style={{ color: skin.rarity?.color }}>{skin.rarity?.name ?? '—'}</span>
+                    </td>
+                    <td className={`${listTable.tdMuted} text-right`}>
+                      {formatSkinsPrice(skin.price, skin.currency)}
+                      {skin.taxPercent > 0 ? <span className="block text-[11px]">taxa {skin.taxPercent}%</span> : null}
+                    </td>
+                    <td className={`${listTable.tdStrong} text-right tabular-nums`}>
                       {formatSkinsPrice(skin.priceWithTax ?? skin.price, skin.currency)}
-                    </ThemeText>
-                    <ThemeText as="p" tone="faint" className="text-xs">
-                      {skin.availableCount ?? 0} disponíveis
-                    </ThemeText>
-                  </div>
-                </div>
-                </Surface>
-              </Link>
-            ))}
+                    </td>
+                    <td className={`${listTable.tdMuted} text-right tabular-nums`}>
+                      {skin.availableCount ?? 0}
+                    </td>
+                    <td className={`${listTable.td} text-right`}>
+                      <Link
+                        to={`/dashboard/skins/item?name=${encodeURIComponent(skin.name)}&currency=${skinsCurrency}`}
+                        className={linkBrand}
+                      >
+                        Detalhes
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : null}
 

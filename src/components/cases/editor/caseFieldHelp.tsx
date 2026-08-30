@@ -9,7 +9,7 @@ export type CaseFieldHelpEntry = {
 function HelpSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <p className="font-medium text-zinc-800 dark:text-zinc-200">{title}</p>
+      <p className="font-medium text-foreground">{title}</p>
       <div className="mt-1 space-y-2">{children}</div>
     </div>
   )

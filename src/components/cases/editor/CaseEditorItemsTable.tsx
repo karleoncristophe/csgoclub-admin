@@ -6,6 +6,7 @@ import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
 import { FieldLabelWithHelp } from '@/components/ui/FieldLabelWithHelp'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
+import { listTableAlt } from '@/components/ui/listTable'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import type { CaseDropItem } from '@/redux/store/api/cases/api.cases'
 import {
@@ -63,7 +64,7 @@ export function CaseEditorItemsTable({
   }
 
   return (
-    <Surface variant="card" className="!p-6">
+    <Surface variant="card" className="!p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <ThemeText as="h2" tone="primary" className="text-base font-semibold">
@@ -84,10 +85,10 @@ export function CaseEditorItemsTable({
           Nenhum item adicionado. Use “Adicionar skins” para montar a caixa.
         </ThemeText>
       ) : (
-        <div className="overflow-x-auto">
+        <div className={listTableAlt.wrap}>
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+              <tr className={listTableAlt.theadRow}>
                 <th className="px-3 py-2">
                   <FieldLabelWithHelp
                     label="Ativo"
@@ -135,7 +136,7 @@ export function CaseEditorItemsTable({
                 <th className="px-3 py-2" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className={listTableAlt.tbody}>
               {items.map((item) => {
                 const itemValue = resolveItemEconomicsValue(item, valueMode)
                 const veItem = roundPrice(itemValue * (item.probability / 100))
@@ -155,7 +156,7 @@ export function CaseEditorItemsTable({
                 return (
                   <tr
                     key={item.skinName}
-                    className={`border-b border-zinc-100 dark:border-zinc-800/80 ${
+                    className={`${listTableAlt.tr} ${
                       rowMuted ? 'opacity-50' : ''
                     }`}
                   >

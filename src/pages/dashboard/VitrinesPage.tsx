@@ -332,7 +332,7 @@ export default function VitrinesPage() {
         Vitrines
       </PageTitle>
 
-      <Surface variant="card" className="!p-6">
+      <Surface variant="card" className="!p-5">
         <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
           Nova vitrine
         </ThemeText>

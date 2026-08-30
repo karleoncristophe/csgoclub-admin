@@ -15,6 +15,8 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
+import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { listTable, linkBrand } from '@/components/ui/listTable'
 import useDebounce from '@/hooks/useDebounce'
 import {
   useGetArenaMatchesQuery,
@@ -24,10 +26,7 @@ import {
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { SteamIdLink } from '@/components/users/SteamIdLink'
 import { UserAvatarLink } from '@/components/users/UserAvatarLink'
-import {
-  filterChipClasses,
-  userStatCardSpaciousClass,
-} from '@/components/users/userPanelClasses'
+import { userStatCardSpaciousClass } from '@/components/users/userPanelClasses'
 
 const PAGE_SIZE = 20
 
@@ -61,7 +60,7 @@ function StatCard({
       <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
         {label}
       </ThemeText>
-      <ThemeText as="p" tone="primary" className="mt-2 text-xl font-bold sm:text-2xl">
+      <ThemeText as="p" tone="primary" className="mt-1 text-lg font-semibold">
         {value}
       </ThemeText>
       <ThemeText as="p" tone="faint" className="mt-2 text-xs leading-relaxed">
@@ -133,7 +132,7 @@ export default function ArenaPlaysPage() {
         </div>
       ) : null}
 
-      <Surface variant="card" className="!p-6">
+      <Surface variant="card" className="!p-5">
         <div className="mb-5 flex flex-wrap items-end gap-3">
           <div className="min-w-[220px] flex-1">
             <Input
@@ -153,35 +152,31 @@ export default function ArenaPlaysPage() {
           </ThemeText>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((option) => (
-            <button
-              key={option.value || 'all-status'}
-              type="button"
-              onClick={() => {
-                setStatus(option.value)
-                setPage(1)
-              }}
-              className={filterChipClasses(status === option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        <div className="mb-5 flex flex-wrap gap-2">
-          {PAYMENT_FILTERS.map((option) => (
-            <button
-              key={option.value || 'all-pay'}
-              type="button"
-              onClick={() => {
-                setPaymentMethod(option.value)
-                setPage(1)
-              }}
-              className={filterChipClasses(paymentMethod === option.value, 'amber')}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className="mb-5 grid gap-2 lg:grid-cols-2">
+          <SegmentedTabs
+            ariaLabel="Status da jogada"
+            value={status || 'all'}
+            items={STATUS_FILTERS.map((option) => ({
+              id: option.value || 'all',
+              label: option.label,
+            }))}
+            onChange={(next) => {
+              setStatus(next === 'all' ? '' : (next as ArenaMatchStatus))
+              setPage(1)
+            }}
+          />
+          <SegmentedTabs
+            ariaLabel="Forma de pagamento"
+            value={paymentMethod || 'all'}
+            items={PAYMENT_FILTERS.map((option) => ({
+              id: option.value || 'all',
+              label: option.label,
+            }))}
+            onChange={(next) => {
+              setPaymentMethod(next === 'all' ? '' : (next as ArenaPaymentMethod))
+              setPage(1)
+            }}
+          />
         </div>
 
         {isLoading ? (
@@ -204,7 +199,19 @@ export default function ArenaPlaysPage() {
         ) : null}
 
         {plays.length > 0 ? (
-          <div className={`flex flex-col gap-2 ${isFetching ? 'opacity-70' : ''}`}>
+          <div className={`${listTable.wrap} ${isFetching ? 'opacity-70' : ''}`}>
+            <table className={listTable.table}>
+              <thead>
+                <tr className={listTable.theadRow}>
+                  <th className={listTable.th}>Quando</th>
+                  <th className={listTable.th}>Jogador</th>
+                  <th className={listTable.th}>Status</th>
+                  <th className={listTable.th}>Pagamento</th>
+                  <th className={listTable.th}>Prêmio</th>
+                  <th className={`${listTable.th} text-right`}>Ação</th>
+                </tr>
+              </thead>
+              <tbody className={listTable.tbody}>
             {plays.map((play) => {
               const prize = play.awarded?.[0]
               const playId = [play._id, play.id].find(
@@ -215,48 +222,33 @@ export default function ArenaPlaysPage() {
               )
               if (!playId) return null
               return (
-                <div
-                  key={playId}
-                  className="group flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/40 p-3 transition hover:border-brand-300 hover:bg-brand-50/30 dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-brand-400/40 dark:hover:bg-brand-500/10 sm:flex-row sm:items-center sm:gap-4 sm:p-4"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                <tr key={playId} className={listTable.tr}>
+                  <td className={listTable.tdMuted}>{formatArenaPlayDateTime(play.createdAt ?? play.startedAt)}</td>
+                  <td className={listTable.td}>
+                    <div className="flex min-w-[190px] items-center gap-2">
                     <UserAvatarLink
                       userId={play.user?.id || play.user?._id}
                       name={play.user?.name}
                       avatar={play.user?.avatar}
                     />
-                    <Link
-                      to={`/dashboard/arena/plays/${playId}`}
-                      className="min-w-0 flex-1"
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <ThemeText as="p" tone="primary" className="truncate text-sm font-semibold">
-                          {play.user?.name ?? 'Jogador'}
-                        </ThemeText>
-                        <ArenaMatchStatusBadge status={play.status} />
-                        <TextBadge>{arenaPaymentLabel(play.paymentMethod)}</TextBadge>
-                      </div>
+                    <div className="min-w-0">
+                      <span className="block truncate font-medium text-foreground">{play.user?.name ?? 'Jogador'}</span>
                       {play.user?.steamId ? (
-                        <div className="mt-1">
-                          <SteamIdLink steamId={play.user.steamId} />
-                        </div>
+                        <SteamIdLink steamId={play.user.steamId} />
                       ) : null}
-                      <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-                        {formatArenaPlayDateTime(play.createdAt ?? play.startedAt)}
-                        {' · '}
-                        {formatArenaPlayMoney(play.chargedAmount, play.currency)}
-                      </ThemeText>
-                    </Link>
-                  </div>
-
-                  <Link
-                    to={`/dashboard/arena/plays/${playId}`}
-                    className="flex min-w-0 items-center gap-3 sm:w-[42%] sm:justify-end"
-                  >
+                    </div>
+                    </div>
+                  </td>
+                  <td className={listTable.td}><ArenaMatchStatusBadge status={play.status} /></td>
+                  <td className={listTable.td}>
+                    <TextBadge>{arenaPaymentLabel(play.paymentMethod)}</TextBadge>
+                    <span className="mt-1 block whitespace-nowrap text-xs text-muted">{formatArenaPlayMoney(play.chargedAmount, play.currency)}</span>
+                  </td>
+                  <td className={listTable.td}>
                     {prize ? (
-                      <>
+                      <div className="flex min-w-[240px] items-center gap-2">
                         <div
-                          className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-zinc-100 dark:bg-zinc-950"
+                          className="flex h-10 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-surface-secondary"
                           style={{
                             borderColor: `${arenaRaritySwatch(prize.rarity)}88`,
                           }}
@@ -265,38 +257,34 @@ export default function ArenaPlaysPage() {
                             <img
                               src={prize.image}
                               alt=""
-                              className="max-h-14 max-w-full object-contain"
+                              className="max-h-9 max-w-full object-contain"
                             />
                           ) : (
                             <Package className="h-5 w-5 text-zinc-400" />
                           )}
                         </div>
-                        <div className="min-w-0 flex-1 sm:max-w-[220px]">
-                          <ThemeText as="p" tone="primary" className="truncate text-sm font-medium">
-                            {prize.crateName ?? prize.name}
-                          </ThemeText>
-                          <ThemeText
-                            as="p"
-                            tone="secondary"
-                            className="mt-0.5 truncate text-xs"
-                            style={{ color: arenaRaritySwatch(prize.rarity) }}
-                          >
+                        <div className="min-w-0">
+                          <span className="block truncate font-medium text-foreground">{prize.crateName ?? prize.name}</span>
+                          <span className="block truncate text-xs" style={{ color: arenaRaritySwatch(prize.rarity) }}>
                             {arenaRarityLabel(prize.rarity)}
                             {play.awarded && play.awarded.length > 1
                               ? ` · +${play.awarded.length - 1}`
                               : ''}
-                          </ThemeText>
+                          </span>
                         </div>
-                      </>
+                      </div>
                     ) : (
-                      <ThemeText as="p" tone="faint" className="text-sm">
-                        Sem crate
-                      </ThemeText>
+                      <span className="text-sm text-muted">Sem crate</span>
                     )}
-                  </Link>
-                </div>
+                  </td>
+                  <td className={`${listTable.td} text-right`}>
+                    <Link to={`/dashboard/arena/plays/${playId}`} className={linkBrand}>Detalhes</Link>
+                  </td>
+                </tr>
               )
             })}
+              </tbody>
+            </table>
           </div>
         ) : null}
 

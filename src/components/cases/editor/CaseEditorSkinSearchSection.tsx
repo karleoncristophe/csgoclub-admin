@@ -132,7 +132,7 @@ export function CaseEditorSkinSearchSection({
         </>
       )}
 
-      <div className="mb-6 grid gap-4 md:grid-cols-2">
+      <div className="mb-4 grid gap-3 md:grid-cols-2">
         <div className="relative md:col-span-2">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <input
@@ -171,7 +171,7 @@ export function CaseEditorSkinSearchSection({
           ))}
         </Select>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <label className="mb-1.5 block text-sm font-medium text-foreground">
             Preço mín. ({currency})
           </label>
           <input
@@ -185,7 +185,7 @@ export function CaseEditorSkinSearchSection({
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <label className="mb-1.5 block text-sm font-medium text-foreground">
             Preço máx. ({currency})
           </label>
           <input

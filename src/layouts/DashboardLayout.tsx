@@ -31,6 +31,7 @@ import type { RootState } from '@/redux/store/store'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { ColorThemePicker } from '@/components/ui/ColorThemePicker'
 import {
   PlatformDataEnvironmentBanner,
   PlatformDataEnvironmentToggle,
@@ -123,11 +124,11 @@ function roleLabel(role?: string) {
 
 function navLinkClass(active: boolean) {
   const base =
-    'flex items-center gap-3 rounded-lg py-2.5 pl-9 pr-4 text-sm font-medium transition-colors'
+    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors'
   if (active) {
-    return `${base} text-brand-700 dark:text-brand-400`
+    return `${base} bg-accent-soft text-accent`
   }
-  return `${base} text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100`
+  return `${base} text-muted hover:bg-default hover:text-foreground`
 }
 
 export default function DashboardLayout() {
@@ -201,7 +202,7 @@ export default function DashboardLayout() {
                     <div key={href} className="relative">
                       {active ? (
                         <span
-                          className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-brand-600"
+                          className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-accent"
                           aria-hidden
                         />
                       ) : null}
@@ -221,13 +222,14 @@ export default function DashboardLayout() {
           ))}
         </nav>
 
-        <div className="shrink-0 space-y-2 border-t border-slate-100 px-3 pb-2 pt-4 dark:border-zinc-800">
+        <div className="shrink-0 space-y-2 border-t border-separator px-3 pb-2 pt-4">
           <PlatformDataEnvironmentToggle variant="sidebar" />
+          <ColorThemePicker variant="sidebar" />
           <ThemeToggle variant="sidebar" />
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-lg py-2.5 pl-9 pr-4 text-sm font-medium text-slate-500 transition-colors hover:bg-brand-50/80 hover:text-brand-700 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-brand-400"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-danger-soft hover:text-danger"
           >
             <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden />
             Sair
@@ -268,14 +270,14 @@ export default function DashboardLayout() {
         {sidebar}
       </aside>
 
-      <div className="mx-auto flex min-h-dvh max-w-[1600px] flex-col lg:flex-row">
+      <div className="mx-auto flex h-full w-full max-w-[1600px] overflow-hidden flex-col lg:flex-row">
         <aside
           className={`hidden lg:sticky lg:top-0 lg:h-dvh ${asideClass} lg:flex`}
         >
           {sidebar}
         </aside>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden flex-col">
           <header className={surfaceClass('mobileHeader')}>
             <button
               type="button"
@@ -299,19 +301,21 @@ export default function DashboardLayout() {
             </div>
             <div className="hidden items-center gap-2 sm:flex">
               <PlatformDataEnvironmentToggle />
+              <ColorThemePicker />
               <ThemeToggle />
             </div>
           </header>
-          <div className="hidden border-b border-zinc-200 px-4 py-3 dark:border-zinc-800 sm:flex sm:items-center sm:justify-end sm:gap-2 lg:hidden">
+          <div className="hidden border-b border-separator px-4 py-3 sm:flex sm:items-center sm:justify-end sm:gap-2 lg:hidden">
             <PlatformDataEnvironmentToggle />
+            <ColorThemePicker />
             <ThemeToggle />
           </div>
           <PlatformDataEnvironmentBanner />
-          <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
+          <main className="scrollbar-edge min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 lg:px-8">
             <Suspense
               fallback={
                 <div className="flex min-h-[min(50vh,28rem)] flex-col items-center justify-center gap-3">
-                  <span className="h-8 w-8 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
+                  <span className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
                   <ThemeText as="p" tone="secondary" className="text-sm">
                     Carregando página…
                   </ThemeText>

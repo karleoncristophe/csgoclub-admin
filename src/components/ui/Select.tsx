@@ -1,55 +1,100 @@
-import { type SelectHTMLAttributes, useId } from 'react'
-import { ChevronDown } from 'lucide-react'
+import {
+  Children,
+  isValidElement,
+  type ChangeEvent,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  useId,
+} from 'react'
+import {
+  Description,
+  Label,
+  ListBox,
+  ListBoxItem,
+  Select as HeroSelect,
+} from '@heroui/react'
 import type { FieldHelp } from '@/components/ui/fieldHelp'
 import { FieldHelpButton } from '@/components/ui/FieldHelpButton'
 
-const selectClass =
-  'peer h-11 w-full cursor-pointer appearance-none rounded-xl border border-zinc-200 bg-white py-0 pl-3.5 pr-10 text-sm text-zinc-900 shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-400 [&>option]:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500 dark:[&>option]:bg-zinc-900 dark:[&>option]:text-zinc-100'
-
-export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectProps
+  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
   label: string
   hint?: string
   description?: string
   fieldHelp?: FieldHelp
+  onChange?: (event: ChangeEvent<HTMLSelectElement>) => void
 }
 
+function optionItems(children: ReactNode): ReactNode[] {
+  return Children.toArray(children).flatMap((child) => {
+    if (!isValidElement<{ value?: string; disabled?: boolean; children?: ReactNode }>(child)) {
+      return []
+    }
+    if (child.type === 'option') {
+      const value = child.props.value ?? String(child.props.children ?? '')
+      return (
+        <ListBoxItem key={value} id={value} isDisabled={child.props.disabled}>
+          {child.props.children}
+        </ListBoxItem>
+      )
+    }
+    if (child.type === 'optgroup') return optionItems(child.props.children)
+    return []
+  })
+}
+
+/** API de select nativo preservada sobre Select/ListBox do HeroUI. */
 export function Select({
   label,
   hint,
   description,
   fieldHelp,
   id,
-  className = '',
+  className,
   children,
+  value,
+  defaultValue,
+  name,
+  disabled,
+  required,
+  onChange,
   ...rest
 }: SelectProps) {
   const uid = useId()
-  const sid = id ?? `${rest.name ?? 'select'}-${uid}`
+  const selectId = id ?? `${name ?? 'select'}-${uid}`
+  const selectedKey = value === undefined ? undefined : String(value)
+  const defaultSelectedKey = defaultValue === undefined ? undefined : String(defaultValue)
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1.5">
-        <label htmlFor={sid} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          {label}
-        </label>
+    <HeroSelect
+      name={name}
+      selectedKey={selectedKey}
+      defaultSelectedKey={defaultSelectedKey}
+      isDisabled={disabled}
+      isRequired={required}
+      onSelectionChange={(key) => {
+        const nextValue = String(key ?? '')
+        onChange?.({
+          target: { value: nextValue },
+          currentTarget: { value: nextValue },
+        } as ChangeEvent<HTMLSelectElement>)
+      }}
+      className="w-full"
+      {...(rest as Record<string, unknown>)}
+    >
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <Label htmlFor={selectId}>{label}</Label>
         {fieldHelp ? <FieldHelpButton fieldHelp={fieldHelp} /> : null}
       </div>
-      <div className="relative">
-        <select id={sid} className={`${selectClass} ${className}`} {...rest}>
-          {children}
-        </select>
-        <ChevronDown
-          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500 peer-disabled:opacity-40 dark:text-zinc-400"
-          strokeWidth={2}
-          aria-hidden
-        />
-      </div>
-      {description ? (
-        <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">{description}</p>
-      ) : null}
-      {hint ? (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">{hint}</p>
-      ) : null}
-    </div>
+      <HeroSelect.Trigger id={selectId} className={className}>
+        <HeroSelect.Value />
+        <HeroSelect.Indicator />
+      </HeroSelect.Trigger>
+      <HeroSelect.Popover className="select__popover">
+        <ListBox>{optionItems(children)}</ListBox>
+      </HeroSelect.Popover>
+      {description ? <Description>{description}</Description> : null}
+      {hint ? <Description>{hint}</Description> : null}
+    </HeroSelect>
   )
 }

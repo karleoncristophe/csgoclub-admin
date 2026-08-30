@@ -146,7 +146,7 @@ export default function WeaponCategoriesPage() {
         Categorias
       </PageTitle>
 
-      <Surface variant="card" className="!p-6">
+      <Surface variant="card" className="!p-5">
         <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
           Nova categoria
         </ThemeText>

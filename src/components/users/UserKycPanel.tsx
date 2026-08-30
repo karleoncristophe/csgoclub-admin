@@ -53,7 +53,7 @@ export function UserKycPanel({ user }: UserKycPanelProps) {
   const sessions = data?.sessions ?? []
 
   return (
-    <Surface variant="card" className="!p-6">
+    <Surface variant="card" className="!p-5">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <SectionTitle className="mb-2 flex items-center gap-2">
@@ -87,7 +87,7 @@ export function UserKycPanel({ user }: UserKycPanelProps) {
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+        <div className="rounded-xl border border-border bg-surface-secondary p-3">
           <ThemeText as="p" tone="label" className="text-xs uppercase">
             Status
           </ThemeText>
@@ -111,7 +111,7 @@ export function UserKycPanel({ user }: UserKycPanelProps) {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+        <div className="rounded-xl border border-border bg-surface-secondary p-3">
           <ThemeText as="p" tone="label" className="text-xs uppercase">
             Status Didit
           </ThemeText>
@@ -120,7 +120,7 @@ export function UserKycPanel({ user }: UserKycPanelProps) {
           </ThemeText>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+        <div className="rounded-xl border border-border bg-surface-secondary p-3">
           <ThemeText as="p" tone="label" className="text-xs uppercase">
             Verificado em
           </ThemeText>
@@ -129,7 +129,7 @@ export function UserKycPanel({ user }: UserKycPanelProps) {
           </ThemeText>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+        <div className="rounded-xl border border-border bg-surface-secondary p-3">
           <ThemeText as="p" tone="label" className="text-xs uppercase">
             Sessão atual
           </ThemeText>
@@ -148,7 +148,7 @@ export function UserKycPanel({ user }: UserKycPanelProps) {
           <ThemeText as="p" tone="label" className="mb-2 text-xs uppercase">
             Resumo da decisão
           </ThemeText>
-          <pre className="overflow-x-auto text-xs text-zinc-700 dark:text-zinc-300">
+          <pre className="overflow-x-auto text-xs text-foreground">
             {JSON.stringify(
               data?.decisionSummary ?? user.kycDecisionSummary,
               null,

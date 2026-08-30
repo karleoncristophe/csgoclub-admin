@@ -49,7 +49,7 @@ function OptionAvatar({
       <img
         src={option.imageUrl}
         alt=""
-        className={`${sizeClass} shrink-0 rounded-full bg-zinc-100 object-cover dark:bg-zinc-800`}
+        className={`${sizeClass} shrink-0 rounded-full bg-default object-cover`}
         loading="lazy"
       />
     )
@@ -57,7 +57,7 @@ function OptionAvatar({
 
   return (
     <span
-      className={`flex ${sizeClass} shrink-0 items-center justify-center rounded-full bg-zinc-100 font-semibold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400`}
+      className={`flex ${sizeClass} shrink-0 items-center justify-center rounded-full bg-default font-semibold text-muted`}
       aria-hidden
     >
       {initial || <UserRound className="h-4 w-4" />}
@@ -106,20 +106,21 @@ export function SearchableSelect({
   }, [options, debouncedSearch, serverSearch])
 
   useEffect(() => {
-    if (!open) {
-      setSearch('')
-      onSearchChange?.('')
-    }
-  }, [open, onSearchChange])
-
-  useEffect(() => {
     if (!open || !serverSearch) return
     onSearchChange?.(debouncedSearch)
   }, [debouncedSearch, open, serverSearch, onSearchChange])
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    if (!nextOpen) {
+      setSearch('')
+      onSearchChange?.('')
+    }
+  }
+
   const pick = (next: string) => {
     onChange(next)
-    setOpen(false)
+    handleOpenChange(false)
   }
 
   const shownCount = filtered.length
@@ -130,7 +131,7 @@ export function SearchableSelect({
     <div className="flex flex-col gap-1.5">
       <label
         htmlFor={`${uid}-trigger`}
-        className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        className="text-sm font-medium text-foreground"
       >
         {label}
       </label>
@@ -141,22 +142,22 @@ export function SearchableSelect({
           type="button"
           disabled={disabled}
           onClick={() => setOpen(true)}
-          className="flex h-11 w-full items-center gap-2.5 rounded-xl border border-zinc-200 bg-white px-3 text-left text-sm text-zinc-900 shadow-sm transition-colors hover:border-zinc-300 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-600 dark:disabled:bg-zinc-800"
+          className="flex h-10 w-full items-center gap-2.5 rounded-field border border-field-border bg-field px-3 text-left text-sm text-field-foreground shadow-field transition-colors hover:bg-field-hover focus:border-focus focus:outline-none focus:ring-4 focus:ring-focus/15 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {selected ? <OptionAvatar option={selected} size="sm" /> : null}
           <span className="min-w-0 flex-1 truncate">
             {selected ? (
               <span className="font-medium">{selected.label}</span>
             ) : (
-              <span className="text-zinc-400 dark:text-zinc-500">{placeholder}</span>
+              <span className="text-field-placeholder">{placeholder}</span>
             )}
           </span>
           {selected?.description ? (
-            <span className="hidden max-w-[40%] truncate text-xs text-zinc-500 sm:inline">
+            <span className="max-w-[45%] truncate text-xs text-muted">
               {selected.description}
             </span>
           ) : null}
-          <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400" aria-hidden />
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted" aria-hidden />
         </button>
 
         {clearable && selected && !disabled ? (
@@ -166,7 +167,7 @@ export function SearchableSelect({
               event.stopPropagation()
               onChange('')
             }}
-            className="absolute right-9 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            className="absolute right-9 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition hover:bg-default hover:text-foreground"
             aria-label="Limpar seleção"
           >
             <X className="h-3.5 w-3.5" aria-hidden />
@@ -182,7 +183,7 @@ export function SearchableSelect({
 
       <Modal
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={handleOpenChange}
         title={modalTitle}
         description={modalDescription}
         size="md"
@@ -190,7 +191,7 @@ export function SearchableSelect({
         <div className="space-y-3">
           <div className="relative">
             <Search
-              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
               aria-hidden
             />
             <input
@@ -199,7 +200,7 @@ export function SearchableSelect({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={searchPlaceholder}
-              className="h-11 w-full rounded-xl border border-zinc-200 bg-white py-0 pl-10 pr-3 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+              className="h-10 w-full rounded-field border border-field-border bg-field py-0 pl-10 pr-3 text-sm text-field-foreground shadow-field placeholder:text-field-placeholder focus:border-focus focus:outline-none focus:ring-4 focus:ring-focus/15"
             />
           </div>
 
@@ -209,19 +210,17 @@ export function SearchableSelect({
               : `${shownCount} de ${total} ${noun}${debouncedSearch ? ` · filtro “${debouncedSearch}”` : ''}`}
           </ThemeText>
 
-          <div className="max-h-[min(50vh,360px)] overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
+          <div className="max-h-[min(50vh,360px)] overflow-y-auto rounded-xl border border-border">
             {loading && filtered.length === 0 ? (
               <ThemeText as="p" tone="secondary" className="px-4 py-6 text-center text-sm">
-                Carregando influencers…
+                Carregando…
               </ThemeText>
             ) : filtered.length === 0 ? (
               <ThemeText as="p" tone="secondary" className="px-4 py-6 text-center text-sm">
-                {total === 0 && !debouncedSearch
-                  ? 'Nenhum influencer cadastrado.'
-                  : emptyMessage}
+                {emptyMessage}
               </ThemeText>
             ) : (
-              <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              <ul className="divide-y divide-separator">
                 {filtered.map((option) => {
                   const isSelected = option.value === value
                   return (
@@ -229,10 +228,10 @@ export function SearchableSelect({
                       <button
                         type="button"
                         onClick={() => pick(option.value)}
-                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition ${
+                        className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition ${
                           isSelected
-                            ? 'bg-brand-50/80 dark:bg-brand-500/15'
-                            : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/80'
+                            ? 'bg-accent-soft'
+                            : 'hover:bg-default'
                         }`}
                       >
                         <OptionAvatar option={option} />
@@ -249,8 +248,8 @@ export function SearchableSelect({
                         <span
                           className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
                             isSelected
-                              ? 'border-brand-500 bg-brand-500 text-white'
-                              : 'border-zinc-200 bg-zinc-50 text-transparent dark:border-zinc-600 dark:bg-zinc-800'
+                              ? 'border-accent bg-accent text-accent-foreground'
+                              : 'border-border bg-default text-transparent'
                           }`}
                         >
                           <Check className="h-3.5 w-3.5" aria-hidden />

@@ -1,9 +1,10 @@
+import { Button as HeroButton } from '@heroui/react'
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { Tooltip } from '@/components/ui/Tooltip'
 
 type IconButtonVariant = 'ghost' | 'danger'
 
-export type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+export type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'value'> & {
   label: string
   variant?: IconButtonVariant
   children: ReactNode
@@ -11,9 +12,9 @@ export type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantClass: Record<IconButtonVariant, string> = {
   ghost:
-    'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100',
+    'rounded-lg text-muted hover:bg-default hover:text-foreground',
   danger:
-    'text-red-500 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/40 dark:hover:text-red-300',
+    'rounded-lg text-danger hover:bg-danger-soft hover:text-danger',
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
@@ -23,15 +24,18 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   ) {
     return (
       <Tooltip content={label}>
-        <button
+        <HeroButton
           ref={ref}
           type={type}
           aria-label={label}
-          className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 disabled:cursor-not-allowed disabled:opacity-40 ${variantClass[variant]} ${className}`}
-          {...rest}
+          isIconOnly
+          size="sm"
+          variant={variant === 'danger' ? 'danger-soft' : 'tertiary'}
+          className={`shrink-0 ${variantClass[variant]} ${className}`}
+          {...(rest as Record<string, unknown>)}
         >
           {children}
-        </button>
+        </HeroButton>
       </Tooltip>
     )
   },

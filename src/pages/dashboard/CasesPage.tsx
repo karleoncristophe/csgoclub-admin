@@ -86,7 +86,7 @@ export default function CasesPage() {
         </Link>
       </div>
 
-      <Surface variant="card" className="!p-6">
+      <Surface variant="card" className="!p-5">
         {isLoading ? (
           <ThemeText tone="secondary" className="text-sm">
             Carregando caixas...
@@ -110,7 +110,7 @@ export default function CasesPage() {
         ) : null}
 
         {data.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div className={listTable.wrap}>
             <table className={listTable.table}>
               <thead>
                 <tr className={listTable.theadRow}>

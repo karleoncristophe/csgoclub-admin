@@ -15,7 +15,7 @@ export function FieldHelpButton({ fieldHelp, className = '' }: FieldHelpButtonPr
     <>
       <button
         type="button"
-        className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:hover:bg-zinc-800 dark:hover:text-brand-400 ${className}`}
+        className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-accent focus:outline-none focus:ring-2 focus:ring-focus/30 ${className}`}
         aria-label={`Ajuda: ${fieldHelp.title}`}
         onClick={() => setOpen(true)}
       >

@@ -153,10 +153,12 @@ export function getActiveQuickPresetLabel(
 export type DateRangePickerModalProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** Intervalo atualmente aplicado (para abrir o modal alinhado). */
-  appliedStart: Date
-  appliedEnd: Date
+  /** Intervalo atualmente aplicado (para abrir o modal alinhado). Vazio = sem período. */
+  appliedStart?: Date | null
+  appliedEnd?: Date | null
   onApply: (start: Date, end: Date) => void
+  /** Se a pessoa aplica sem datas, remove o período. */
+  onClear?: () => void
 }
 
 export function DateRangePickerTrigger({
@@ -164,44 +166,67 @@ export function DateRangePickerTrigger({
   appliedEnd,
   presetLabel,
   onClick,
+  emptyLabel = 'Escolher período',
+  onClear,
 }: {
-  appliedStart: Date
-  appliedEnd: Date
+  appliedStart?: Date | null
+  appliedEnd?: Date | null
   /** Quando o intervalo bate com um atalho (ex.: Últimos 7 dias), exibido acima das datas. */
   presetLabel?: string | null
   onClick: () => void
+  emptyLabel?: string
+  onClear?: () => void
 }) {
-  const label = `${appliedStart.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })} – ${appliedEnd.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })}`
+  const hasRange = Boolean(appliedStart && appliedEnd)
+  const label = hasRange
+    ? `${appliedStart!.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })} – ${appliedEnd!.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })}`
+    : emptyLabel
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={surfaceClass('dateRangeTrigger')}
-    >
-      <span className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm">
-        <CalendarRange className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden />
-        <span className="min-w-0 flex-1">
-          {presetLabel ? (
-            <span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-600 dark:text-brand-400">
-              {presetLabel}
-            </span>
-          ) : null}
-          <ThemeText as="span" tone="primary" className="font-medium">
-            {label}
-          </ThemeText>
+    <div className="flex w-full max-w-md items-center gap-2">
+      <button
+        type="button"
+        onClick={onClick}
+        className={surfaceClass('dateRangeTrigger', 'min-w-0 flex-1')}
+      >
+        <span className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm">
+          <CalendarRange className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden />
+          <span className="min-w-0 flex-1">
+            {presetLabel ? (
+              <span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-600 dark:text-brand-400">
+                {presetLabel}
+              </span>
+            ) : null}
+            <ThemeText
+              as="span"
+              tone={hasRange ? 'primary' : 'secondary'}
+              className="font-medium"
+            >
+              {label}
+            </ThemeText>
+          </span>
         </span>
-      </span>
-      <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" aria-hidden />
-    </button>
+        <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" aria-hidden />
+      </button>
+      {hasRange && onClear ? (
+        <button
+          type="button"
+          onClick={onClear}
+          className={surfaceClass('ghostIconButton')}
+          aria-label="Limpar período"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      ) : null}
+    </div>
   )
 }
 
@@ -211,18 +236,26 @@ export function DateRangePickerModal({
   appliedStart,
   appliedEnd,
   onApply,
+  onClear,
 }: DateRangePickerModalProps) {
-  const [visibleMonth, setVisibleMonth] = useState(() =>
-    startOfLocalDay(new Date(appliedStart.getFullYear(), appliedStart.getMonth(), 1)),
-  )
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const base = appliedStart ?? new Date()
+    return startOfLocalDay(new Date(base.getFullYear(), base.getMonth(), 1))
+  })
   const [selectedDates, setSelectedDates] = useState<Set<string>>(() =>
-    buildRangeSet(appliedStart, appliedEnd),
+    appliedStart && appliedEnd ? buildRangeSet(appliedStart, appliedEnd) : new Set(),
   )
   const [applyError, setApplyError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
     setApplyError(null)
+    if (!appliedStart || !appliedEnd) {
+      setSelectedDates(new Set())
+      const now = startOfLocalDay(new Date())
+      setVisibleMonth(new Date(now.getFullYear(), now.getMonth(), 1))
+      return
+    }
     const s = startOfLocalDay(appliedStart)
     const e = startOfLocalDay(appliedEnd)
     setSelectedDates(buildRangeSet(s, e))
@@ -301,6 +334,11 @@ export function DateRangePickerModal({
   const handleApply = () => {
     setApplyError(null)
     if (selectedDates.size === 0) {
+      if (onClear) {
+        onClear()
+        onOpenChange(false)
+        return
+      }
       setApplyError('Selecione pelo menos um dia.')
       return
     }

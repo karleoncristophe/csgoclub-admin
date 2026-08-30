@@ -83,7 +83,7 @@ function AccordionItem({
               >
                 Em resumo
               </ThemeText>
-              <ul className="space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+              <ul className="space-y-2 text-sm text-foreground">
                 {item.bullets.map((bullet) => (
                   <li key={bullet} className="flex items-start gap-2">
                     <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600 dark:bg-brand-500" />
@@ -138,13 +138,13 @@ function AccordionItem({
                     {group.entries.map((entry) => (
                       <li
                         key={`${group.title}-${entry.code}`}
-                        className="text-sm text-zinc-700 dark:text-zinc-300"
+                        className="text-sm text-foreground"
                       >
-                        <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                        <span className="font-medium text-foreground">
                           <Highlight text={entry.label} query={searchQuery} />
                         </span>
                         {entry.hint ? (
-                          <span className="text-zinc-500 dark:text-zinc-400">
+                          <span className="text-muted">
                             {' '}
                             — <Highlight text={entry.hint} query={searchQuery} />
                           </span>

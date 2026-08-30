@@ -34,7 +34,7 @@ function ValueTile({
   hint?: string
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-900/60">
+    <div className="rounded-xl border border-border bg-surface-secondary p-3">
       <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
         {label}
       </ThemeText>
@@ -150,7 +150,7 @@ export default function ArenaPlayDetailPage() {
             />
           </div>
 
-          <Surface variant="card" className="!p-6 space-y-4">
+          <Surface variant="card" className="!p-5 space-y-4">
             <SectionTitle>Jogador</SectionTitle>
             {data.user ? (
               <div className="flex items-center gap-4">
@@ -181,14 +181,14 @@ export default function ArenaPlayDetailPage() {
             )}
           </Surface>
 
-          <Surface variant="card" className="!p-6 space-y-4">
+          <Surface variant="card" className="!p-5 space-y-4">
             <SectionTitle>Prêmios</SectionTitle>
             {data.awarded?.length ? (
               <div className="grid gap-3 md:grid-cols-2">
                 {data.awarded.map((prize, index) => (
                   <div
                     key={`${prize.crateId ?? prize.name}-${index}`}
-                    className="flex items-center gap-4 rounded-2xl border border-zinc-200/80 p-4 dark:border-zinc-800"
+                    className="flex items-center gap-4 rounded-xl border border-border p-3"
                   >
                     <div
                       className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-zinc-100 dark:bg-zinc-950"
@@ -245,7 +245,7 @@ export default function ArenaPlayDetailPage() {
           </Surface>
 
           {data.pricingSnapshot ? (
-            <Surface variant="card" className="!p-6 space-y-4">
+            <Surface variant="card" className="!p-5 space-y-4">
               <SectionTitle>Preço da jogada (snapshot)</SectionTitle>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <ValueTile
@@ -269,7 +269,7 @@ export default function ArenaPlayDetailPage() {
             </Surface>
           ) : null}
 
-          <Surface variant="card" className="!p-6 space-y-4">
+          <Surface variant="card" className="!p-5 space-y-4">
             <SectionTitle>Progresso por raridade</SectionTitle>
             <div className="space-y-2">
               {ARENA_RARITIES.map((rarity) => (
@@ -284,7 +284,7 @@ export default function ArenaPlayDetailPage() {
             </div>
           </Surface>
 
-          <Surface variant="card" className="!p-6 space-y-4">
+          <Surface variant="card" className="!p-5 space-y-4">
             <SectionTitle>Caixas da rodada</SectionTitle>
             <ThemeText tone="secondary" className="text-sm">
               {destroyedSet.size} destruída(s) de {data.boxes.length}.

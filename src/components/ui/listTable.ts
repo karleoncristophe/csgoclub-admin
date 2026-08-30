@@ -3,30 +3,30 @@
  * Evita repetir dark: em cada página.
  */
 export const listTable = {
-  wrap: 'scrollbar-list overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800',
-  table: 'min-w-full divide-y divide-zinc-200 text-left text-sm dark:divide-zinc-800',
-  theadRow: 'bg-zinc-50/80 dark:bg-zinc-800/35',
-  th: 'px-4 py-3 font-semibold text-zinc-700 dark:text-zinc-300',
-  tbody: 'divide-y divide-zinc-200 bg-white dark:divide-zinc-800 dark:bg-zinc-900/70',
-  tr: 'transition-colors hover:bg-brand-50/40 dark:hover:bg-zinc-800/45',
-  tdStrong: 'px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100',
-  td: 'px-4 py-3 text-zinc-600 dark:text-zinc-400',
-  tdMuted: 'whitespace-nowrap px-4 py-3 text-zinc-500 dark:text-zinc-500',
-  empty: 'px-4 py-12 text-center text-zinc-500 dark:text-zinc-400',
+  wrap: 'scrollbar-list overflow-x-auto overflow-y-hidden rounded-[var(--radius)] border border-separator bg-surface p-0 shadow-none',
+  table: 'min-w-full divide-y divide-separator text-left text-sm',
+  theadRow: 'bg-transparent',
+  th: 'px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted',
+  tbody: 'divide-y divide-separator bg-surface',
+  tr: 'transition-colors hover:bg-accent-soft/45',
+  tdStrong: 'px-3 py-2.5 font-medium text-foreground',
+  td: 'px-3 py-2.5 text-foreground/75',
+  tdMuted: 'whitespace-nowrap px-3 py-2.5 text-muted',
+  empty: 'px-4 py-12 text-center text-muted',
 } as const
 
 /** Tabelas border-collapse (cabeçalho com border-b, linhas separadas). */
 export const listTableAlt = {
-  wrap: 'scrollbar-list overflow-x-auto',
+  wrap: 'scrollbar-list overflow-x-auto overflow-y-hidden rounded-[var(--radius)] border border-separator bg-surface p-0 shadow-none [&_th]:px-3 [&_td]:px-3',
   theadRow:
-    'border-b border-zinc-200 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-700 dark:text-zinc-400',
-  th: 'py-3 pr-4',
-  tbody: 'text-zinc-800 dark:text-zinc-200',
-  tr: 'border-b border-zinc-200 transition-colors hover:bg-zinc-50/40 dark:border-zinc-800 dark:hover:bg-zinc-800/40',
-  tdStrong: 'font-medium text-zinc-900 dark:text-zinc-100',
-  td: 'text-zinc-600 dark:text-zinc-400',
-  tdMuted: 'text-zinc-500 dark:text-zinc-400',
-  empty: 'py-10 text-center text-zinc-500 dark:text-zinc-400',
+    'bg-transparent text-xs font-semibold uppercase tracking-wide text-muted',
+  th: 'py-2.5',
+  tbody: 'bg-surface text-foreground',
+  tr: 'border-b border-separator transition-colors last:border-b-0 hover:bg-accent-soft/45',
+  tdStrong: 'font-medium text-foreground',
+  td: 'text-foreground/75',
+  tdMuted: 'text-muted',
+  empty: 'py-10 text-center text-muted',
 } as const
 
 export const linkBrand =

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/DateRangePickerModal'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
-import { filterChipClasses } from '@/components/users/userPanelClasses'
+import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import {
   ChartTypeSelector,
   DualSeriesMetricsChart,
@@ -64,7 +64,7 @@ function MetricTile({
       <ThemeText
         as="p"
         tone="primary"
-        className="mt-2 text-2xl font-semibold tabular-nums"
+        className="mt-1 text-xl font-semibold tabular-nums"
       >
         {display}
       </ThemeText>
@@ -225,7 +225,7 @@ export default function DashboardHomePage() {
         ) : null}
 
         {isLoading && queryOk ? (
-          <div className="flex items-center gap-2 py-12 text-sm text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center gap-2 py-12 text-sm text-muted">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
             Carregando métricas…
           </div>
@@ -233,9 +233,9 @@ export default function DashboardHomePage() {
 
         {metrics && queryOk ? (
           <>
-            <p className="mb-4 mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mb-4 mt-2 text-sm text-muted">
               Série por{' '}
-              <span className="font-medium text-zinc-800 dark:text-zinc-200">
+              <span className="font-medium text-foreground">
                 {bucketLabel}
               </span>
               {metrics.seriesGranularity === 'month'
@@ -292,21 +292,16 @@ export default function DashboardHomePage() {
                 <ThemeText as="p" tone="label" className="text-sm font-medium">
                   Carteira
                 </ThemeText>
-                <div className="flex flex-wrap gap-2">
-                  {ADMIN_DASHBOARD_CURRENCIES.map((code) => (
-                    <button
-                      key={code}
-                      type="button"
-                      className={filterChipClasses(currency === code)}
-                      onClick={() => {
-                        setCurrency(code)
-                        saveStoredMetricsCurrency(code)
-                      }}
-                    >
-                      {code}
-                    </button>
-                  ))}
-                </div>
+                <SegmentedTabs
+                  ariaLabel="Moeda da carteira"
+                  value={currency}
+                  items={ADMIN_DASHBOARD_CURRENCIES.map((code) => ({ id: code, label: code }))}
+                  onChange={(next) => {
+                    const code = next as (typeof ADMIN_DASHBOARD_CURRENCIES)[number]
+                    setCurrency(code)
+                    saveStoredMetricsCurrency(code)
+                  }}
+                />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <MetricTile

@@ -1,25 +1,26 @@
+import { Typography } from '@heroui/react'
 import type { ElementType, ReactNode } from 'react'
 
 const tones = {
   /** Títulos e texto principal */
-  primary: 'text-zinc-900 dark:text-zinc-100',
+  primary: 'text-foreground',
   /** Parágrafos secundários na página */
-  secondary: 'text-zinc-600 dark:text-zinc-400',
+  secondary: 'text-muted',
   /** Legendas e auxiliares */
-  muted: 'text-zinc-500 dark:text-zinc-500',
+  muted: 'text-muted',
   /** Menos ênfase (rodapé, meta) */
-  faint: 'text-zinc-400 dark:text-zinc-500',
+  faint: 'text-muted/75',
   /** Labels de seção (sidebar, formulário) */
-  label: 'text-slate-600 dark:text-zinc-400',
+  label: 'text-muted',
   /** Título de seção em caixa alta */
   overline:
-    'text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500',
+    'text-xs font-semibold uppercase tracking-wider text-muted/75',
   /** Link / item ativo da marca */
-  brand: 'text-brand-700 dark:text-brand-400',
+  brand: 'text-accent',
   /** Aviso */
-  warning: 'text-amber-700 dark:text-amber-400',
+  warning: 'text-warning',
   /** Erro inline */
-  danger: 'text-red-600 dark:text-red-400',
+  danger: 'text-danger',
 } as const
 
 export type ThemeTextTone = keyof typeof tones
@@ -38,8 +39,40 @@ export function ThemeText({
   children,
   ...rest
 }: ThemeTextProps) {
+  const classes = `${tones[tone]} ${className}`.trim()
+  const typographyColor = ['secondary', 'muted', 'faint', 'label', 'overline'].includes(tone)
+    ? 'muted'
+    : 'default'
+
+  if (typeof Comp === 'string' && /^h[1-6]$/.test(Comp)) {
+    const level = Number(Comp.slice(1)) as 1 | 2 | 3 | 4 | 5 | 6
+
+    return (
+      <Typography.Heading
+        level={level}
+        color={typographyColor}
+        className={classes}
+        {...rest}
+      >
+        {children}
+      </Typography.Heading>
+    )
+  }
+
+  if (Comp === 'p') {
+    return (
+      <Typography.Paragraph
+        color={typographyColor}
+        className={classes}
+        {...rest}
+      >
+        {children}
+      </Typography.Paragraph>
+    )
+  }
+
   return (
-    <Comp className={`${tones[tone]} ${className}`.trim()} {...rest}>
+    <Comp className={classes} {...rest}>
       {children}
     </Comp>
   )

@@ -175,44 +175,40 @@ export function LoginPage() {
 
   return (
     <Surface variant="loginShell">
-      <div
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-        aria-hidden
-      >
-        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-brand-400/20 blur-3xl dark:bg-brand-500/10" />
-        <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-fuchsia-400/15 blur-3xl dark:bg-fuchsia-500/10" />
-      </div>
-
-      <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
+      <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-5 py-5 sm:px-8 lg:w-1/2">
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/logo.png"
+            alt=""
+            className="h-9 w-9 object-contain"
+            draggable={false}
+          />
+          <span className="text-sm font-semibold tracking-tight text-foreground">
+            CS2Club
+          </span>
+        </div>
         <ThemeToggle />
-      </div>
+      </header>
 
-      <div className="relative w-full max-w-md">
-        <Surface variant="loginCard">
-          <div className="mb-8 text-center sm:text-left">
-            <img
-              src="/logo.png"
-              alt="CS2Club"
-              className="mb-4 h-12 w-12 object-contain"
-              draggable={false}
-            />
+      <div className="grid min-h-dvh lg:grid-cols-2">
+        <div className="relative flex flex-col justify-center px-5 py-24 sm:px-12 lg:px-16 xl:px-24">
+          <Surface variant="loginCard" className="mx-auto lg:mx-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
+              Painel administrativo
+            </p>
             <ThemeText
               as="h1"
               tone="primary"
-              className="text-2xl font-semibold tracking-tight"
+              className="mt-3 text-[2.15rem] font-semibold leading-[1.12] tracking-tight sm:text-5xl"
             >
-              Entrar
-              <span className="ml-2" aria-hidden>
-                👋
-              </span>
+              Controle a operação do <span className="text-accent">CS2Club</span>.
             </ThemeText>
             <ThemeText as="p" tone="secondary" className="mt-2 text-sm">
-              Painel administrativo CS2Club
+              Entre com sua conta administrativa para continuar.
             </ThemeText>
-          </div>
 
           <form
-            className="flex flex-col gap-5"
+            className="mt-8 flex flex-col gap-5"
             onSubmit={formik.handleSubmit}
             noValidate
           >
@@ -273,17 +269,63 @@ export function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full"
+              className="mt-1 w-full"
               size="lg"
               isLoading={formik.isSubmitting || isLoading}
             >
               Entrar
             </Button>
           </form>
-        </Surface>
-        <ThemeText as="p" tone="faint" className="mt-6 text-center text-xs">
-          © {new Date().getFullYear()} CS2Club
-        </ThemeText>
+          </Surface>
+        </div>
+
+        <div className="relative hidden min-h-dvh overflow-hidden lg:block">
+          <div className="login-mesh absolute inset-0" aria-hidden />
+          <svg
+            className="login-silk pointer-events-none absolute -inset-[18%] h-[136%] w-[136%]"
+            viewBox="0 0 640 860"
+            fill="none"
+            aria-hidden
+          >
+            <defs>
+              <linearGradient id="cs2SilkA" x1="12%" y1="8%" x2="92%" y2="88%">
+                <stop offset="0%" stopColor="color-mix(in oklab, var(--accent) 78%, white)" />
+                <stop offset="44%" stopColor="#38bdf8" />
+                <stop offset="74%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#ef4444" />
+              </linearGradient>
+              <linearGradient id="cs2SilkB" x1="80%" y1="0%" x2="10%" y2="100%">
+                <stop offset="0%" stopColor="color-mix(in oklab, var(--accent) 85%, #22d3ee)" />
+                <stop offset="58%" stopColor="#6366f1" />
+                <stop offset="100%" stopColor="#fb923c" />
+              </linearGradient>
+              <filter id="cs2SilkBlur" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="22" />
+              </filter>
+            </defs>
+            <g filter="url(#cs2SilkBlur)">
+              <path
+                fill="url(#cs2SilkA)"
+                d="M40 180C120 40 280 20 390 130C510 250 470 390 360 480C240 580 90 620 70 740C52 842 210 860 340 800C520 716 640 520 600 330C560 140 300 -20 80 40C-20 80 -20 280 40 180Z"
+              />
+              <path
+                fill="url(#cs2SilkB)"
+                opacity="0.72"
+                d="M520 80C620 160 640 340 560 470C470 620 300 680 220 780C140 880 -40 820 40 680C120 540 280 520 340 400C400 280 360 140 250 80C140 20 400 -20 520 80Z"
+              />
+            </g>
+          </svg>
+          <div className="login-grid pointer-events-none absolute inset-0" aria-hidden />
+          <div className="absolute inset-0 bg-linear-to-t from-black/50 via-black/5 to-transparent" />
+          <div className="absolute inset-x-10 bottom-12 z-10">
+            <p className="max-w-md text-2xl font-semibold leading-tight text-white">
+              Catálogo, caixas e operação em um só lugar.
+            </p>
+            <p className="mt-3 text-xs text-white/60">
+              © {new Date().getFullYear()} CS2Club · Acesso restrito
+            </p>
+          </div>
+        </div>
       </div>
     </Surface>
   )

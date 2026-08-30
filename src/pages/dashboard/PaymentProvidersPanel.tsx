@@ -158,7 +158,7 @@ function ProviderCard({ item }: { item: PaymentProviderCredential }) {
   const isPix = item.catalog.methods.includes('pix')
 
   return (
-    <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-700">
+    <div className="rounded-xl border border-border bg-surface-secondary p-3">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <ThemeText as="p" tone="primary" className="font-semibold">
@@ -280,7 +280,7 @@ export function PaymentProvidersPanel() {
   const { data, isLoading, isError, error } = useGetPaymentProvidersQuery()
 
   return (
-    <Surface variant="card" className="!p-6">
+    <Surface variant="card" className="!p-5">
       <div className="mb-4">
         <ThemeText as="h2" tone="primary" className="text-base font-semibold">
           APIs de pagamento

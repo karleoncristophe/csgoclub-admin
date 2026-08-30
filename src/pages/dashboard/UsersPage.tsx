@@ -86,8 +86,8 @@ export default function UsersPage() {
         Usuários
       </PageTitle>
 
-      <Surface variant="card" className="!p-6 sm:!p-6">
-        <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <Surface variant="card" className="!p-5 sm:!p-5">
+        <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <Input
             label="Buscar"
             name="searchUser"
@@ -191,7 +191,7 @@ export default function UsersPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center gap-2 py-10 text-sm text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center gap-2 py-10 text-sm text-muted">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
             Carregando usuários...
           </div>

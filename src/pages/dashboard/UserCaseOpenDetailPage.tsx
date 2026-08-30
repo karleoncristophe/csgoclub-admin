@@ -58,7 +58,7 @@ function ValueTile({
   hint?: string
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+    <div className="rounded-xl border border-border bg-surface-secondary p-3">
       <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
         {label}
       </ThemeText>
@@ -110,7 +110,7 @@ export default function UserCaseOpenDetailPage() {
 
       {data ? (
         <>
-          <Surface variant="card" className="!p-6">
+          <Surface variant="card" className="!p-5">
             <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
               <div className="mx-auto w-full max-w-[220px]">
                 <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
@@ -205,7 +205,7 @@ export default function UserCaseOpenDetailPage() {
             </div>
           </Surface>
 
-          <Surface variant="card" className="!p-6">
+          <Surface variant="card" className="!p-5">
             <SectionTitle className="mb-4">Item sorteado</SectionTitle>
             <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
               <SkinRarityVisual
@@ -266,7 +266,7 @@ export default function UserCaseOpenDetailPage() {
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-zinc-200/80 p-4 dark:border-zinc-800">
+                  <div className="rounded-xl border border-border p-3">
                     <div className="flex items-center gap-2">
                       {data.coveredByOpenPrice ? (
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -283,7 +283,7 @@ export default function UserCaseOpenDetailPage() {
                         : `Liberado pelo banco (exigia ${formatMoney(data.requiredBankBalance ?? 0, data.currency)})`}
                     </ThemeText>
                   </div>
-                  <div className="rounded-2xl border border-zinc-200/80 p-4 dark:border-zinc-800">
+                  <div className="rounded-xl border border-border p-3">
                     <ThemeText as="p" tone="primary" className="text-sm font-medium">
                       Banco virtual da caixa
                     </ThemeText>
@@ -299,7 +299,7 @@ export default function UserCaseOpenDetailPage() {
             </div>
           </Surface>
 
-          <Surface variant="card" className="!p-6">
+          <Surface variant="card" className="!p-5">
             <SectionTitle className="mb-1">Itens da caixa</SectionTitle>
             <ThemeText as="p" tone="secondary" className="mb-5 text-sm">
               Conteúdo atual da caixa, com destaque no item que caiu nesta abertura.

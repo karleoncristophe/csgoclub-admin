@@ -13,7 +13,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     return (
       <label
         htmlFor={cid}
-        className={`group inline-flex cursor-pointer select-none items-center gap-3 text-sm text-zinc-600 has-disabled:cursor-not-allowed has-disabled:opacity-55 dark:text-zinc-400 ${className}`}
+        className={`group inline-flex cursor-pointer select-none items-center gap-3 text-sm text-muted has-disabled:cursor-not-allowed has-disabled:opacity-55 ${className}`}
       >
         <input
           ref={ref}
@@ -25,7 +25,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         />
         <span
           aria-hidden
-          className="relative flex size-5 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white shadow-sm transition-all duration-200 ease-out will-change-transform group-hover:border-brand-400/80 group-hover:bg-brand-50/50 group-active:scale-[0.92] dark:border-zinc-700 dark:bg-zinc-900 dark:group-hover:border-brand-500/50 dark:group-hover:bg-brand-950/25 peer-focus-visible:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-brand-500/15 peer-disabled:pointer-events-none peer-checked:border-brand-500 peer-checked:bg-brand-500 peer-checked:shadow-sm peer-checked:shadow-brand-500/20 peer-checked:[&>svg]:opacity-100 peer-checked:[&>svg]:scale-100 dark:peer-checked:border-brand-500 dark:peer-checked:bg-brand-500"
+          className="relative flex size-5 shrink-0 items-center justify-center rounded-md border border-border bg-field shadow-sm transition-all duration-200 ease-out will-change-transform group-hover:border-accent/80 group-hover:bg-accent-soft group-active:scale-[0.92] peer-focus-visible:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-focus/15 peer-disabled:pointer-events-none peer-checked:border-accent peer-checked:bg-accent peer-checked:shadow-sm peer-checked:shadow-accent/20 peer-checked:[&>svg]:scale-100 peer-checked:[&>svg]:opacity-100"
         >
           <Check
             className="h-3.5 w-3.5 text-white opacity-0 scale-[0.35] transition-all duration-200 ease-[cubic-bezier(0.34,1.4,0.64,1)]"

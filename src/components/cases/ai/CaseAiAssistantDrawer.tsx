@@ -73,7 +73,7 @@ function ThinkingBubble() {
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
         <Bot className="h-4 w-4" aria-hidden />
       </div>
-      <div className="rounded-2xl rounded-tl-sm border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-2xl rounded-tl-sm border border-border bg-surface px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="flex gap-1" aria-hidden>
             <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-500 [animation-delay:-0.3s]" />
@@ -103,7 +103,7 @@ function DraftCard({
   const topItems = draft.items.slice(0, 5)
 
   return (
-    <div className="mt-3 space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-3 dark:border-zinc-800 dark:bg-zinc-950/50">
+    <div className="mt-3 space-y-3 rounded-xl border border-border bg-surface-secondary p-3">
       <div className="grid grid-cols-3 gap-2">
         <div>
           <ThemeText as="span" tone="faint" className="block text-[10px] uppercase tracking-wide">
@@ -286,7 +286,7 @@ export function CaseAiAssistantDrawer({
     <div className="fixed inset-0 z-[110] flex justify-end">
       <button
         type="button"
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm dark:bg-zinc-950/60"
+        className="absolute inset-0 bg-backdrop backdrop-blur-sm"
         aria-label="Fechar assistente"
         onClick={() => onOpenChange(false)}
       />
@@ -367,7 +367,7 @@ export function CaseAiAssistantDrawer({
                   <button
                     key={prompt}
                     type="button"
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-left text-xs text-zinc-600 transition hover:border-brand-300 hover:bg-brand-50/50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-brand-500/40 dark:hover:bg-brand-500/10"
+                    className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-left text-xs text-muted transition hover:border-accent/30 hover:bg-accent-soft"
                     onClick={() => void submit(prompt)}
                   >
                     {prompt}
@@ -417,13 +417,13 @@ export function CaseAiAssistantDrawer({
                     </ThemeText>
 
                     {entry.toolTrace?.length ? (
-                      <ul className="mt-2 space-y-1 border-t border-zinc-200 pt-2 dark:border-zinc-800">
+                      <ul className="mt-2 space-y-1 border-t border-separator pt-2">
                         {entry.toolTrace.map((tool, index) => (
                           <li
                             key={`${entry.id}-${tool.name}-${index}`}
                             className="flex items-center gap-1.5"
                           >
-                            <Wrench className="h-3 w-3 shrink-0 text-zinc-400" aria-hidden />
+                            <Wrench className="h-3 w-3 shrink-0 text-muted" aria-hidden />
                             <ThemeText as="span" tone="faint" className="text-[11px]">
                               {tool.summary}
                             </ThemeText>
@@ -468,7 +468,7 @@ export function CaseAiAssistantDrawer({
               maxLength={12000}
               disabled={disabled || isLoading}
               placeholder="Peça uma caixa, cole a tabela de skins de outro site ou mande um link"
-              className="scrollbar-list max-h-32 min-h-[56px] w-full resize-none rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-600"
+              className="scrollbar-list max-h-32 min-h-[56px] w-full resize-none rounded-field border border-field-border bg-field px-3 py-2 text-sm text-field-foreground shadow-field outline-none transition placeholder:text-field-placeholder focus:border-focus focus:ring-4 focus:ring-focus/15 disabled:opacity-60"
             />
             <Button
               type="button"

@@ -89,7 +89,7 @@ export function UserWalletPanel({ user }: UserWalletPanelProps) {
   const wallets = user.wallets
 
   return (
-    <Surface variant="card" className="!p-6">
+    <Surface variant="card" className="!p-5">
       <SectionTitle className="mb-2 flex items-center gap-2">
         <Coins className="h-5 w-5 text-brand-600 dark:text-brand-400" />
         Carteira
@@ -117,7 +117,7 @@ export function UserWalletPanel({ user }: UserWalletPanelProps) {
               className={`rounded-2xl border p-4 ${
                 isActive
                   ? 'border-brand-300 bg-brand-50/40 dark:border-brand-400/40 dark:bg-brand-500/10'
-                  : 'border-zinc-200 dark:border-zinc-700/80'
+                  : 'border-border/80'
               }`}
             >
               <div className="mb-3 flex items-center justify-between gap-2">
@@ -154,7 +154,7 @@ export function UserWalletPanel({ user }: UserWalletPanelProps) {
       </div>
 
       {isInfluencer ? (
-        <div className="mt-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-700/80 dark:bg-zinc-900/40">
+        <div className="mt-6 rounded-xl border border-border p-3/80 dark:bg-zinc-900/40">
           <div className="mb-3 flex items-center gap-2">
             <Gift className="h-4 w-4 text-brand-600 dark:text-brand-400" />
             <ThemeText as="p" tone="primary" className="text-sm font-medium">

@@ -28,31 +28,31 @@ export function PlatformDataEnvironmentToggle({
 
   const shellClass =
     variant === 'sidebar'
-      ? 'w-full rounded-lg border border-slate-200/80 bg-slate-50/70 px-3 py-3 dark:border-zinc-800 dark:bg-zinc-900/50'
-      : 'inline-flex rounded-xl border border-zinc-200 bg-white p-1 shadow-sm dark:border-zinc-700 dark:bg-zinc-900'
+      ? 'w-full rounded-lg border border-border bg-surface-secondary px-3 py-3'
+      : 'inline-flex rounded-xl border border-border bg-surface p-1 shadow-sm'
 
   const trackClass =
     variant === 'sidebar'
-      ? 'grid w-full grid-cols-2 gap-1 rounded-lg border border-zinc-200/80 bg-zinc-100/90 p-1 dark:border-zinc-700 dark:bg-zinc-800/80'
-      : 'grid grid-cols-2 gap-1 rounded-lg bg-zinc-100/90 p-1 dark:bg-zinc-800/80'
+      ? 'grid w-full grid-cols-2 gap-1 rounded-lg border border-border bg-default p-1'
+      : 'grid grid-cols-2 gap-1 rounded-lg bg-default p-1'
 
   const optionBase =
-    'flex min-w-0 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30'
+    'flex min-w-0 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/30'
 
   const productionActive =
-    'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200/80 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-700'
+    'bg-surface text-foreground shadow-sm ring-1 ring-border'
   const productionIdle =
-    'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+    'text-muted hover:text-foreground'
 
   const sandboxActive =
-    'bg-amber-100 text-amber-950 shadow-sm ring-1 ring-amber-300/70 dark:bg-amber-500/25 dark:text-amber-100 dark:ring-amber-500/40'
+    'bg-warning-soft text-warning shadow-sm ring-1 ring-warning/30'
   const sandboxIdle =
-    'text-zinc-500 hover:text-amber-700 dark:text-zinc-400 dark:hover:text-amber-300'
+    'text-muted hover:text-warning'
 
   return (
     <div className={shellClass}>
       {variant === 'sidebar' ? (
-        <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
+        <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
           Visão dos dados
         </p>
       ) : null}

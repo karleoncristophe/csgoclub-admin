@@ -33,7 +33,7 @@ function InventoryStatCard({
       <ThemeText
         as="p"
         tone="primary"
-        className={`mt-2 text-xl font-bold sm:text-2xl ${
+        className={`mt-1 text-lg font-semibold ${
           variant === 'brand'
             ? 'dark:text-brand-100'
             : variant === 'amber'
@@ -169,7 +169,7 @@ export function UserSiteInventoryPanel({
   }
 
   return (
-    <Surface variant="card" className="!p-6 sm:!p-8">
+    <Surface variant="card" className="!p-5 sm:!p-8">
       <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-2xl">
           <SectionTitle className="flex items-center gap-2">
@@ -292,7 +292,7 @@ export function UserSiteInventoryPanel({
       ) : null}
 
       {isLoading ? (
-        <div className="flex items-center gap-2 py-10 text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="flex items-center gap-2 py-10 text-sm text-muted">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
           Carregando inventário do site...
         </div>

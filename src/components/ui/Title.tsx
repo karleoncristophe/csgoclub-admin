@@ -8,12 +8,12 @@ export function PageTitle({
   subtitle?: string
 }) {
   return (
-    <header className="mb-8">
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+    <header className="mb-6">
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
         {children}
       </h1>
       {subtitle ? (
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
           {subtitle}
         </p>
       ) : null}
@@ -30,7 +30,7 @@ export function SectionTitle({
 }) {
   return (
     <h2
-      className={`text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 ${className}`}
+      className={`text-lg font-semibold tracking-tight text-foreground ${className}`}
     >
       {children}
     </h2>

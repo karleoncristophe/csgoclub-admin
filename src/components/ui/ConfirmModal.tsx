@@ -72,11 +72,11 @@ export function ConfirmModal({
 
         <div className="space-y-5 px-5 py-5">
           {subjectName ? (
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950/50">
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
+            <div className="rounded-xl border border-border bg-surface-secondary px-4 py-3">
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
                 {subjectLabel ?? 'Item'}
               </p>
-              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <p className="mt-1 text-sm font-semibold text-foreground">
                 {subjectName}
               </p>
             </div>

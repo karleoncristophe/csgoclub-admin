@@ -18,7 +18,7 @@ export function EditorSectionShell({
   }
 
   return (
-    <Surface variant="card" className={`!p-6 ${className}`.trim()}>
+    <Surface variant="card" className={`!p-5 ${className}`.trim()}>
       {children}
     </Surface>
   )

@@ -81,7 +81,7 @@ export default function SkinDetailPage() {
       </PageTitle>
 
       {isLoading ? (
-        <div className="flex items-center gap-2 py-10 text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="flex items-center gap-2 py-10 text-sm text-muted">
           <span className="h-5 w-5 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
           Carregando detalhes...
         </div>
@@ -92,7 +92,7 @@ export default function SkinDetailPage() {
       ) : null}
 
       {data ? (
-        <Surface variant="card" className="mx-auto max-w-2xl !p-6">
+        <Surface variant="card" className="mx-auto max-w-2xl !p-5">
           <div className="group">
             <button
               type="button"

@@ -105,7 +105,7 @@ export function SearchableMultiSelect({
     <div ref={rootRef} className="flex flex-col gap-1.5">
       <label
         htmlFor={`${uid}-search`}
-        className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        className="text-sm font-medium text-foreground"
       >
         {label}
       </label>
@@ -115,14 +115,14 @@ export function SearchableMultiSelect({
           {selectedOptions.map((option) => (
             <span
               key={option.value}
-              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand-200/80 bg-brand-50/80 py-1 pl-3 pr-1.5 text-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/15 dark:text-brand-200"
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-accent/25 bg-accent-soft py-1 pl-3 pr-1.5 text-sm text-accent"
             >
               <span className="truncate">{option.label}</span>
               <button
                 type="button"
                 disabled={disabled}
                 onClick={() => removeOption(option.value)}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-brand-600 transition hover:bg-brand-100 disabled:opacity-40 dark:text-brand-300 dark:hover:bg-brand-500/20"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-accent transition hover:bg-accent/10 disabled:opacity-40"
                 aria-label={`Remover ${option.label}`}
               >
                 <X className="h-3.5 w-3.5" aria-hidden />
@@ -134,7 +134,7 @@ export function SearchableMultiSelect({
 
       <div className="relative">
         <Search
-          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
+          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
           aria-hidden
         />
         <input
@@ -153,10 +153,10 @@ export function SearchableMultiSelect({
             setOpen(true)
           }}
           onFocus={() => setOpen(true)}
-          className="h-11 w-full rounded-xl border border-zinc-200 bg-white py-0 pl-10 pr-10 text-sm text-zinc-900 shadow-sm transition-colors placeholder:text-zinc-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:disabled:bg-zinc-800"
+          className="h-11 w-full rounded-field border border-field-border bg-field py-0 pl-10 pr-10 text-sm text-field-foreground shadow-field transition-colors placeholder:text-field-placeholder focus:border-focus focus:outline-none focus:ring-4 focus:ring-focus/15 disabled:cursor-not-allowed disabled:opacity-50"
         />
         <ChevronDown
-          className={`pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 transition-transform dark:text-zinc-500 ${
+          className={`pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted transition-transform ${
             open ? 'rotate-180' : ''
           }`}
           aria-hidden
@@ -174,7 +174,7 @@ export function SearchableMultiSelect({
           id={listboxId}
           role="listbox"
           aria-multiselectable
-          className="max-h-56 overflow-y-auto rounded-xl border border-zinc-200 bg-white shadow-lg shadow-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-black/40"
+          className="max-h-56 overflow-y-auto rounded-xl border border-border bg-overlay text-overlay-foreground shadow-overlay"
         >
           {filteredOptions.length === 0 ? (
             <ThemeText as="p" tone="secondary" className="px-4 py-3 text-sm">
@@ -183,7 +183,7 @@ export function SearchableMultiSelect({
                 : emptyMessage}
             </ThemeText>
           ) : (
-            <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <ul className="divide-y divide-separator">
               {filteredOptions.map((option) => (
                 <li key={option.value}>
                   <button
@@ -191,9 +191,9 @@ export function SearchableMultiSelect({
                     role="option"
                     aria-selected={false}
                     onClick={() => addOption(option.value)}
-                    className="flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition hover:bg-zinc-50 dark:hover:bg-zinc-800/80"
+                    className="flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition hover:bg-default"
                   >
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 text-transparent dark:border-zinc-600 dark:bg-zinc-800">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border bg-default text-transparent">
                       <Check className="h-3.5 w-3.5" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">

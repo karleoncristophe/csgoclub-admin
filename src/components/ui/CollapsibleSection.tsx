@@ -15,9 +15,9 @@ type CollapsibleSectionProps = {
 }
 
 const shellClass = {
-  card: 'overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm shadow-zinc-900/5 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/20',
+  card: 'overflow-hidden rounded-xl border border-border bg-surface shadow-sm shadow-black/5',
   inset:
-    'overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/40 dark:border-zinc-800 dark:bg-zinc-950/40',
+    'overflow-hidden rounded-xl border border-border bg-surface-secondary',
 } as const
 
 export function CollapsibleSection({
@@ -39,7 +39,7 @@ export function CollapsibleSection({
         type="button"
         onClick={() => setUserOpen(!open)}
         aria-expanded={open}
-        className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/40"
+        className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-default"
       >
         <div className="min-w-0 flex-1">
           <ThemeText as="p" tone="primary" className="text-sm font-semibold">
@@ -55,7 +55,7 @@ export function CollapsibleSection({
           <div className="hidden shrink-0 sm:block">{summary}</div>
         ) : null}
         <ChevronDown
-          className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-200 ${
+          className={`h-4 w-4 shrink-0 text-muted transition-transform duration-200 ${
             open ? 'rotate-180' : ''
           }`}
           aria-hidden
@@ -63,7 +63,7 @@ export function CollapsibleSection({
       </button>
 
       {open ? (
-        <div className="border-t border-zinc-200 px-5 py-5 dark:border-zinc-800">
+        <div className="border-t border-separator px-5 py-5">
           {children}
         </div>
       ) : null}

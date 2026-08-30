@@ -206,7 +206,7 @@ export default function UserDetailPage() {
       </Link>
 
       {isLoading ? (
-        <div className="flex items-center gap-2 py-16 text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="flex items-center gap-2 py-16 text-sm text-muted">
           <span className="h-5 w-5 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
           Carregando perfil do usuário...
         </div>
@@ -282,7 +282,7 @@ export default function UserDetailPage() {
                   <ThemeText as="p" tone="secondary" className="mt-3 max-w-xl text-sm leading-relaxed">
                     Perfil Steam vinculado à plataforma CS2Club. Último acesso{' '}
                     {lastLoginRelative ? (
-                      <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                      <span className="font-medium text-foreground">
                         {lastLoginRelative}
                       </span>
                     ) : (
@@ -342,7 +342,7 @@ export default function UserDetailPage() {
             />
           </div>
 
-          <Surface variant="card" className="!p-6">
+          <Surface variant="card" className="!p-5">
             <SectionTitle className="mb-5">Identidade Steam</SectionTitle>
             <div className="grid gap-3 sm:grid-cols-2">
               <CopyableField

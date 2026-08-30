@@ -17,6 +17,7 @@ import {
 } from '@/utils/arenaCrateEconomics'
 import { describeDropEligibility } from '@/utils/caseEconomics'
 import type { ReactNode } from 'react'
+import { listTableAlt } from '@/components/ui/listTable'
 
 type ArenaCrateItemsTableProps = {
   items: ArenaCrateItem[]
@@ -65,7 +66,7 @@ export function ArenaCrateItemsTable({
   }
 
   return (
-    <Surface variant="card" className="!p-6">
+    <Surface variant="card" className="!p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <ThemeText as="h2" tone="primary" className="text-base font-semibold">
@@ -94,10 +95,10 @@ export function ArenaCrateItemsTable({
           Nenhuma skin adicionada. Use “Adicionar skins” para montar o conteúdo.
         </ThemeText>
       ) : (
-        <div className="overflow-x-auto">
+        <div className={listTableAlt.wrap}>
           <table className="min-w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+              <tr className={listTableAlt.theadRow}>
                 <th className="py-2 pr-4">Skin</th>
                 <th className="py-2 pr-4">Prêmio</th>
                 <th className="py-2 pr-4">Chance %</th>
@@ -107,7 +108,7 @@ export function ArenaCrateItemsTable({
                 <th className="py-2" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className={listTableAlt.tbody}>
               {items.map((item) => {
                 const prize = arenaPrizeForCurrency(item, currency)
                 const eligibility = evaluateArenaDropEligibility({
@@ -124,7 +125,7 @@ export function ArenaCrateItemsTable({
                 return (
                   <tr
                     key={item.skinName}
-                    className={`border-b border-zinc-100 dark:border-zinc-800 ${
+                    className={`${listTableAlt.tr} ${
                       item.enabled === false ? 'opacity-50' : ''
                     }`}
                   >

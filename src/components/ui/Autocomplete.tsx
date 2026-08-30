@@ -19,7 +19,7 @@ export type AutocompleteProps = {
 }
 
 const inputClass =
-  'h-11 w-full rounded-xl border border-zinc-200 bg-white py-0 pl-10 pr-10 text-sm text-zinc-900 shadow-sm transition-colors placeholder:text-zinc-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500'
+  'h-11 w-full rounded-field border border-field-border bg-field py-0 pl-10 pr-10 text-sm text-field-foreground shadow-field transition-colors placeholder:text-field-placeholder focus:border-focus focus:outline-none focus:ring-4 focus:ring-focus/15 disabled:cursor-not-allowed disabled:opacity-50'
 
 export function Autocomplete({
   label,
@@ -78,12 +78,12 @@ export function Autocomplete({
 
   return (
     <div ref={rootRef} className="flex flex-col gap-1.5">
-      <label htmlFor={inputId} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <label htmlFor={inputId} className="text-sm font-medium text-foreground">
         {label}
       </label>
 
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
         <input
           id={inputId}
           name={name}
@@ -112,7 +112,7 @@ export function Autocomplete({
           className={inputClass}
         />
         <ChevronDown
-          className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500 transition-transform dark:text-zinc-400 ${
+          className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted transition-transform ${
             open ? 'rotate-180' : ''
           }`}
           aria-hidden
@@ -121,7 +121,7 @@ export function Autocomplete({
         {open && visibleOptions.length > 0 ? (
           <ul
             role="listbox"
-            className="absolute left-0 right-0 top-full z-20 mt-1 max-h-72 overflow-auto rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+            className="absolute left-0 right-0 top-full z-20 mt-1 max-h-72 overflow-auto rounded-xl border border-border bg-overlay py-1 text-overlay-foreground shadow-overlay"
           >
             {visibleOptions.map((option) => {
               const active = option.value === value
@@ -133,8 +133,8 @@ export function Autocomplete({
                     onClick={() => handleSelect(option.value)}
                     className={`flex w-full flex-col gap-0.5 px-3 py-2.5 text-left text-sm transition ${
                       active
-                        ? 'bg-brand-50 text-brand-900 dark:bg-brand-500/10 dark:text-zinc-50'
-                        : 'text-zinc-900 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800'
+                        ? 'bg-accent-soft text-accent'
+                        : 'text-foreground hover:bg-default'
                     }`}
                   >
                     <span className="font-medium">{option.label}</span>
@@ -142,8 +142,8 @@ export function Autocomplete({
                       <span
                         className={`text-xs ${
                           active
-                            ? 'text-brand-800/80 dark:text-zinc-300'
-                            : 'text-zinc-500 dark:text-zinc-400'
+                            ? 'text-accent/80'
+                            : 'text-muted'
                         }`}
                       >
                         {option.description}
@@ -157,7 +157,7 @@ export function Autocomplete({
         ) : null}
 
         {open && visibleOptions.length === 0 ? (
-          <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm text-zinc-500 shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
+          <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-border bg-overlay px-3 py-3 text-sm text-muted shadow-overlay">
             Nenhuma opção encontrada.
           </div>
         ) : null}

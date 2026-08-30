@@ -11,11 +11,18 @@
     "codegen": "node scripts/codegen.mjs && node scripts/generate-aliases.mjs"
   },
   "dependencies": {
+    "@heroui/react": "^3.2.4",
+    "@heroui/styles": "^3.2.4",
+    "@react-aria/i18n": "^3.13.1",
+    "@react-aria/ssr": "^3.10.1",
+    "@react-aria/utils": "^3.34.1",
     "@reduxjs/toolkit": "^2.11.2",
     "formik": "^2.4.9",
     "js-cookie": "^3.0.5",
     "lucide-react": "^1.8.0",
     "react": "^19.2.4",
+    "react-aria": "^3.51.0",
+    "react-aria-components": "^1.20.0",
     "react-dom": "^19.2.4",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.14.0",

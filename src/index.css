@@ -1,12 +1,67 @@
 @import "tailwindcss";
+@import "@heroui/styles";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  font-family: var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
+}
+
+.theme-slider,
+.theme-hue-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border: 0;
+  outline: none;
+  border-radius: 9999px;
+}
+.theme-slider::-webkit-slider-thumb,
+.theme-hue-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: transparent;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.4);
+}
+.theme-slider::-moz-range-thumb,
+.theme-hue-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-radius: 9999px;
+  background: transparent;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.4);
+}
+.theme-hue-slider {
+  background: linear-gradient(
+    to right,
+    hsl(0 100% 50%),
+    hsl(60 100% 50%),
+    hsl(120 100% 50%),
+    hsl(180 100% 50%),
+    hsl(240 100% 50%),
+    hsl(300 100% 50%),
+    hsl(360 100% 50%)
+  );
+}
+
+/* Keep Select menus compact instead of the oversized pill default. */
+.select__popover {
+  border-radius: var(--radius);
+}
 
 /* Scroll fino (sidebar + eixos V/H): trilho invisível, thumb arredondado */
 @layer utilities {
   .scrollbar-edge {
     scrollbar-width: thin;
-    scrollbar-color: rgb(148 163 184 / 0.38) transparent;
+    scrollbar-color: var(--scrollbar) transparent;
   }
   .scrollbar-edge::-webkit-scrollbar {
     width: 6px;
@@ -19,22 +74,14 @@
     background: transparent;
   }
   .scrollbar-edge::-webkit-scrollbar-thumb {
-    background-color: rgb(148 163 184 / 0.32);
+    background-color: var(--scrollbar);
     border-radius: 9999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
   .scrollbar-edge::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(148 163 184 / 0.52);
-  }
-  .dark .scrollbar-edge {
-    scrollbar-color: rgb(161 161 170 / 0.4) transparent;
-  }
-  .dark .scrollbar-edge::-webkit-scrollbar-thumb {
-    background-color: rgb(161 161 170 / 0.28);
-  }
-  .dark .scrollbar-edge::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(161 161 170 / 0.48);
+    background-color: var(--scrollbar);
+    filter: brightness(0.9);
   }
 
   /**
@@ -42,7 +89,7 @@
    */
   .scrollbar-list {
     scrollbar-width: thin;
-    scrollbar-color: rgb(148 163 184 / 0.35) transparent;
+    scrollbar-color: var(--scrollbar) transparent;
   }
   .scrollbar-list::-webkit-scrollbar {
     width: 6px;
@@ -55,34 +102,203 @@
     background: transparent;
   }
   .scrollbar-list::-webkit-scrollbar-thumb {
-    background-color: rgb(148 163 184 / 0.28);
+    background-color: var(--scrollbar);
     border-radius: 9999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
   .scrollbar-list::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(148 163 184 / 0.48);
+    background-color: var(--scrollbar);
+    filter: brightness(0.9);
   }
-  .dark .scrollbar-list {
-    scrollbar-color: rgb(161 161 170 / 0.35) transparent;
+
+  .side-drawer-overlay-enter {
+    animation: side-drawer-overlay-in 300ms ease-out both;
   }
-  .dark .scrollbar-list::-webkit-scrollbar-thumb {
-    background-color: rgb(161 161 170 / 0.22);
+
+  .side-drawer-overlay-exit {
+    animation: side-drawer-overlay-out 300ms ease-out both;
   }
-  .dark .scrollbar-list::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(161 161 170 / 0.42);
+
+  .side-drawer-panel-enter {
+    animation: side-drawer-panel-in 300ms ease-out both;
+  }
+
+  .side-drawer-panel-exit {
+    animation: side-drawer-panel-out 300ms ease-out both;
   }
 }
 
-/* Cor principal da marca: #5C6FFF */
-@theme {
-  --color-brand-50: #f2f4ff;
-  --color-brand-100: #e6e9ff;
-  --color-brand-200: #d0d6ff;
-  --color-brand-300: #aeb8ff;
-  --color-brand-400: #8895ff;
-  --color-brand-500: #5c6fff;
-  --color-brand-600: #5c6fff;
-  --color-brand-700: #4d5ef0;
-  --color-brand-800: #3d47c7;
+@keyframes side-drawer-panel-in {
+  from {
+    translate: 100% 0;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes side-drawer-panel-out {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 100% 0;
+  }
+}
+
+@keyframes side-drawer-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes side-drawer-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Compatibility bridge: existing CS2Club components follow the active HeroUI palette. */
+/* Keep native Hero tables and the shared legacy-table bridge on the same hover token. */
+.table__row:hover:not([data-selected='true']),
+.table__row[data-hovered='true']:not([data-selected='true']) {
+  background-color: color-mix(in oklab, var(--accent) 8%, var(--surface));
+}
+
+/* One compact HeroUI table treatment across the admin: single outer radius,
+   no nested padding/gutter (that mismatch shows as a crescent in the corners). */
+.table-root,
+.table-root--primary {
+  overflow: hidden;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0;
+  box-shadow: none;
+}
+
+.table__content {
+  overflow: hidden;
+  border-radius: 0;
+  background: var(--surface);
+}
+
+.table__header,
+.table__column {
+  background: var(--surface-secondary);
+}
+
+.table__column {
+  border-bottom: 1px solid var(--separator);
+}
+
+.table__row {
+  background: var(--surface);
+}
+
+.table__row:not(:last-child) .table__cell {
+  border-bottom: 1px solid var(--separator);
+}
+
+.table__body tr:first-child td:first-child,
+.table__body tr:first-child td:last-child,
+.table__body tr:last-child td:first-child,
+.table__body tr:last-child td:last-child {
+  border-radius: 0;
+}
+
+.table__body:not(tbody) {
+  border-radius: 0;
+}
+
+@theme inline {
+  --color-brand-50: var(--accent-soft);
+  --color-brand-100: var(--accent-soft);
+  --color-brand-200: var(--accent-soft-hover);
+  --color-brand-300: var(--accent);
+  --color-brand-400: var(--accent);
+  --color-brand-500: var(--accent);
+  --color-brand-600: var(--accent);
+  --color-brand-700: var(--accent-hover);
+  --color-brand-800: var(--accent-hover);
+  --color-brand-900: var(--accent-hover);
+  --color-brand-950: var(--accent-hover);
+}
+
+/*
+ * Dark: soft backgrounds stay dark tints; text/icons stay bright accent.
+ * Without this, brand-950/200 both resolve near --accent and icons vanish on chips.
+ */
+.dark {
+  --color-brand-50: color-mix(in oklab, var(--accent) 16%, transparent);
+  --color-brand-100: color-mix(in oklab, var(--accent) 20%, transparent);
+  --color-brand-200: color-mix(in oklab, var(--accent) 55%, white);
+  --color-brand-300: color-mix(in oklab, var(--accent) 72%, white);
+  --color-brand-400: var(--accent);
+  --color-brand-500: var(--accent);
+  --color-brand-600: var(--accent);
+  --color-brand-700: color-mix(in oklab, var(--accent) 82%, white);
+  --color-brand-800: color-mix(in oklab, var(--accent) 70%, white);
+  --color-brand-900: color-mix(in oklab, var(--accent) 58%, white);
+  --color-brand-950: color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+.login-mesh {
+  background-color: color-mix(in oklab, var(--accent) 28%, #140c24);
+  background-image:
+    radial-gradient(
+      ellipse 90% 70% at 12% 18%,
+      color-mix(in oklab, var(--accent) 92%, white) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 70% 55% at 88% 8%,
+      color-mix(in oklab, #c084fc 70%, var(--accent)) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 65% 80% at 78% 88%,
+      color-mix(in oklab, #fb7185 55%, var(--accent)) 0%,
+      transparent 56%
+    ),
+    radial-gradient(
+      ellipse 50% 45% at 8% 92%,
+      color-mix(in oklab, #f59e0b 45%, transparent) 0%,
+      transparent 48%
+    );
+}
+
+.login-grid {
+  background-image: radial-gradient(rgb(255 255 255 / 0.14) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 72%, transparent);
+}
+
+@keyframes login-silk-float {
+  0% {
+    transform: translate3d(-1.5%, 1%, 0) rotate(-4deg) scale(1.04);
+  }
+  50% {
+    transform: translate3d(2%, -2%, 0) rotate(5deg) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-1.5%, 1%, 0) rotate(-4deg) scale(1.04);
+  }
+}
+
+.login-silk {
+  animation: login-silk-float 28s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-silk {
+    animation: none;
+  }
 }

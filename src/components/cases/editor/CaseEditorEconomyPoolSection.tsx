@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Check, Search, X } from 'lucide-react'
 import { CaseListImage } from '@/components/cases/CaseListImage'
 import { EditorSectionShell } from '@/components/cases/editor/EditorSectionShell'
@@ -12,18 +12,16 @@ const CASE_POOL_PAGE_SIZE = 12
 
 const casePoolCardClass = {
   selected:
-    'border-brand-500 bg-brand-50/90 shadow-sm shadow-brand-500/10 ' +
-    'dark:border-brand-400/50 dark:bg-brand-500/10 dark:shadow-brand-500/5 dark:ring-1 dark:ring-brand-400/20',
+    'border-accent/35 bg-accent-soft shadow-sm shadow-accent/10 ring-1 ring-accent/15',
   default:
-    'border-zinc-200 bg-white hover:border-brand-300 hover:bg-brand-50/40 ' +
-    'dark:border-zinc-800 dark:bg-zinc-900/70 dark:hover:border-brand-700 dark:hover:bg-brand-950/30',
+    'border-border bg-surface hover:border-accent/35 hover:bg-accent-soft/45',
 } as const
 
 const casePoolCheckClass = {
   selected:
-    'border-brand-500 bg-brand-600 text-white dark:border-brand-400 dark:bg-brand-500',
+    'border-accent bg-accent text-accent-foreground',
   default:
-    'border-zinc-200 bg-zinc-50 text-transparent dark:border-zinc-600 dark:bg-zinc-800/80',
+    'border-border bg-default text-transparent',
 } as const
 
 export type CaseEconomyPoolOption = {
@@ -90,16 +88,6 @@ export function CaseEditorEconomyPoolSection({
     [selectableCases, sharedCaseIds],
   )
 
-  useEffect(() => {
-    setPage(1)
-  }, [debouncedSearch])
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages)
-    }
-  }, [page, totalPages])
-
   const toggleCase = (caseId: string) => {
     if (sharedCaseIds.includes(caseId)) {
       onSharedCaseIdsChange(sharedCaseIds.filter((id) => id !== caseId))
@@ -127,7 +115,7 @@ export function CaseEditorEconomyPoolSection({
       )}
 
       {economyLedger ? (
-        <div className="mb-4 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/50 sm:grid-cols-3">
+        <div className="mb-4 grid gap-3 rounded-xl border border-border bg-surface-secondary p-4 sm:grid-cols-3">
           <div>
             <ThemeText tone="label" className="text-xs uppercase">
               Receita acumulada
@@ -164,13 +152,13 @@ export function CaseEditorEconomyPoolSection({
             {selectedCases.map((lootCase) => (
               <span
                 key={lootCase._id}
-                className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-800 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-default px-2.5 py-1 text-xs font-medium text-foreground"
               >
                 <span className="truncate">{lootCase.name}</span>
                 <button
                   type="button"
                   onClick={() => removeCase(lootCase._id)}
-                  className="rounded-md p-0.5 text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white"
+                  className="rounded-md p-0.5 text-muted transition hover:bg-surface hover:text-foreground"
                   aria-label={`Remover ${lootCase.name}`}
                 >
                   <X className="h-3 w-3" aria-hidden />
@@ -192,13 +180,16 @@ export function CaseEditorEconomyPoolSection({
       ) : (
         <>
           <div className="relative mb-4">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <input
               type="search"
               value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
+              onChange={(event) => {
+                setSearchInput(event.target.value)
+                setPage(1)
+              }}
               placeholder="Buscar caixa por nome ou slug..."
-              className="w-full rounded-xl border border-zinc-200 bg-white py-3 pl-10 pr-4 text-sm text-zinc-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              className="w-full rounded-field border border-field-border bg-field py-2.5 pl-10 pr-4 text-sm text-field-foreground shadow-field outline-none transition placeholder:text-field-placeholder focus:border-focus focus:ring-4 focus:ring-focus/15"
               autoComplete="off"
             />
           </div>
@@ -233,7 +224,7 @@ export function CaseEditorEconomyPoolSection({
                         <ThemeText
                           tone="primary"
                           className={`line-clamp-2 text-xs font-semibold ${
-                            selected ? 'text-zinc-900 dark:text-zinc-50' : ''
+                            selected ? 'text-foreground' : ''
                           }`}
                         >
                           {lootCase.name}
@@ -241,7 +232,7 @@ export function CaseEditorEconomyPoolSection({
                         <ThemeText
                           tone="secondary"
                           className={`mt-0.5 truncate text-[11px] ${
-                            selected ? 'text-zinc-600 dark:text-zinc-300' : ''
+                            selected ? 'text-muted' : ''
                           }`}
                         >
                           {lootCase.slug}
@@ -250,8 +241,8 @@ export function CaseEditorEconomyPoolSection({
                           <span
                             className={
                               selected
-                                ? 'inline-flex rounded-full bg-zinc-200/90 px-2 py-0.5 text-[10px] font-medium text-zinc-800 ring-1 ring-inset ring-zinc-400/20 dark:bg-zinc-700/90 dark:text-zinc-100 dark:ring-zinc-500/30'
-                                : 'inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-700 ring-1 ring-inset ring-zinc-500/15 dark:bg-zinc-800 dark:text-zinc-200 dark:ring-zinc-600/35'
+                                ? 'inline-flex rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-inset ring-accent/20'
+                                : 'inline-flex rounded-full bg-default px-2 py-0.5 text-[10px] font-medium text-muted ring-1 ring-inset ring-border'
                             }
                           >
                             {lootCase.active ? 'Ativa' : 'Inativa'}
@@ -259,7 +250,7 @@ export function CaseEditorEconomyPoolSection({
                           <ThemeText
                             tone="secondary"
                             className={`text-[11px] font-medium ${
-                              selected ? 'text-zinc-700 dark:text-zinc-200' : ''
+                              selected ? 'text-foreground' : ''
                             }`}
                           >
                             {formatSkinsPrice(lootCase.price, currency)}

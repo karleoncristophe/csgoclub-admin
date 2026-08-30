@@ -78,7 +78,7 @@ export default function ArenaCratesPage() {
 
       <ArenaPlayPricingPanel />
 
-      <Surface variant="card" className="!p-6">
+      <Surface variant="card" className="!p-5">
         {isLoading ? (
           <ThemeText tone="secondary" className="text-sm">
             Carregando crates...
@@ -102,7 +102,7 @@ export default function ArenaCratesPage() {
         ) : null}
 
         {data.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div className={listTable.wrap}>
             <table className={listTable.table}>
               <thead>
                 <tr className={listTable.theadRow}>

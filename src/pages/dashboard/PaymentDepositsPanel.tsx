@@ -7,6 +7,15 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Select } from '@/components/ui/Select'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
+import {
+  DateRangePickerModal,
+  DateRangePickerTrigger,
+  getActiveQuickPresetLabel,
+} from '@/components/ui/DateRangePickerModal'
+import {
+  SearchableSelect,
+  type SearchableSelectOption,
+} from '@/components/ui/SearchableSelect'
 import { listTable, linkBrand } from '@/components/ui/listTable'
 import { UserAvatarLink } from '@/components/users/UserAvatarLink'
 import useDebounce from '@/hooks/useDebounce'
@@ -16,6 +25,7 @@ import {
   type AdminPaymentDeposit,
   type AdminPaymentDepositStatus,
 } from '@/redux/store/api/payment/api.payment'
+import { useGetCouponsQuery } from '@/redux/store/api/coupons/api.coupons'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
 function formatWhen(iso?: string) {
@@ -85,6 +95,12 @@ export function PaymentDepositsPanel() {
   const [status, setStatus] = useState<AdminPaymentDepositStatus | ''>('')
   const [method, setMethod] = useState('')
   const [provider, setProvider] = useState('')
+  const [couponCode, setCouponCode] = useState('')
+  const [couponSearch, setCouponSearch] = useState('')
+  const [selectedCoupon, setSelectedCoupon] = useState<SearchableSelectOption | null>(null)
+  const [periodStart, setPeriodStart] = useState<Date | null>(null)
+  const [periodEnd, setPeriodEnd] = useState<Date | null>(null)
+  const [periodOpen, setPeriodOpen] = useState(false)
   const [selected, setSelected] = useState<AdminPaymentDeposit | null>(null)
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
@@ -93,6 +109,9 @@ export function PaymentDepositsPanel() {
   const debouncedSearch = useDebounce(search.trim(), 300)
   const safePage = Math.max(page, 1)
 
+  const periodPresetLabel =
+    periodStart && periodEnd ? getActiveQuickPresetLabel(periodStart, periodEnd) : null
+
   const { data, isLoading, isFetching, isError, error } = useGetPaymentDepositsQuery(
     {
       page: safePage,
@@ -100,14 +119,40 @@ export function PaymentDepositsPanel() {
       ...(status ? { status } : {}),
       ...(method ? { method } : {}),
       ...(provider ? { provider } : {}),
+      ...(couponCode ? { couponCode } : {}),
       ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      ...(periodStart ? { from: periodStart.toISOString() } : {}),
+      ...(periodEnd ? { to: periodEnd.toISOString() } : {}),
     },
     { pollingInterval: 10_000, refetchOnFocus: true },
   )
   const [approve, approveState] = useApprovePaymentDepositMutation()
+  const { data: couponsData, isFetching: couponsLoading } = useGetCouponsQuery({
+    page: 1,
+    limit: 50,
+    ...(couponSearch ? { search: couponSearch } : {}),
+  })
+  const couponOptions = useMemo<SearchableSelectOption[]>(
+    () =>
+      (couponsData?.data ?? []).map((coupon) => ({
+        value: coupon.code,
+        label: coupon.ownerUserName || coupon.code,
+        description: coupon.ownerUserName ? coupon.code : undefined,
+        imageUrl: coupon.ownerAvatar,
+      })),
+    [couponsData],
+  )
 
   const rows = data?.data ?? []
   const summary = data?.summary
+  const totals = data?.totals
+  const moneyFiltered = Boolean(
+    couponCode || periodStart || periodEnd || method || provider || debouncedSearch,
+  )
+  const couponFilterLabel =
+    couponCode && selectedCoupon?.label && selectedCoupon.label !== couponCode
+      ? `${selectedCoupon.label} · ${couponCode}`
+      : couponCode
   const total = data?.total ?? 0
   const totalPages = Math.max(1, data?.totalPages ?? 1)
   const currentPage = Math.min(safePage, totalPages)
@@ -168,24 +213,49 @@ export function PaymentDepositsPanel() {
   )
 
   return (
-    <Surface variant="card" className="!p-6">
+    <>
+    <Surface variant="card" className="!p-5">
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {stats.map((item) => (
-          <div
-            key={item.label}
-            className="rounded-2xl border border-zinc-200 px-4 py-3 dark:border-zinc-700"
-          >
+          <Surface key={item.label} variant="statTile" className="!px-3 !py-2.5">
             <ThemeText as="p" tone="secondary" className="text-xs uppercase tracking-wide">
               {item.label}
             </ThemeText>
             <ThemeText as="p" tone="primary" className="mt-1 text-xl font-semibold tabular-nums">
               {item.value}
             </ThemeText>
-          </div>
+          </Surface>
         ))}
       </div>
 
-      <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-accent/20 bg-accent-soft px-3 py-3">
+          <ThemeText as="p" tone="secondary" className="text-xs uppercase tracking-wide">
+            Pix (BRL)
+          </ThemeText>
+          <ThemeText as="p" tone="primary" className="mt-1 text-xl font-semibold tabular-nums">
+            {formatMoney(totals?.volumeBrl ?? 0, 'BRL')}
+          </ThemeText>
+          <ThemeText as="p" tone="secondary" className="mt-1 text-xs">
+            {moneyFiltered ? 'Valor filtrado' : 'Total pago'}
+            {couponFilterLabel ? ` · ${couponFilterLabel}` : ''}
+          </ThemeText>
+        </div>
+        <div className="rounded-xl border border-accent/20 bg-accent-soft px-3 py-3">
+          <ThemeText as="p" tone="secondary" className="text-xs uppercase tracking-wide">
+            Cripto (USD)
+          </ThemeText>
+          <ThemeText as="p" tone="primary" className="mt-1 text-xl font-semibold tabular-nums">
+            {formatMoney(totals?.volumeUsd ?? 0, 'USD')}
+          </ThemeText>
+          <ThemeText as="p" tone="secondary" className="mt-1 text-xs">
+            {moneyFiltered ? 'Valor filtrado' : 'Total pago'}
+            {couponFilterLabel ? ` · ${couponFilterLabel}` : ''}
+          </ThemeText>
+        </div>
+      </div>
+
+      <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         <Input
           label="Busca"
           name="payment-deposit-search"
@@ -238,6 +308,49 @@ export function PaymentDepositsPanel() {
           <option value="woovi">Woovi</option>
           <option value="xgate">XGate</option>
         </Select>
+        <SearchableSelect
+          clearable
+          emptyMessage="Nenhum cupom encontrado."
+          label="Cupom"
+          loading={couponsLoading}
+          modalDescription="Busque pelo nick ou pelo código. Todos os cupons da pessoa aparecem juntos."
+          modalTitle="Cupons"
+          onChange={(code) => {
+            setCouponCode(code)
+            setSelectedCoupon(
+              code
+                ? (couponOptions.find((option) => option.value === code) ?? selectedCoupon)
+                : null,
+            )
+            setPage(1)
+          }}
+          onSearchChange={setCouponSearch}
+          options={couponOptions}
+          placeholder="Todos os cupons"
+          resultNoun="cupom"
+          searchPlaceholder="Nick ou código do cupom…"
+          selectedOption={selectedCoupon}
+          serverSearch
+          totalCount={couponsData?.total}
+          value={couponCode}
+        />
+        <div className="flex flex-col gap-1.5">
+          <ThemeText as="p" className="text-sm font-medium text-foreground">
+            Período
+          </ThemeText>
+          <DateRangePickerTrigger
+            appliedEnd={periodEnd}
+            appliedStart={periodStart}
+            emptyLabel="Todo o período"
+            onClear={() => {
+              setPeriodStart(null)
+              setPeriodEnd(null)
+              setPage(1)
+            }}
+            onClick={() => setPeriodOpen(true)}
+            presetLabel={periodPresetLabel}
+          />
+        </div>
         <Select
           label="Itens por página"
           name="payment-deposit-page-size"
@@ -264,6 +377,7 @@ export function PaymentDepositsPanel() {
               <th className={listTable.th}>Quando</th>
               <th className={listTable.th}>Jogador</th>
               <th className={listTable.th}>Método</th>
+              <th className={listTable.th}>Cupom</th>
               <th className={listTable.th}>Valor</th>
               <th className={listTable.th}>Creditado</th>
               <th className={listTable.th}>Status</th>
@@ -273,13 +387,13 @@ export function PaymentDepositsPanel() {
           <tbody className={listTable.tbody}>
             {isLoading ? (
               <tr>
-                <td className={listTable.empty} colSpan={7}>
+                <td className={listTable.empty} colSpan={8}>
                   Carregando transações...
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td className={listTable.empty} colSpan={7}>
+                <td className={listTable.empty} colSpan={8}>
                   Nenhuma transação encontrada.
                 </td>
               </tr>
@@ -317,6 +431,37 @@ export function PaymentDepositsPanel() {
                       {item.provider}
                       {item.creditSource === 'admin' ? ' · aprovado no admin' : ''}
                     </ThemeText>
+                  </td>
+                  <td className={listTable.td}>
+                    {item.couponCode ? (
+                      <div className="flex items-center gap-2">
+                        <UserAvatarLink
+                          avatar={item.couponOwner?.avatar}
+                          name={item.couponOwner?.name || item.couponCode}
+                          size="sm"
+                          userId={item.couponOwner?.userId}
+                        />
+                        <div className="min-w-0">
+                          {item.couponOwner?.userId ? (
+                            <Link
+                              className={linkBrand}
+                              to={`/dashboard/users/${item.couponOwner.userId}`}
+                            >
+                              {item.couponOwner.name || item.couponCode}
+                            </Link>
+                          ) : (
+                            <ThemeText tone="primary">
+                              {item.couponOwner?.name || item.couponCode}
+                            </ThemeText>
+                          )}
+                          <ThemeText as="p" tone="secondary" className="text-xs">
+                            {item.couponCode}
+                          </ThemeText>
+                        </div>
+                      </div>
+                    ) : (
+                      <ThemeText tone="primary">—</ThemeText>
+                    )}
                   </td>
                   <td className={`${listTable.td} tabular-nums`}>{expectedAmount(item)}</td>
                   <td className={`${listTable.td} tabular-nums`}>
@@ -450,5 +595,22 @@ export function PaymentDepositsPanel() {
         ) : null}
       </Modal>
     </Surface>
+    <DateRangePickerModal
+      appliedEnd={periodEnd}
+      appliedStart={periodStart}
+      onApply={(start, end) => {
+        setPeriodStart(start)
+        setPeriodEnd(end)
+        setPage(1)
+      }}
+      onClear={() => {
+        setPeriodStart(null)
+        setPeriodEnd(null)
+        setPage(1)
+      }}
+      onOpenChange={setPeriodOpen}
+      open={periodOpen}
+    />
+    </>
   )
 }

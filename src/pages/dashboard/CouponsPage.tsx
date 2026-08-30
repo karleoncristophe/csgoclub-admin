@@ -356,7 +356,7 @@ export default function CouponsPage() {
         </Button>
       </div>
 
-      <Surface variant="card" className="!p-6">
+      <Surface variant="card" className="!p-5">
         <div className="mb-4 grid gap-3 md:grid-cols-[1fr_220px]">
           <Input
             label="Buscar"

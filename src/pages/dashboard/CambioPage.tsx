@@ -108,7 +108,7 @@ export default function CambioPage() {
         </div>
       </div>
 
-      <Surface variant="card" className="!p-6">
+      <Surface variant="card" className="!p-5">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <ThemeText as="h2" tone="primary" className="text-base font-semibold">

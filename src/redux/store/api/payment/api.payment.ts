@@ -80,6 +80,11 @@ export type AdminPaymentDeposit = {
   walletAmount?: number
   walletCurrency?: string
   couponCode?: string
+  couponOwner?: {
+    userId: string
+    name?: string
+    avatar?: string
+  }
   cashbackPercent?: number
   creditSource?: 'webhook' | 'admin'
   approveNote?: string
@@ -96,6 +101,12 @@ export type AdminPaymentDeposit = {
   }
 }
 
+export type AdminDepositMoneyTotals = {
+  paidCount: number
+  volumeBrl: number
+  volumeUsd: number
+}
+
 export type AdminPaymentDepositList = {
   data: AdminPaymentDeposit[]
   total: number
@@ -109,6 +120,7 @@ export type AdminPaymentDepositList = {
     failed: number
     cancelled: number
   }
+  totals: AdminDepositMoneyTotals
 }
 
 export type ListPaymentDepositsQuery = {
@@ -118,6 +130,7 @@ export type ListPaymentDepositsQuery = {
   provider?: string
   method?: string
   search?: string
+  couponCode?: string
   from?: string
   to?: string
   userId?: string
@@ -161,6 +174,7 @@ export const paymentApi = createApi({
           ...(params.provider ? { provider: params.provider } : {}),
           ...(params.method ? { method: params.method } : {}),
           ...(params.search ? { search: params.search } : {}),
+          ...(params.couponCode ? { couponCode: params.couponCode } : {}),
           ...(params.from ? { from: params.from } : {}),
           ...(params.to ? { to: params.to } : {}),
           ...(params.userId ? { userId: params.userId } : {}),

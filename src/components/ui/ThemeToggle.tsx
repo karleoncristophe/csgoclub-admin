@@ -12,8 +12,8 @@ export function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
 
   const base =
     variant === 'sidebar'
-      ? 'flex w-full items-center gap-3 rounded-lg py-2.5 pl-9 pr-4 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'
-      : 'flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800'
+      ? 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-default hover:text-foreground'
+      : 'flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface text-muted shadow-sm transition hover:bg-default hover:text-foreground'
 
   return (
     <button

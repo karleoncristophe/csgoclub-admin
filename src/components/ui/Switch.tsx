@@ -37,7 +37,7 @@ export function Switch({
       <div className="flex items-center gap-1.5">
         <label
           htmlFor={switchId}
-          className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          className="text-sm font-medium text-foreground"
         >
           {label}
         </label>
@@ -54,15 +54,15 @@ export function Switch({
         onBlur={onBlur}
         className={`flex h-11 w-full items-center justify-between rounded-xl border px-3.5 shadow-sm transition-colors focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 ${
           checked
-            ? 'border-brand-300 bg-brand-50/60 focus:border-brand-500 focus:ring-brand-500/15 dark:border-brand-400/40 dark:bg-brand-500/10'
-            : 'border-zinc-200 bg-white focus:border-brand-500 focus:ring-brand-500/15 dark:border-zinc-700 dark:bg-zinc-900'
+            ? 'border-accent/40 bg-accent-soft focus:border-accent focus:ring-accent/15'
+            : 'border-border bg-field focus:border-accent focus:ring-accent/15'
         }`}
       >
         <span
           className={`text-sm font-medium ${
             checked
-              ? 'text-brand-800 dark:text-brand-100'
-              : 'text-zinc-600 dark:text-zinc-300'
+              ? 'text-accent'
+              : 'text-muted'
           }`}
         >
           {checked ? 'Ativa' : 'Inativa'}
@@ -70,7 +70,7 @@ export function Switch({
         <span
           aria-hidden
           className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-            checked ? 'bg-brand-600' : 'bg-zinc-300 dark:bg-zinc-600'
+            checked ? 'bg-accent' : 'bg-default'
           }`}
         >
           <span
@@ -81,12 +81,12 @@ export function Switch({
         </span>
       </button>
       {description ? (
-        <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+        <p className="text-xs leading-relaxed text-muted">
           {description}
         </p>
       ) : null}
       {hint ? (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">{hint}</p>
+        <p className="text-xs text-muted">{hint}</p>
       ) : null}
     </div>
   )

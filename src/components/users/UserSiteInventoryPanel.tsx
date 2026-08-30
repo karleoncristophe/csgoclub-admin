@@ -169,7 +169,7 @@ export function UserSiteInventoryPanel({
   }
 
   return (
-    <Surface variant="card" className="!p-5 sm:!p-8">
+    <Surface variant="settingsPanel" className="!p-5 sm:!p-8">
       <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-2xl">
           <SectionTitle className="flex items-center gap-2">

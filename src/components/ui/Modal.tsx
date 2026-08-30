@@ -7,8 +7,8 @@ import { ThemeText } from '@/components/ui/ThemeText'
 const sizeClass = {
   md: 'max-w-lg',
   lg: 'max-w-2xl',
-  xl: 'max-w-4xl',
-  full: 'max-w-6xl',
+  xl: 'max-w-3xl',
+  full: 'max-w-5xl',
 } as const
 
 export type ModalSize = keyof typeof sizeClass

@@ -219,7 +219,7 @@ export default function UserDetailPage() {
       {data ? (
         <>
           <Surface
-            variant="card"
+            variant="settingsPanel"
             className="relative overflow-hidden !p-0"
           >
             <div
@@ -342,7 +342,7 @@ export default function UserDetailPage() {
             />
           </div>
 
-          <Surface variant="card" className="!p-5">
+          <Surface variant="settingsPanel" className="!p-5">
             <SectionTitle className="mb-5">Identidade Steam</SectionTitle>
             <div className="grid gap-3 sm:grid-cols-2">
               <CopyableField

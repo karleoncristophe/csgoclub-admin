@@ -280,7 +280,7 @@ export function PaymentProvidersPanel() {
   const { data, isLoading, isError, error } = useGetPaymentProvidersQuery()
 
   return (
-    <Surface variant="card" className="!p-5">
+    <Surface variant="settingsPanel" className="!p-5">
       <div className="mb-4">
         <ThemeText as="h2" tone="primary" className="text-base font-semibold">
           APIs de pagamento

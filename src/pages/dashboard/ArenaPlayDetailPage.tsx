@@ -150,7 +150,7 @@ export default function ArenaPlayDetailPage() {
             />
           </div>
 
-          <Surface variant="card" className="!p-5 space-y-4">
+          <Surface variant="settingsPanel" className="!p-5 space-y-4">
             <SectionTitle>Jogador</SectionTitle>
             {data.user ? (
               <div className="flex items-center gap-4">
@@ -181,7 +181,7 @@ export default function ArenaPlayDetailPage() {
             )}
           </Surface>
 
-          <Surface variant="card" className="!p-5 space-y-4">
+          <Surface variant="settingsPanel" className="!p-5 space-y-4">
             <SectionTitle>Prêmios</SectionTitle>
             {data.awarded?.length ? (
               <div className="grid gap-3 md:grid-cols-2">
@@ -245,7 +245,7 @@ export default function ArenaPlayDetailPage() {
           </Surface>
 
           {data.pricingSnapshot ? (
-            <Surface variant="card" className="!p-5 space-y-4">
+            <Surface variant="settingsPanel" className="!p-5 space-y-4">
               <SectionTitle>Preço da jogada (snapshot)</SectionTitle>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <ValueTile
@@ -269,7 +269,7 @@ export default function ArenaPlayDetailPage() {
             </Surface>
           ) : null}
 
-          <Surface variant="card" className="!p-5 space-y-4">
+          <Surface variant="settingsPanel" className="!p-5 space-y-4">
             <SectionTitle>Progresso por raridade</SectionTitle>
             <div className="space-y-2">
               {ARENA_RARITIES.map((rarity) => (
@@ -284,7 +284,7 @@ export default function ArenaPlayDetailPage() {
             </div>
           </Surface>
 
-          <Surface variant="card" className="!p-5 space-y-4">
+          <Surface variant="settingsPanel" className="!p-5 space-y-4">
             <SectionTitle>Caixas da rodada</SectionTitle>
             <ThemeText tone="secondary" className="text-sm">
               {destroyedSet.size} destruída(s) de {data.boxes.length}.

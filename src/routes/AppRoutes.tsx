@@ -59,6 +59,9 @@ const BannersPage = lazy(
 const SettingsPage = lazy(
   () => import('@/pages/dashboard/SettingsPage'),
 )
+const ThemeBuilderPage = lazy(
+  () => import('@/pages/dashboard/theme/ThemeBuilderPage'),
+)
 const CambioPage = lazy(
   () => import('@/pages/dashboard/CambioPage'),
 )
@@ -151,6 +154,7 @@ function ProtectedRoutes() {
         <Route path="arena/plays/:id" element={<ArenaPlayDetailPage />} />
         <Route path="arena/:id" element={<ArenaCrateEditorPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="theme" element={<ThemeBuilderPage />} />
         <Route path="cambio" element={<CambioPage />} />
         <Route path="deposits" element={<PaymentDepositsPage />} />
         <Route path="depositos" element={<Navigate replace to="/dashboard/deposits" />} />

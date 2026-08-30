@@ -14,7 +14,7 @@ const variants = {
     'sticky top-0 z-30 flex shrink-0 items-center gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur-sm lg:hidden',
   menuIconButton:
     'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-foreground shadow-sm transition hover:bg-default active:scale-[0.98]',
-  card: 'items-stretch rounded-xl border border-border bg-surface p-5 text-left shadow-sm shadow-black/5 sm:p-6',
+  card: 'items-stretch rounded-xl border-0 !bg-transparent !p-0 text-left shadow-none',
   cardInset:
     'rounded-xl border border-border bg-surface-secondary p-4',
   metricTile:
@@ -99,8 +99,8 @@ type SurfaceProps = {
 
 export const Surface = forwardRef<HTMLDivElement, SurfaceProps>(
   function Surface({ variant, className = '', children, ...rest }, ref) {
-    const cardVariant = {
-      card: 'default',
+    // `card` = page shell (transparent). Never use HeroCard — it paints bg-content1.
+    const heroCardVariant = {
       chartPanel: 'default',
       metricTile: 'default',
       docSection: 'default',
@@ -110,7 +110,8 @@ export const Surface = forwardRef<HTMLDivElement, SurfaceProps>(
       statTile: 'secondary',
       settingsPanel: 'default',
     } as const
-    const heroVariant = cardVariant[variant as keyof typeof cardVariant]
+    const heroVariant =
+      heroCardVariant[variant as keyof typeof heroCardVariant]
 
     if (heroVariant) {
       return (

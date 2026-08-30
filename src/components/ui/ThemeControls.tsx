@@ -111,7 +111,7 @@ export function ThemeControls() {
   ]
   const radiusOptions = RADIUS_ORDER.map((id) => ({
     id,
-    label: RADIUS_SCALE[id].label,
+    label: RADIUS_SCALE[id].hint,
   }))
 
   return (

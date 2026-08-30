@@ -16,15 +16,18 @@ export type ThemeAppearance = {
   preset: ColorTheme
 }
 
-export const RADIUS_SCALE: Record<RadiusScale, { rem: number; label: string }> = {
-  none: { rem: 0, label: 'Sem raio' },
-  sm: { rem: 0.25, label: 'Pequeno' },
-  md: { rem: 0.5, label: 'Médio' },
-  lg: { rem: 0.75, label: 'Grande' },
-  xl: { rem: 1, label: 'Extra grande' },
+export const RADIUS_SCALE: Record<
+  RadiusScale,
+  { rem: number; label: string; hint: string }
+> = {
+  none: { rem: 0, label: '–', hint: 'Sem raio' },
+  sm: { rem: 0.25, label: 'S', hint: 'Pequeno' },
+  md: { rem: 0.5, label: 'M', hint: 'Médio' },
+  lg: { rem: 0.75, label: 'L', hint: 'Grande' },
+  xl: { rem: 1, label: 'XL', hint: 'Extra grande' },
 }
 
-export const radiusHint = (radius: RadiusScale) => RADIUS_SCALE[radius].label
+export const radiusHint = (radius: RadiusScale) => RADIUS_SCALE[radius].hint
 
 export const FONT_OPTIONS: Array<{ id: FontId; label: string; family: string; href?: string }> = [
   { id: 'inter', label: 'Inter', family: '"Inter", ui-sans-serif, system-ui, sans-serif', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap' },

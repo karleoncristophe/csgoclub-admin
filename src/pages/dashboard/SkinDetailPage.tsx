@@ -92,7 +92,7 @@ export default function SkinDetailPage() {
       ) : null}
 
       {data ? (
-        <Surface variant="card" className="mx-auto max-w-2xl !p-5">
+        <Surface variant="settingsPanel" className="mx-auto max-w-2xl !p-5">
           <div className="group">
             <button
               type="button"

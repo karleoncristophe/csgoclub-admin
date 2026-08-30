@@ -110,7 +110,7 @@ export default function UserCaseOpenDetailPage() {
 
       {data ? (
         <>
-          <Surface variant="card" className="!p-5">
+          <Surface variant="settingsPanel" className="!p-5">
             <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
               <div className="mx-auto w-full max-w-[220px]">
                 <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
@@ -205,7 +205,7 @@ export default function UserCaseOpenDetailPage() {
             </div>
           </Surface>
 
-          <Surface variant="card" className="!p-5">
+          <Surface variant="settingsPanel" className="!p-5">
             <SectionTitle className="mb-4">Item sorteado</SectionTitle>
             <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
               <SkinRarityVisual
@@ -299,7 +299,7 @@ export default function UserCaseOpenDetailPage() {
             </div>
           </Surface>
 
-          <Surface variant="card" className="!p-5">
+          <Surface variant="settingsPanel" className="!p-5">
             <SectionTitle className="mb-1">Itens da caixa</SectionTitle>
             <ThemeText as="p" tone="secondary" className="mb-5 text-sm">
               Conteúdo atual da caixa, com destaque no item que caiu nesta abertura.

@@ -146,7 +146,7 @@ export default function WeaponCategoriesPage() {
         Categorias
       </PageTitle>
 
-      <Surface variant="card" className="!p-5">
+      <Surface variant="settingsPanel" className="!p-5">
         <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
           Nova categoria
         </ThemeText>
@@ -199,130 +199,130 @@ export default function WeaponCategoriesPage() {
         </form>
 
         {createState.isError ? (
-          <p className={`mb-4 ${surfaceClass('errorBanner')}`}>
+          <p className={`mb-0 ${surfaceClass('errorBanner')}`}>
             {getErrorMessage(createState.error)}
           </p>
         ) : null}
-
-        {isLoading ? (
-          <ThemeText as="p" tone="secondary" className="py-8 text-sm">
-            Carregando categorias...
-          </ThemeText>
-        ) : null}
-
-        {isError ? (
-          <p className={surfaceClass('errorBanner')}>{getErrorMessage(error)}</p>
-        ) : null}
-
-        {!isLoading && !isError ? (
-          <div className={listTable.wrap}>
-            <table className={listTable.table}>
-              <thead>
-                <tr className={listTable.theadRow}>
-                  <th className={listTable.th}>Tipo de arma</th>
-                  <th className={listTable.th}>Taxa (%)</th>
-                  <th className={listTable.th}>Ações</th>
-                </tr>
-              </thead>
-              <tbody className={listTable.tbody}>
-                {data.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className={listTable.empty}>
-                      Nenhuma categoria cadastrada.
-                    </td>
-                  </tr>
-                ) : (
-                  data.map((category) => {
-                    const isEditing = editingId === category._id
-                    const isDeleting = deletingId === category._id
-                    const protectedCategory = isProtectedCategory(category)
-
-                    return (
-                      <tr key={category._id} className={listTable.tr}>
-                        <td className={listTable.tdStrong}>
-                          {isEditing ? (
-                            <Input
-                              label="Nome"
-                              name={`edit-name-${category._id}`}
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              disabled={protectedCategory}
-                            />
-                          ) : (
-                            categoryDisplayName(category.name)
-                          )}
-                        </td>
-                        <td className={listTable.td}>
-                          {isEditing ? (
-                            <Input
-                              label="Taxa (%)"
-                              name={`edit-tax-${category._id}`}
-                              type="number"
-                              min={0}
-                              step="0.01"
-                              value={editTax}
-                              onChange={(e) => setEditTax(e.target.value)}
-                            />
-                          ) : (
-                            `${category.taxPercent}%`
-                          )}
-                        </td>
-                        <td className={listTable.td}>
-                          {isEditing ? (
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                size="sm"
-                                isLoading={updateState.isLoading}
-                                onClick={() => handleSaveEdit(category._id)}
-                              >
-                                Salvar
-                              </Button>
-                              <Button size="sm" variant="secondary" onClick={cancelEdit}>
-                                Cancelar
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="flex flex-wrap items-center justify-end gap-1">
-                              <IconButton
-                                label="Editar categoria"
-                                onClick={() => startEdit(category)}
-                              >
-                                <Pencil className="h-4 w-4" aria-hidden />
-                              </IconButton>
-                              {!protectedCategory ? (
-                                <IconButton
-                                  label="Excluir categoria"
-                                  variant="danger"
-                                  disabled={isDeleting && deleteState.isLoading}
-                                  onClick={() => handleDelete(category)}
-                                >
-                                  <Trash2 className="h-4 w-4" aria-hidden />
-                                </IconButton>
-                              ) : null}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-
-        {updateState.isError ? (
-          <p className={`mt-4 ${surfaceClass('errorBanner')}`}>
-            {getErrorMessage(updateState.error)}
-          </p>
-        ) : null}
-
-        {deleteState.isError ? (
-          <p className={`mt-4 ${surfaceClass('errorBanner')}`}>
-            {getErrorMessage(deleteState.error)}
-          </p>
-        ) : null}
       </Surface>
+
+      {isLoading ? (
+        <ThemeText as="p" tone="secondary" className="py-8 text-sm">
+          Carregando categorias...
+        </ThemeText>
+      ) : null}
+
+      {isError ? (
+        <p className={surfaceClass('errorBanner')}>{getErrorMessage(error)}</p>
+      ) : null}
+
+      {!isLoading && !isError ? (
+        <div className={listTable.wrap}>
+          <table className={listTable.table}>
+            <thead>
+              <tr className={listTable.theadRow}>
+                <th className={listTable.th}>Tipo de arma</th>
+                <th className={listTable.th}>Taxa (%)</th>
+                <th className={listTable.th}>Ações</th>
+              </tr>
+            </thead>
+            <tbody className={listTable.tbody}>
+              {data.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className={listTable.empty}>
+                    Nenhuma categoria cadastrada.
+                  </td>
+                </tr>
+              ) : (
+                data.map((category) => {
+                  const isEditing = editingId === category._id
+                  const isDeleting = deletingId === category._id
+                  const protectedCategory = isProtectedCategory(category)
+
+                  return (
+                    <tr key={category._id} className={listTable.tr}>
+                      <td className={listTable.tdStrong}>
+                        {isEditing ? (
+                          <Input
+                            label="Nome"
+                            name={`edit-name-${category._id}`}
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            disabled={protectedCategory}
+                          />
+                        ) : (
+                          categoryDisplayName(category.name)
+                        )}
+                      </td>
+                      <td className={listTable.td}>
+                        {isEditing ? (
+                          <Input
+                            label="Taxa (%)"
+                            name={`edit-tax-${category._id}`}
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={editTax}
+                            onChange={(e) => setEditTax(e.target.value)}
+                          />
+                        ) : (
+                          `${category.taxPercent}%`
+                        )}
+                      </td>
+                      <td className={listTable.td}>
+                        {isEditing ? (
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              isLoading={updateState.isLoading}
+                              onClick={() => handleSaveEdit(category._id)}
+                            >
+                              Salvar
+                            </Button>
+                            <Button size="sm" variant="secondary" onClick={cancelEdit}>
+                              Cancelar
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center justify-end gap-1">
+                            <IconButton
+                              label="Editar categoria"
+                              onClick={() => startEdit(category)}
+                            >
+                              <Pencil className="h-4 w-4" aria-hidden />
+                            </IconButton>
+                            {!protectedCategory ? (
+                              <IconButton
+                                label="Excluir categoria"
+                                variant="danger"
+                                disabled={isDeleting && deleteState.isLoading}
+                                onClick={() => handleDelete(category)}
+                              >
+                                <Trash2 className="h-4 w-4" aria-hidden />
+                              </IconButton>
+                            ) : null}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      {updateState.isError ? (
+        <p className={surfaceClass('errorBanner')}>
+          {getErrorMessage(updateState.error)}
+        </p>
+      ) : null}
+
+      {deleteState.isError ? (
+        <p className={surfaceClass('errorBanner')}>
+          {getErrorMessage(deleteState.error)}
+        </p>
+      ) : null}
     </div>
   )
 }

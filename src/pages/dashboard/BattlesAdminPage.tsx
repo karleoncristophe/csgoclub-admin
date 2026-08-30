@@ -179,7 +179,7 @@ export default function BattlesAdminPage() {
         </ThemeText>
       ) : null}
 
-      <Surface variant="card" className="space-y-4 !p-4">
+      <Surface variant="settingsPanel" className="space-y-4 !p-4">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-brand-600" />
           <ThemeText as="h2" className="text-lg font-semibold">
@@ -219,8 +219,9 @@ export default function BattlesAdminPage() {
           mexe no banco da caixa. Tem saldo próprio que começa em 1.000.000 e
           recarrega quando acaba. Peso = chance de ser escolhido na vaga.
         </ThemeText>
+      </Surface>
 
-        <div className={listTable.wrap}>
+      <div className={listTable.wrap}>
           <table className={listTable.table}>
             <thead>
               <tr>
@@ -321,7 +322,6 @@ export default function BattlesAdminPage() {
             </tbody>
           </table>
         </div>
-      </Surface>
 
       <Surface variant="card" className="space-y-4 !p-4">
         <div className="flex items-center justify-between gap-3">

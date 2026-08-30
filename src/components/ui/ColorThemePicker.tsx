@@ -9,12 +9,12 @@ export function ColorThemePicker({ variant = 'default' }: ColorThemePickerProps)
   const { appearance } = useTheme()
   const compact = variant === 'default'
   const { pathname } = useLocation()
-  const active = pathname.startsWith('/dashboard/settings')
+  const active = pathname.startsWith('/dashboard/theme')
 
   return (
     <div className="relative">
       <Link
-        to="/dashboard/settings"
+        to="/dashboard/theme"
         className={
           compact
             ? 'flex h-10 items-center gap-2 rounded-xl border border-border bg-surface px-3 text-muted shadow-sm transition hover:bg-default hover:text-foreground'
@@ -31,7 +31,7 @@ export function ColorThemePicker({ variant = 'default' }: ColorThemePickerProps)
           style={{ background: accentCss(appearance) }}
           aria-hidden
         />
-        {compact ? <span className="sr-only">Editar aparência</span> : <span>Aparência</span>}
+        {compact ? <span className="sr-only">Editar tema</span> : <span>Editar tema</span>}
         {!compact ? <Palette className="ml-auto h-4 w-4" aria-hidden /> : null}
       </Link>
     </div>

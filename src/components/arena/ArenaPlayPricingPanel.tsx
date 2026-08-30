@@ -56,7 +56,7 @@ export function ArenaPlayPricingPanel() {
   }
 
   return (
-    <Surface variant="card" className="!p-5">
+    <Surface variant="settingsPanel" className="!p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <ThemeText as="h2" tone="primary" className="text-base font-semibold">

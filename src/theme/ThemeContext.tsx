@@ -14,6 +14,7 @@ import {
   readVibrantPalette,
   VIBRANT_PALETTE_STORAGE_KEY,
 } from './applyAppearance'
+import { parseThemeShareParams } from './themeSearchParams'
 import {
   DEFAULT_APPEARANCE,
   appearanceFromPreset,
@@ -31,6 +32,13 @@ const STORAGE_KEY = 'cs2club-admin-theme'
 function readTheme(): Theme {
   if (typeof window === 'undefined') return 'light'
   try {
+    if (window.location.pathname.includes('/dashboard/theme')) {
+      const shared = parseThemeShareParams(
+        new URLSearchParams(window.location.search),
+        DEFAULT_APPEARANCE,
+      )
+      if (shared.theme) return shared.theme
+    }
     const t = localStorage.getItem(STORAGE_KEY)
     if (t === 'dark' || t === 'light') return t
   } catch {

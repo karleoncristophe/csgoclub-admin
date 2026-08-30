@@ -84,7 +84,7 @@ function initialDashboardRange() {
 }
 
 const chartArticleClass =
-  'overflow-hidden rounded-3xl border border-zinc-200/70 bg-gradient-to-br from-white via-white to-zinc-50/80 p-5 shadow-sm dark:border-zinc-700/80 dark:from-zinc-900/95 dark:via-zinc-900/90 dark:to-zinc-950 dark:ring-1 dark:ring-inset dark:ring-zinc-700/50 sm:p-6'
+  'overflow-hidden rounded-3xl border border-border bg-linear-to-br from-surface via-surface to-accent-soft p-5 text-left shadow-sm shadow-black/5 sm:p-6'
 
 export default function DashboardHomePage() {
   const dataEnvironment = usePlatformDataEnvironment()

@@ -89,7 +89,7 @@ export function UserWalletPanel({ user }: UserWalletPanelProps) {
   const wallets = user.wallets
 
   return (
-    <Surface variant="card" className="!p-5">
+    <Surface variant="settingsPanel" className="!p-5">
       <SectionTitle className="mb-2 flex items-center gap-2">
         <Coins className="h-5 w-5 text-brand-600 dark:text-brand-400" />
         Carteira

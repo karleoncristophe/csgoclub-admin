@@ -12,6 +12,8 @@ import {
   type Theme,
   type ThemeAppearance,
 } from './themeConfig'
+import { hasThemeShareParams, parseThemeShareParams } from './themeSearchParams'
+
 const APPEARANCE_KEY = 'cs2club-admin-theme-appearance'
 export const VIBRANT_PALETTE_STORAGE_KEY = 'cs2club-admin-vibrant-palette'
 const LEGACY_COLOR_KEY = 'cs2club-admin-color-theme'
@@ -32,6 +34,10 @@ function isRadius(value: unknown): value is ThemeAppearance['radius'] {
 export function readAppearance(): ThemeAppearance {
   if (typeof window === 'undefined') return DEFAULT_APPEARANCE
   try {
+    const share = new URLSearchParams(window.location.search)
+    if (window.location.pathname.includes('/dashboard/theme') && hasThemeShareParams(share)) {
+      return parseThemeShareParams(share, DEFAULT_APPEARANCE).appearance
+    }
     const raw = localStorage.getItem(APPEARANCE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<ThemeAppearance>
@@ -65,6 +71,11 @@ export function persistAppearance(appearance: ThemeAppearance) {
 export function readVibrantPalette(): boolean {
   if (typeof window === 'undefined') return false
   try {
+    const share = new URLSearchParams(window.location.search)
+    if (window.location.pathname.includes('/dashboard/theme') && hasThemeShareParams(share)) {
+      const vibrant = parseThemeShareParams(share, DEFAULT_APPEARANCE).vibrant
+      if (vibrant != null) return vibrant
+    }
     return localStorage.getItem(VIBRANT_PALETTE_STORAGE_KEY) === 'true'
   } catch {
     return false
@@ -94,10 +105,19 @@ export function applyAppearance(
 
 export function bootTheme(mode?: Theme) {
   if (typeof document === 'undefined') return
+  const share = new URLSearchParams(window.location.search)
+  const fromShare =
+    window.location.pathname.includes('/dashboard/theme') && hasThemeShareParams(share)
+      ? parseThemeShareParams(share, DEFAULT_APPEARANCE)
+      : null
+  if (fromShare?.theme) {
+    document.documentElement.classList.toggle('dark', fromShare.theme === 'dark')
+    document.documentElement.classList.toggle('light', fromShare.theme === 'light')
+  }
   const dark = document.documentElement.classList.contains('dark')
   applyAppearance(
-    mode ?? (dark ? 'dark' : 'light'),
-    readAppearance(),
-    readVibrantPalette(),
+    mode ?? fromShare?.theme ?? (dark ? 'dark' : 'light'),
+    fromShare?.appearance ?? readAppearance(),
+    fromShare?.vibrant ?? readVibrantPalette(),
   )
 }

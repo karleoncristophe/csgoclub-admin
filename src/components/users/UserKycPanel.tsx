@@ -53,7 +53,7 @@ export function UserKycPanel({ user }: UserKycPanelProps) {
   const sessions = data?.sessions ?? []
 
   return (
-    <Surface variant="card" className="!p-5">
+    <Surface variant="settingsPanel" className="!p-5">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <SectionTitle className="mb-2 flex items-center gap-2">

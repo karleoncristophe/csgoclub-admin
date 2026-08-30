@@ -64,7 +64,7 @@ export function CaseEditorItemsTable({
   }
 
   return (
-    <Surface variant="card" className="!p-5">
+    <Surface variant="settingsPanel" className="!p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <ThemeText as="h2" tone="primary" className="text-base font-semibold">

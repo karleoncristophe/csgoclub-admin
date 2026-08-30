@@ -353,7 +353,7 @@ export default function BannersPage() {
         Banners
       </PageTitle>
 
-      <Surface variant="card" className="!p-5">
+      <Surface variant="settingsPanel" className="!p-5">
         <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
           Novo banner
         </ThemeText>

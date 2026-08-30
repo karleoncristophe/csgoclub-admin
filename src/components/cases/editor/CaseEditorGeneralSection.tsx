@@ -50,7 +50,7 @@ export function CaseEditorGeneralSection({
   const vitrineName = vitrines.find((item) => item._id === values.vitrineId)?.name
 
   return (
-    <Surface variant="card" className="!p-5">
+    <Surface variant="settingsPanel" className="!p-5">
       <ThemeText as="h2" tone="primary" className="mb-4 text-base font-semibold">
         Informações gerais
       </ThemeText>

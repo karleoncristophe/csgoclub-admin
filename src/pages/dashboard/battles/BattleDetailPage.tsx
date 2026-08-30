@@ -150,7 +150,7 @@ export default function BattleDetailPage() {
             />
           </div>
 
-          <Surface variant="card" className="!p-5 space-y-4">
+          <Surface variant="settingsPanel" className="!p-5 space-y-4">
             <SectionTitle>Jogadores</SectionTitle>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {data.seats.map((seat) => {
@@ -247,7 +247,7 @@ export default function BattleDetailPage() {
             </div>
           </Surface>
 
-          <Surface variant="card" className="!p-5 space-y-4">
+          <Surface variant="settingsPanel" className="!p-5 space-y-4">
             <SectionTitle>Sequência de caixas</SectionTitle>
             {data.caseSequence.length === 0 ? (
               <ThemeText as="p" tone="secondary" className="text-sm">
@@ -288,7 +288,7 @@ export default function BattleDetailPage() {
             )}
           </Surface>
 
-          <Surface variant="card" className="!p-5 space-y-4">
+          <Surface variant="settingsPanel" className="!p-5 space-y-4">
             <SectionTitle>Drops por round</SectionTitle>
             {roundKeys.length === 0 ? (
               <ThemeText as="p" tone="secondary" className="text-sm">
@@ -391,7 +391,7 @@ export default function BattleDetailPage() {
             )}
           </Surface>
 
-          <Surface variant="card" className="!p-4">
+          <Surface variant="settingsPanel" className="!p-4">
             <ThemeText as="p" tone="faint" className="font-mono text-xs break-all">
               ID: {data.id}
               {data.hostUserId ? ` · Host: ${data.hostUserId}` : ''}

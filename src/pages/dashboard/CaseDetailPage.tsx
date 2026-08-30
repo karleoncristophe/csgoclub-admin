@@ -247,7 +247,7 @@ export default function CaseDetailPage() {
         </div>
       </div>
 
-      <Surface variant="card" className="!p-5">
+      <Surface variant="settingsPanel" className="!p-5">
         <div className="flex flex-wrap items-start gap-5">
           <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-950/60">
             {lootCase.imageUrl ? (
@@ -321,7 +321,7 @@ export default function CaseDetailPage() {
         </div>
       </Surface>
 
-      <Surface variant="card" className="!p-5">
+      <Surface variant="settingsPanel" className="!p-5">
         <SectionTitle className="mb-1">Resultado</SectionTitle>
         <ThemeText tone="secondary" className="mb-5 text-sm leading-relaxed">
           Quanto entrou nas aberturas, quanto saiu em prêmios e o que sobrou.
@@ -409,7 +409,7 @@ export default function CaseDetailPage() {
         </div>
       </Surface>
 
-      <Surface variant="card" className="!p-5">
+      <Surface variant="settingsPanel" className="!p-5">
         <SectionTitle className="mb-1">Banco virtual</SectionTitle>
         <ThemeText tone="secondary" className="mb-5 text-sm leading-relaxed">
           Cada abertura coloca {money(bank.injectionPerOpen)} no banco (o VE da caixa).
@@ -462,7 +462,7 @@ export default function CaseDetailPage() {
         </div>
       </Surface>
 
-      <Surface variant="card" className="!p-5">
+      <Surface variant="settingsPanel" className="!p-5">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <SectionTitle>Últimos 30 dias</SectionTitle>
@@ -484,7 +484,7 @@ export default function CaseDetailPage() {
         />
       </Surface>
 
-      <Surface variant="card" className="!p-5">
+      <Surface variant="settingsPanel" className="!p-5">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <SectionTitle>Itens da caixa</SectionTitle>
@@ -612,7 +612,7 @@ export default function CaseDetailPage() {
         </div>
       </Surface>
 
-      <Surface variant="card" className="!p-5">
+      <Surface variant="settingsPanel" className="!p-5">
         <SectionTitle className="mb-3">Configuração</SectionTitle>
         <div className="grid gap-x-8 sm:grid-cols-2">
           <div>

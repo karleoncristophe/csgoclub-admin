@@ -270,14 +270,14 @@ export default function DashboardLayout() {
         {sidebar}
       </aside>
 
-      <div className="mx-auto flex h-full w-full max-w-[1600px] overflow-hidden flex-col lg:flex-row">
+      <div className="flex h-full w-full flex-col overflow-hidden lg:flex-row">
         <aside
           className={`hidden lg:sticky lg:top-0 lg:h-dvh ${asideClass} lg:flex`}
         >
           {sidebar}
         </aside>
 
-        <div className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <header className={surfaceClass('mobileHeader')}>
             <button
               type="button"
@@ -311,7 +311,7 @@ export default function DashboardLayout() {
             <ThemeToggle />
           </div>
           <PlatformDataEnvironmentBanner />
-          <main className="scrollbar-edge min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 lg:px-8">
+          <main className="scrollbar-edge min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
             <Suspense
               fallback={
                 <div className="flex min-h-[min(50vh,28rem)] flex-col items-center justify-center gap-3">

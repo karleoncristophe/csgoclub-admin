@@ -22,6 +22,7 @@ import {
   Wallet,
   Settings,
   ShieldCheck,
+  Sparkles,
   Users,
 } from 'lucide-react'
 import { useGetMeQuery } from '@/redux/store/api/auth/api.auth'
@@ -78,6 +79,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
       { href: '/dashboard/battles', label: 'Battles', Icon: Swords },
       { href: '/dashboard/arena', label: 'Arena', Icon: Crosshair },
       { href: '/dashboard/arena/plays', label: 'Jogadas', Icon: Target },
+      { href: '/dashboard/arena/crate-opens', label: 'Aberturas Arena', Icon: Sparkles },
     ],
   },
   {
@@ -99,6 +101,7 @@ function navItemActive(pathname: string, href: string) {
       return true
     }
     if (pathname.startsWith('/dashboard/arena/plays')) return false
+    if (pathname.startsWith('/dashboard/arena/crate-opens')) return false
     return pathname.startsWith('/dashboard/arena/')
   }
   return pathname === href || pathname.startsWith(`${href}/`)

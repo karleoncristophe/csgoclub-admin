@@ -1,6 +1,7 @@
 import { Factory, FlaskConical } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { caseOpensApi } from '@/redux/store/api/case-opens/api.case-opens'
+import { arenaApi } from '@/redux/store/api/arena/api.arena'
 import { metricsApi } from '@/redux/store/api/metrics/api.metrics'
 import { usersApi } from '@/redux/store/api/users/api.users'
 import { setPlatformDataEnvironment } from '@/redux/store/slices/platformDataEnvironmentSlice'
@@ -23,6 +24,7 @@ export function PlatformDataEnvironmentToggle({
     dispatch(setPlatformDataEnvironment(next))
     dispatch(metricsApi.util.resetApiState())
     dispatch(caseOpensApi.util.resetApiState())
+    dispatch(arenaApi.util.resetApiState())
     dispatch(usersApi.util.resetApiState())
   }
 

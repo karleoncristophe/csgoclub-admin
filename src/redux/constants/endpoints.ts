@@ -103,6 +103,8 @@ export const BATTLES_ADMIN = {
 export const ARENA = {
   CRATES: '/admin/arena/crates',
   CRATE_BY_ID: (id: string) => `/admin/arena/crates/${id}`,
+  CRATE_OPENS: '/admin/arena/crate-opens',
+  CRATE_OPEN_BY_ID: (openId: string) => `/admin/arena/crate-opens/${openId}`,
   PRICING: '/admin/arena/pricing',
   PRICING_HISTORY: '/admin/arena/pricing/history',
   MATCHES: '/admin/arena/matches',

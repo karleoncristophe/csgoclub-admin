@@ -1,6 +1,10 @@
 import { createApi } from '@reduxjs/toolkit/query/react'
 import { ARENA } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
+import {
+  omitDataEnvironmentQueryArg,
+  type WithPlatformDataEnvironment,
+} from '@/utils/platformDataEnvironmentStorage'
 
 export const ARENA_RARITIES = [
   'common',
@@ -218,10 +222,124 @@ export type GetArenaMatchesParams = {
   crateId?: string
 }
 
+export type ArenaCrateOpenUser = {
+  _id: string
+  name: string
+  steamId?: string
+  avatar?: string
+  avatarMedium?: string
+  avatarFull?: string
+}
+
+export type ArenaCrateOpenCrate = {
+  _id: string
+  name: string
+  slug: string
+  imageUrl?: string
+  rarity?: string
+}
+
+export type ArenaCrateOpenListItem = {
+  _id: string
+  crateId: string
+  userId: string
+  matchId?: string
+  inventoryItemId: string
+  wonSkinName: string
+  pricePaid: number
+  itemValue: number
+  currency: string
+  valueUsd: number
+  valueBrl: number
+  valueEur: number
+  isTestOpen: boolean
+  wasRerolled: boolean
+  originalRolledSkinName?: string
+  dropResolutionMethod: 'direct' | 'reroll' | 'fallback'
+  rerollAttempts: number
+  disposition: 'converted'
+  dispositionResolvedAt?: string
+  convertedAmount?: number
+  wonItemImage?: string
+  wonItemRarityName?: string
+  wonItemRarityColor?: string
+  createdAt?: string
+  crate: ArenaCrateOpenCrate
+  user?: ArenaCrateOpenUser
+}
+
+export type ArenaCrateOpenDetailItem = {
+  skinName: string
+  image?: string
+  rarityName?: string
+  rarityColor?: string
+  probability: number
+  valueBrl?: number
+  valueUsd?: number
+  valueEur?: number
+  isWon: boolean
+}
+
+export type ArenaCrateOpenDetail = ArenaCrateOpenListItem & {
+  bankBalanceBefore: number
+  bankInjection: number
+  bankBalanceAfter: number
+  requiredBankBalance: number
+  coveredByOpenPrice: boolean
+  bankField: 'bankBalanceBrl' | 'bankBalanceUsd' | 'bankBalanceEur'
+  crateItems: ArenaCrateOpenDetailItem[]
+}
+
+export type ArenaCrateOpenTopWonItem = {
+  openId: string
+  skinName: string
+  image?: string
+  rarityName?: string
+  rarityColor?: string
+  itemValue: number
+  currency: string
+  crateName?: string
+  userName?: string
+  createdAt?: string
+}
+
+export type ArenaCrateOpensResponse = {
+  data: ArenaCrateOpenListItem[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  summary: {
+    totalOpens: number
+    totalPaid: number
+    totalWonValue: number
+    convertedCount: number
+    testOpensCount: number
+    topWonItem?: ArenaCrateOpenTopWonItem | null
+  }
+}
+
+export type GetArenaCrateOpensParams = WithPlatformDataEnvironment<{
+  page?: number
+  limit?: number
+  crateId?: string
+  matchId?: string
+  userId?: string
+  search?: string
+}>
+
 export const arenaApi = createApi({
   reducerPath: 'arenaApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['ArenaCrates', 'ArenaCrate', 'ArenaPlayPricing', 'ArenaMatches', 'ArenaMatch'],
+  tagTypes: [
+    'ArenaCrates',
+    'ArenaCrate',
+    'ArenaPlayPricing',
+    'ArenaMatches',
+    'ArenaMatch',
+    'ArenaCrateOpens',
+    'ArenaCrateOpen',
+  ],
   refetchOnMountOrArgChange: true,
   endpoints: (builder) => ({
     getArenaCrates: builder.query<ArenaCrate[], void>({
@@ -311,6 +429,36 @@ export const arenaApi = createApi({
       query: (id) => ({ url: ARENA.MATCH_BY_ID(id), method: 'GET' }),
       providesTags: (_result, _error, id) => [{ type: 'ArenaMatch', id }],
     }),
+    getArenaCrateOpens: builder.query<
+      ArenaCrateOpensResponse,
+      GetArenaCrateOpensParams | void
+    >({
+      query: (params) => {
+        const clean = params ? omitDataEnvironmentQueryArg(params) : undefined
+        return {
+          url: ARENA.CRATE_OPENS,
+          method: 'GET',
+          params: {
+            ...(clean?.page != null ? { page: clean.page } : {}),
+            ...(clean?.limit != null ? { limit: clean.limit } : {}),
+            ...(clean?.crateId ? { crateId: clean.crateId } : {}),
+            ...(clean?.matchId ? { matchId: clean.matchId } : {}),
+            ...(clean?.userId ? { userId: clean.userId } : {}),
+            ...(clean?.search ? { search: clean.search } : {}),
+          },
+        }
+      },
+      providesTags: ['ArenaCrateOpens'],
+    }),
+    getArenaCrateOpenById: builder.query<ArenaCrateOpenDetail, string>({
+      query: (openId) => ({
+        url: ARENA.CRATE_OPEN_BY_ID(openId),
+        method: 'GET',
+      }),
+      providesTags: (_result, _error, openId) => [
+        { type: 'ArenaCrateOpen', id: openId },
+      ],
+    }),
   }),
 })
 
@@ -325,4 +473,6 @@ export const {
   useGetArenaPlayPricingHistoryQuery,
   useGetArenaMatchesQuery,
   useGetArenaMatchByIdQuery,
+  useGetArenaCrateOpensQuery,
+  useGetArenaCrateOpenByIdQuery,
 } = arenaApi

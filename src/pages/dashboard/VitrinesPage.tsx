@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Button } from '@/components/ui/Button'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { IconButton } from '@/components/ui/IconButton'
 import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { SearchableMultiSelect } from '@/components/ui/SearchableMultiSelect'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { TextBadge } from '@/components/StatusPill'
@@ -90,6 +91,7 @@ export default function VitrinesPage() {
   const [createSortOrder, setCreateSortOrder] = useState('0')
   const [createActive, setCreateActive] = useState(true)
   const [createCaseIds, setCreateCaseIds] = useState<string[]>([])
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editNameI18n, setEditNameI18n] = useState(emptyLocaleMap)
@@ -134,6 +136,17 @@ export default function VitrinesPage() {
     setCreateCaseIds([])
   }
 
+  const openCreateModal = () => {
+    resetCreateForm()
+    setCreateModalOpen(true)
+  }
+
+  const closeCreateModal = () => {
+    if (createState.isLoading) return
+    setCreateModalOpen(false)
+    resetCreateForm()
+  }
+
   const startEdit = (vitrine: CaseVitrine) => {
     setEditingId(vitrine._id)
     setEditNameI18n(preloadNameI18n(vitrine))
@@ -160,8 +173,7 @@ export default function VitrinesPage() {
     setEditCaseIds([])
   }
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleCreate = async () => {
     if (!createNameNormalized || createNameTaken) return
 
     const nameI18n = toLocalePayload(createNameI18n)
@@ -178,6 +190,7 @@ export default function VitrinesPage() {
         active: createActive,
         caseIds: createCaseIds,
       }).unwrap()
+      setCreateModalOpen(false)
       resetCreateForm()
     } catch {
       // mutation state
@@ -328,78 +341,15 @@ export default function VitrinesPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle subtitle="A vitrine Hero é fixa e alimenta o banner da home. As demais agrupam seções do catálogo.">
-        Vitrines
-      </PageTitle>
-
-      <Surface variant="settingsPanel" className="!p-5">
-        <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <PageTitle subtitle="A vitrine Hero é fixa e alimenta o banner da home. As demais agrupam seções do catálogo.">
+          Vitrines
+        </PageTitle>
+        <Button type="button" className="gap-2" onClick={openCreateModal}>
+          <Plus className="h-4 w-4" />
           Nova vitrine
-        </ThemeText>
-        <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-          Crie seções do catálogo (ex.: Edição Limitada). Para a faixa do banner, edite a
-          vitrine Hero na lista abaixo.
-        </ThemeText>
-
-        <form onSubmit={handleCreate} className="space-y-4">
-          {renderLocaleTitleFields(createNameI18n, setCreateNameLocale, 'create')}
-
-          {renderLocaleDescriptionFields(
-            createDescriptionI18n,
-            setCreateDescriptionLocale,
-            'create',
-          )}
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Input
-              label="Ordem no site"
-              name="createSortOrder"
-              type="number"
-              min={0}
-              step={1}
-              value={createSortOrder}
-              onChange={(e) => setCreateSortOrder(e.target.value)}
-            />
-            <div className="flex items-end pb-1">
-              <Checkbox
-                label="Ativa no site"
-                checked={createActive}
-                onChange={(e) => setCreateActive(e.target.checked)}
-              />
-            </div>
-          </div>
-
-          {createNameTaken ? (
-            <ThemeText as="p" tone="danger" className="text-sm">
-              Já existe uma vitrine com este nome.
-            </ThemeText>
-          ) : null}
-
-          {createNameNormalized ? (
-            renderCasePicker(createCaseIds, setCreateCaseIds, createState.isLoading, {})
-          ) : (
-            <ThemeText as="p" tone="faint" className="text-sm">
-              Informe o título (pt-BR) da vitrine para buscar e adicionar caixas.
-            </ThemeText>
-          )}
-
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              isLoading={createState.isLoading}
-              disabled={!createNameNormalized || createNameTaken}
-            >
-              Criar vitrine
-            </Button>
-          </div>
-        </form>
-
-        {createState.isError ? (
-          <ThemeText as="p" tone="danger" className="mt-3 text-sm">
-            {getErrorMessage(createState.error)}
-          </ThemeText>
-        ) : null}
-      </Surface>
+        </Button>
+      </div>
 
       <Surface variant="card" className="!p-0">
         {isLoading ? (
@@ -578,6 +528,81 @@ export default function VitrinesPage() {
           </p>
         ) : null}
       </Surface>
+
+      <Modal
+        open={createModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeCreateModal()
+          else setCreateModalOpen(true)
+        }}
+        title="Nova vitrine"
+        description="Crie seções do catálogo (ex.: Edição Limitada). Para a faixa do banner, edite a vitrine Hero na lista."
+        size="xl"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeCreateModal}
+              disabled={createState.isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              isLoading={createState.isLoading}
+              disabled={!createNameNormalized || createNameTaken}
+              onClick={() => void handleCreate()}
+            >
+              Criar vitrine
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {renderLocaleTitleFields(createNameI18n, setCreateNameLocale, 'create')}
+          {renderLocaleDescriptionFields(
+            createDescriptionI18n,
+            setCreateDescriptionLocale,
+            'create',
+          )}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              label="Ordem no site"
+              name="createSortOrder"
+              type="number"
+              min={0}
+              step={1}
+              value={createSortOrder}
+              onChange={(e) => setCreateSortOrder(e.target.value)}
+            />
+            <div className="flex items-end pb-1">
+              <Checkbox
+                label="Ativa no site"
+                checked={createActive}
+                onChange={(e) => setCreateActive(e.target.checked)}
+              />
+            </div>
+          </div>
+          {createNameTaken ? (
+            <ThemeText as="p" tone="danger" className="text-sm">
+              Já existe uma vitrine com este nome.
+            </ThemeText>
+          ) : null}
+          {createNameNormalized ? (
+            renderCasePicker(createCaseIds, setCreateCaseIds, createState.isLoading, {})
+          ) : (
+            <ThemeText as="p" tone="faint" className="text-sm">
+              Informe o título (pt-BR) da vitrine para buscar e adicionar caixas.
+            </ThemeText>
+          )}
+          {createState.isError ? (
+            <ThemeText as="p" tone="danger" className="text-sm">
+              {getErrorMessage(createState.error)}
+            </ThemeText>
+          ) : null}
+        </div>
+      </Modal>
     </div>
   )
 }

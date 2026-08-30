@@ -1,4 +1,4 @@
-import type { DocumentationEnumGroup } from './types'
+import type { DocumentationEnumGroup, DocumentationField } from './types'
 
 export const DROP_METHOD_ENUMS: DocumentationEnumGroup = {
   title: 'Como o item foi entregue',
@@ -55,7 +55,7 @@ export const WALLET_BALANCE_ENUMS: DocumentationEnumGroup = {
     {
       code: 'Total para caixas',
       label: 'Quanto pode gastar abrindo',
-      hint: 'Soma do saldo real + bônus disponível.',
+      hint: 'Soma do saldo real + bônus disponível. Gastos consomem bônus primeiro.',
     },
     {
       code: 'Sacável',
@@ -167,3 +167,171 @@ export const CASE_EDITOR_FIELDS: DocumentationEnumGroup = {
     },
   ],
 }
+
+export const UPGRADE_FORMULA_FIELDS: DocumentationField[] = [
+  {
+    name: 'chancePercent',
+    label: 'Chance de vitória',
+    description:
+      '(valor apostado ÷ valor do alvo) × 71, limitada entre 1% e 95%. Ex.: aposta 100 em alvo 1000 → 7,1%.',
+  },
+  {
+    name: 'idealTarget',
+    label: 'Alvo ideal',
+    description:
+      'Inversa da fórmula: (aposta × 71) ÷ chance desejada. Serve para sugerir skin alvo com a % que o jogador quer.',
+  },
+  {
+    name: 'winTickets',
+    label: 'Tickets de vitória',
+    description:
+      'Pool de 100.000 tickets. Vitória = floor(chance% / 100 × 100.000). O ponteiro cai num ticket; se estiver na faixa win, ganha.',
+  },
+]
+
+export const UPGRADE_RULE_ENUMS: DocumentationEnumGroup = {
+  title: 'Regras rápidas do upgrade',
+  entries: [
+    {
+      code: 'Fator 71',
+      label: 'Margem embutida na roleta',
+      hint: 'Já inclui a vantagem da casa — não some margem extra em cima.',
+    },
+    {
+      code: 'Mín. 1%',
+      label: 'Piso para jogar',
+      hint: 'Abaixo de 1% o upgrade não abre.',
+    },
+    {
+      code: 'Máx. 95%',
+      label: 'Teto absoluto',
+      hint: 'Mesmo apostando acima do alvo, a chance não passa de 95%.',
+    },
+    {
+      code: 'Faixas de derrota',
+      label: 'Só visual',
+      hint: 'Redistribuem onde o ponteiro para no arco perdido — não mudam P(vitória).',
+    },
+  ],
+}
+
+export const ARENA_SCRIPT_ENUMS: DocumentationEnumGroup = {
+  title: 'Pesos do script da partida',
+  description: 'Sorteio do grupo de raridade da partida (soma 100):',
+  entries: [
+    {
+      code: 'COMMON',
+      label: '94%',
+      hint: 'Partida comum — progresso mais frequente em crates baratas.',
+    },
+    {
+      code: 'RARE',
+      label: '5%',
+      hint: 'Partida rara.',
+    },
+    {
+      code: 'JACKPOT',
+      label: '1%',
+      hint: 'Partida jackpot — raridades altas no script.',
+    },
+  ],
+}
+
+export const ARENA_PROGRESS_ENUMS: DocumentationEnumGroup = {
+  title: 'Progresso → crate',
+  entries: [
+    {
+      code: '5 destroys',
+      label: '1 crate',
+      hint: 'A cada 5 alvos destruídos daquela raridade, o jogador recebe 1 crate da mesma raridade.',
+    },
+    {
+      code: 'Preço da jogada',
+      label: 'Lista − desconto',
+      hint: 'Cobrado na carteira (ou ticket). Moeda congelada na entrada da partida.',
+    },
+    {
+      code: 'Banco da crate',
+      label: 'Sem margem',
+      hint: 'Cada abertura injeta o preço cheio (não divide por 1+margem como nas caixas).',
+    },
+  ],
+}
+
+export const BATTLE_MODE_ENUMS: DocumentationEnumGroup = {
+  title: 'Modos de battle',
+  entries: [
+    {
+      code: 'classic',
+      label: 'Clássico',
+      hint: 'Ganha quem (ou o time que) acumula o maior valor total de drops.',
+    },
+    {
+      code: 'crazy',
+      label: 'Crazy',
+      hint: 'Ganha quem acumula o menor valor — inverte a lógica.',
+    },
+  ],
+}
+
+export const BATTLE_FORMAT_ENUMS: DocumentationEnumGroup = {
+  title: 'Formatos',
+  entries: [
+    {
+      code: 'solo / FFA',
+      label: 'Todos contra todos',
+      hint: 'Cada assento compete sozinho.',
+    },
+    {
+      code: '2v2',
+      label: 'Dois times',
+      hint: 'Soma os drops do time; vitória coletiva.',
+    },
+    {
+      code: '3v3',
+      label: 'Dois times de três',
+      hint: 'Mesma lógica de time, com seis assentos.',
+    },
+  ],
+}
+
+export const CAMBIO_PROVIDER_ENUMS: DocumentationEnumGroup = {
+  title: 'Cadeia de câmbio',
+  description: 'Ordem de tentativa das cotações (todas em base USD):',
+  entries: [
+    {
+      code: 'SkinsBack',
+      label: 'Principal (sempre primeiro)',
+      hint: 'Mesma cotação do catálogo — casa e jogador não se desalinham.',
+    },
+    {
+      code: 'AwesomeAPI / Frankfurter',
+      label: 'Reserva',
+      hint: 'Só entram se a SkinsBack falhar. A reserva ativa é a marcada em Câmbio.',
+    },
+  ],
+}
+
+export const DEPOSIT_CREDIT_FIELDS: DocumentationField[] = [
+  {
+    name: 'paidWallet',
+    label: 'Pago na carteira',
+    description: 'Valor pago convertido para a moeda da carteira via câmbio (pivô USD).',
+  },
+  {
+    name: 'cashbackWallet',
+    label: 'Cashback',
+    description:
+      'percentual × valor creditado, limitado ao teto por moeda (BRL/USD/EUR) configurado na API de pagamento.',
+  },
+  {
+    name: 'couponWallet',
+    label: 'Bônus do cupom',
+    description: 'Bônus em USD do cupom convertido para a carteira e somado ao crédito.',
+  },
+  {
+    name: 'totalWallet',
+    label: 'Total creditado',
+    description: 'paidWallet + cashback + cupom.',
+  },
+]

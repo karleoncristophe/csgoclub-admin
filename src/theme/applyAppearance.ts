@@ -14,7 +14,7 @@ import {
 } from './themeConfig'
 import { hasThemeShareParams, parseThemeShareParams } from './themeSearchParams'
 
-const APPEARANCE_KEY = 'cs2club-admin-theme-appearance'
+const APPEARANCE_KEY = 'cs2club-admin-theme-appearance-v2'
 export const VIBRANT_PALETTE_STORAGE_KEY = 'cs2club-admin-vibrant-palette'
 const LEGACY_COLOR_KEY = 'cs2club-admin-color-theme'
 const NAMED_PRESETS: Exclude<ColorTheme, 'custom'>[] = [

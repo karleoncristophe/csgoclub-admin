@@ -30,13 +30,25 @@ export function useDocumentationFilters() {
     setSelectedCategory('all')
   }
 
+  const hasFilters = Boolean(
+    searchQuery.trim() || selectedCategory !== 'all' || selectedTag,
+  )
+
+  const clearFilters = () => {
+    setSearchQuery('')
+    setSelectedCategory('all')
+    setSelectedTag(null)
+  }
+
   return {
     searchQuery,
     setSearchQuery,
     selectedCategory,
     selectedTag,
     filteredItems,
+    hasFilters,
     handleCategoryClick,
     handleTagClick,
+    clearFilters,
   }
 }

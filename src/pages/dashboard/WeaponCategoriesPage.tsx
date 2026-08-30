@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { IconButton } from '@/components/ui/IconButton'
 import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
@@ -47,6 +48,7 @@ export default function WeaponCategoriesPage() {
 
   const [createName, setCreateName] = useState('')
   const [createTax, setCreateTax] = useState('0')
+  const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editTax, setEditTax] = useState('0')
@@ -81,8 +83,23 @@ export default function WeaponCategoriesPage() {
     setEditTax('0')
   }
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const resetCreateForm = () => {
+    setCreateName('')
+    setCreateTax('0')
+  }
+
+  const openCreateModal = () => {
+    resetCreateForm()
+    setCreateModalOpen(true)
+  }
+
+  const closeCreateModal = () => {
+    if (createState.isLoading) return
+    setCreateModalOpen(false)
+    resetCreateForm()
+  }
+
+  const handleCreate = async () => {
     if (!createNameNormalized || createNameTaken) return
 
     try {
@@ -90,8 +107,8 @@ export default function WeaponCategoriesPage() {
         name: createNameNormalized,
         taxPercent: clampTax(Number(createTax)),
       }).unwrap()
-      setCreateName('')
-      setCreateTax('0')
+      setCreateModalOpen(false)
+      resetCreateForm()
     } catch {
       // error handled by mutation state
     }
@@ -142,68 +159,15 @@ export default function WeaponCategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle subtitle="Taxas por tipo de arma (porcentagem sobre o preço base do catálogo).">
-        Categorias
-      </PageTitle>
-
-      <Surface variant="settingsPanel" className="!p-5">
-        <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <PageTitle subtitle="Taxas por tipo de arma (porcentagem sobre o preço base do catálogo).">
+          Categorias
+        </PageTitle>
+        <Button type="button" className="gap-2" onClick={openCreateModal}>
+          <Plus className="h-4 w-4" />
           Nova categoria
-        </ThemeText>
-        <ThemeText as="p" tone="secondary" className="mb-4 text-xs">
-          Informe um nome livre (ex.: Charm, Sticker) ou um tipo de arma ainda não cadastrado.
-        </ThemeText>
-
-        <form
-          onSubmit={handleCreate}
-          className="mb-2 grid gap-4 md:grid-cols-[1fr_160px_auto] md:items-end"
-        >
-          <div>
-            <Input
-              label="Nome da categoria"
-              name="createName"
-              list="weapon-category-suggestions"
-              placeholder="Ex.: Charm, Rifle..."
-              value={createName}
-              onChange={(e) => setCreateName(e.target.value)}
-            />
-            <datalist id="weapon-category-suggestions">
-              {nameSuggestions.map((name) => (
-                <option key={name} value={name} />
-              ))}
-            </datalist>
-            {createNameTaken ? (
-              <ThemeText as="p" tone="secondary" className="mt-1 text-xs text-red-500">
-                Já existe uma categoria com este nome.
-              </ThemeText>
-            ) : null}
-          </div>
-
-          <Input
-            label="Taxa (%)"
-            name="createTax"
-            type="number"
-            min={0}
-            step="0.01"
-            value={createTax}
-            onChange={(e) => setCreateTax(e.target.value)}
-          />
-
-          <Button
-            type="submit"
-            isLoading={createState.isLoading}
-            disabled={!createNameNormalized || createNameTaken}
-          >
-            Criar
-          </Button>
-        </form>
-
-        {createState.isError ? (
-          <p className={`mb-0 ${surfaceClass('errorBanner')}`}>
-            {getErrorMessage(createState.error)}
-          </p>
-        ) : null}
-      </Surface>
+        </Button>
+      </div>
 
       {isLoading ? (
         <ThemeText as="p" tone="secondary" className="py-8 text-sm">
@@ -323,6 +287,74 @@ export default function WeaponCategoriesPage() {
           {getErrorMessage(deleteState.error)}
         </p>
       ) : null}
+
+      <Modal
+        open={createModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeCreateModal()
+          else setCreateModalOpen(true)
+        }}
+        title="Nova categoria"
+        description="Informe um nome livre (ex.: Charm, Sticker) ou um tipo de arma ainda não cadastrado."
+        size="md"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeCreateModal}
+              disabled={createState.isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              isLoading={createState.isLoading}
+              disabled={!createNameNormalized || createNameTaken}
+              onClick={() => void handleCreate()}
+            >
+              Criar
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <Input
+              label="Nome da categoria"
+              name="createName"
+              list="weapon-category-suggestions"
+              placeholder="Ex.: Charm, Rifle..."
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+            />
+            <datalist id="weapon-category-suggestions">
+              {nameSuggestions.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+            {createNameTaken ? (
+              <ThemeText as="p" tone="secondary" className="mt-1 text-xs text-red-500">
+                Já existe uma categoria com este nome.
+              </ThemeText>
+            ) : null}
+          </div>
+          <Input
+            label="Taxa (%)"
+            name="createTax"
+            type="number"
+            min={0}
+            step="0.01"
+            value={createTax}
+            onChange={(e) => setCreateTax(e.target.value)}
+          />
+          {createState.isError ? (
+            <p className={surfaceClass('errorBanner')}>
+              {getErrorMessage(createState.error)}
+            </p>
+          ) : null}
+        </div>
+      </Modal>
     </div>
   )
 }

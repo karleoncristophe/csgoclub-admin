@@ -13,7 +13,7 @@ export function PageTitle({
         {children}
       </h1>
       {subtitle ? (
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted">
           {subtitle}
         </p>
       ) : null}

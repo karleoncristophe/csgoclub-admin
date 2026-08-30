@@ -1,3 +1,4 @@
+import { DOCUMENTATION_CATEGORIES } from './constants'
 import type { DocumentationCategory, DocumentationItem } from './types'
 
 function normalizeText(text: string): string {
@@ -62,4 +63,13 @@ export function filterDocumentation(
 
     return searchable.some((text) => matchesQuery(trimmedQuery, text))
   })
+}
+
+export function groupDocumentationByCategory(items: DocumentationItem[]) {
+  return DOCUMENTATION_CATEGORIES.filter((category) => category.id !== 'all')
+    .map((category) => ({
+      ...category,
+      items: items.filter((item) => item.category === category.id),
+    }))
+    .filter((group) => group.items.length > 0)
 }

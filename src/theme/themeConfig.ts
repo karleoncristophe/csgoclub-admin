@@ -3,7 +3,15 @@ import { hexToOklch } from './oklch'
 export type Theme = 'light' | 'dark'
 export type ColorTheme = 'custom' | 'default' | 'sky' | 'lavender' | 'mint' | 'ember' | 'spotify' | 'discord'
 export type RadiusScale = 'none' | 'sm' | 'md' | 'lg' | 'xl'
-export type FontId = 'inter' | 'geist' | 'outfit' | 'jakarta' | 'ibm-plex' | 'nunito'
+export type FontId =
+  | 'rajdhani'
+  | 'pixelify'
+  | 'inter'
+  | 'geist'
+  | 'outfit'
+  | 'jakarta'
+  | 'ibm-plex'
+  | 'nunito'
 
 export type ThemeAppearance = {
   accentLightness: number
@@ -30,6 +38,18 @@ export const RADIUS_SCALE: Record<
 export const radiusHint = (radius: RadiusScale) => RADIUS_SCALE[radius].hint
 
 export const FONT_OPTIONS: Array<{ id: FontId; label: string; family: string; href?: string }> = [
+  {
+    id: 'rajdhani',
+    label: 'Rajdhani (CS)',
+    family: '"Rajdhani", ui-sans-serif, system-ui, sans-serif',
+    href: 'https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap',
+  },
+  {
+    id: 'pixelify',
+    label: 'Pixelify Sans',
+    family: '"Pixelify Sans", ui-sans-serif, system-ui, sans-serif',
+    href: 'https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap',
+  },
   { id: 'inter', label: 'Inter', family: '"Inter", ui-sans-serif, system-ui, sans-serif', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap' },
   { id: 'geist', label: 'Geist', family: '"Geist", ui-sans-serif, system-ui, sans-serif', href: 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap' },
   { id: 'outfit', label: 'Outfit', family: '"Outfit", ui-sans-serif, system-ui, sans-serif', href: 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap' },
@@ -39,7 +59,7 @@ export const FONT_OPTIONS: Array<{ id: FontId; label: string; family: string; hr
 ]
 
 export const COLOR_PRESETS: Array<{ id: Exclude<ColorTheme, 'custom'>; label: string; hex: string; baseChroma?: number }> = [
-  { id: 'default', label: 'CS2Club', hex: '#5c6fff' },
+  { id: 'default', label: 'CS2Club', hex: '#5b9a3c' },
   { id: 'sky', label: 'Sky', hex: '#0b86d4' },
   { id: 'lavender', label: 'Lavender', hex: '#a43ee8' },
   { id: 'mint', label: 'Mint', hex: '#17aa85' },
@@ -58,7 +78,7 @@ export function appearanceFromPreset(id: Exclude<ColorTheme, 'custom'>): ThemeAp
     baseChroma: preset.baseChroma ?? 0.015,
     radius: 'md',
     fieldRadius: 'lg',
-    fontId: 'inter',
+    fontId: 'rajdhani',
     preset: preset.id,
   }
 }

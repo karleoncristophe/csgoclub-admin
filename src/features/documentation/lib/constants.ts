@@ -1,77 +1,90 @@
 import {
+  ArrowLeftRight,
   BookOpenText,
   Calculator,
-  Coins,
+  Crosshair,
   Gem,
   HelpCircle,
   Package,
   Settings,
+  Swords,
+  TicketPercent,
   Users,
   Wallet,
 } from 'lucide-react'
 import {
+  ARENA_PROGRESS_ENUMS,
+  ARENA_SCRIPT_ENUMS,
+  BATTLE_FORMAT_ENUMS,
+  BATTLE_MODE_ENUMS,
+  CAMBIO_PROVIDER_ENUMS,
   CASE_EDITOR_FIELDS,
   CURRENCY_ENUMS,
+  DEPOSIT_CREDIT_FIELDS,
   DROP_METHOD_ENUMS,
   ECONOMY_PANEL_FIELDS,
   INVENTORY_STATUS_ENUMS,
+  UPGRADE_FORMULA_FIELDS,
+  UPGRADE_RULE_ENUMS,
   USER_TYPE_ENUMS,
   WALLET_BALANCE_ENUMS,
 } from '@/features/documentation/lib/documentationReference'
 import type { DocumentationCategory, DocumentationItem } from './types'
 
 export const DOCUMENTATION_DATA: DocumentationItem[] = [
+  // ── Visão geral ──────────────────────────────────────────
   {
     id: 'overview-1',
     category: 'visao-geral',
     question: 'Para que serve este painel?',
     answer:
-      'O CS2Club Admin é onde você monta as caixas de skins, acompanha usuários, confere preços do catálogo e opera o dia a dia da plataforma.\n\nPense nele como a “cozinha” do site: aqui você define o cardápio (itens e chances), o preço de cada caixa e acompanha o que os jogadores ganham.',
+      'O CS2Club Admin é a cozinha da plataforma: você monta caixas, opera modos de jogo (upgrade, arena, battles), acompanha usuários e configura câmbio e pagamentos.\n\nTudo que o jogador vê no site passa por regras definidas aqui ou no backend — esta documentação resume essas regras no tom operacional.',
     bullets: [
-      'Caixas: montar, precificar e publicar.',
-      'Usuários: saldo, tipo de conta e inventário.',
-      'Skins: catálogo com preços reais da SkinsBack.',
-      'Categorias: taxa por tipo de arma.',
+      'Catálogo: skins, categorias (taxa), vitrines e banners.',
+      'Economia: caixas, banco virtual, upgrade, arena e battles.',
+      'Financeiro: câmbio, APIs de pagamento, depósitos e cupons.',
+      'Pessoas: usuários, influencers, inventário e KYC.',
     ],
     tags: ['visão geral', 'painel', 'operação'],
   },
   {
     id: 'overview-2',
     category: 'visao-geral',
-    question: 'Qual é o fluxo de uma caixa, do início ao fim?',
+    question: 'Qual é o fluxo principal do produto?',
     answer:
-      '1) Você escolhe as skins e define as chances.\n\n2) O sistema calcula quanto a caixa “devolve” em média (valor esperado).\n\n3) Você define o preço que o jogador paga para abrir.\n\n4) Na abertura, o valor esperado entra no banco virtual da caixa e o motor sorteia entre os itens que o banco consegue pagar.\n\n5) O jogador guarda a skin no inventário do site ou converte em saldo.',
+      'O jogador deposita (Pix/cripto) → joga com saldo nas carteiras BRL/USD/EUR → abre caixas, faz upgrade, joga arena ou entra em battles → guarda skins no inventário do site ou converte em saldo.\n\nCada modo tem economia própria. Não misture: caixa usa margem + banco virtual; upgrade usa fator 71; arena injeta preço cheio na crate; battle isola o bot do banco.',
     bullets: [
-      'Montar itens → calcular valor médio → definir preço → abrir → inventário ou saldo.',
-      'Cada caixa tem moeda e banco virtual próprios.',
-      'O banco virtual acumula o valor esperado e paga os itens entregues.',
+      'Produção vs Dev: visão do painel separa jogadores reais de influencers/teste.',
+      'Três carteiras por usuário; a ativa é a que gasta e recebe conversões.',
+      'Câmbio entra quando moedas diferem (depósito, FX entre carteiras, cobrança de caixa).',
     ],
-    tags: ['fluxo', 'caixa', 'visão geral'],
+    tags: ['fluxo', 'visão geral', 'carteira', 'modos'],
   },
   {
     id: 'overview-3',
     category: 'visao-geral',
     question: 'Quais telas uso no dia a dia?',
     answer:
-      'Depende da sua função, mas o caminho mais comum é: Caixas (criar e revisar), Usuários (suporte e influencers), Skins (conferir preços) e Documentação (esta página).\n\nConfigurações serve para país e moeda padrão do painel.',
+      'Operação diária: Dashboard (métricas), Caixas, Usuários, Depósitos e Aberturas.\n\nConfiguração: Categorias, Câmbio (cotação + APIs), Cupons, Vitrines/Banners.\n\nModos: Battles (bots + histórico), Arena (crates, preços, plays). Documentação (esta página) é a referência rápida.',
     bullets: [
-      'Caixas → criar, editar, ativar/desativar.',
-      'Usuários → saldo, influencer, inventário do site.',
-      'Skins → buscar itens e ver preço com taxa.',
-      'Categorias → ajustar taxa por tipo de arma.',
+      'Câmbio → aba Câmbio (reserva FX) e aba APIs de pagamento (XGate/Woovi).',
+      'Battles → bots e battles recentes; create de bot no modal.',
+      'Arena → crates por raridade, preço global da jogada, histórico de plays.',
     ],
     tags: ['telas', 'navegação', 'operação'],
   },
+
+  // ── Caixas e economia ────────────────────────────────────
   {
     id: 've-1',
     category: 'caixas-economia',
     question: 'O que é valor esperado (VE)?',
     answer:
-      'É a média de quanto a caixa devolve em skins se milhares de pessoas abrirem.\n\nNão é o que uma pessoa vai ganhar na próxima abertura — é a média de longo prazo.\n\nExemplo simples: uma skin de $10 com 1% de chance contribui $0,10 ao VE. Some todas as skins e você tem o VE total da caixa.',
+      'É a média de quanto a caixa devolve em skins se milhares de pessoas abrirem.\n\nNão é o que uma pessoa ganha na próxima abertura — é a média de longo prazo.\n\nExemplo: skin de $10 com 1% de chance contribui $0,10 ao VE. Some todos os itens ativos e você tem o VE total.',
     bullets: [
-      'VE alto → caixa “pesada” em valor → preço de abertura tende a ser maior.',
-      'VE baixo → caixa barata, mas quase sempre skins de centavos.',
-      'Itens desligados ou com 0% de chance não entram na conta.',
+      'VE_item = preço × (chance / 100).',
+      'VE alto → caixa “pesada” → preço de abertura maior.',
+      'Itens desligados ou com 0% não entram na conta.',
     ],
     tags: ['valor esperado', 'VE', 'economia', 'caixa'],
   },
@@ -80,11 +93,11 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'Como o preço da caixa é definido?',
     answer:
-      'Você escolhe uma margem alvo (ex.: 30% de lucro). O sistema sugere um preço com base no VE.\n\nNa prática: preço sugerido = VE × (1 + margem). Com VE de $0,15 e margem de 30%, a sugestão fica em $0,195.\n\nVocê ainda pode aplicar desconto sobre o preço de tabela para chegar no preço final da vitrine.',
+      'Você escolhe uma margem alvo. O sistema sugere: preço de tabela = VE × (1 + margem%).\n\nCom VE $0,15 e margem 30%, a sugestão fica ~$0,195. Depois você pode aplicar desconto sobre a tabela para o preço final da vitrine.\n\nMargem real = (preço final − VE) / VE. Se o final ficar abaixo do VE, a casa perde no design — o painel avisa.',
     bullets: [
-      'Preço de tabela = referência “de catálogo”.',
+      'Preço de tabela = referência de catálogo.',
       'Preço final = o que o jogador paga de verdade.',
-      'Se o preço final ficar abaixo do VE, a casa perde no design — o painel avisa.',
+      'Injeção no banco por abertura = preço ÷ (1 + margem alvo).',
     ],
     enumGroups: [ECONOMY_PANEL_FIELDS],
     tags: ['preço', 'margem', 'desconto', 'caixa'],
@@ -94,11 +107,11 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'O que significa “elegível” na tabela de itens?',
     answer:
-      'É a pergunta: “esta skin pode sair agora?”\n\nNão confunda com a chance (Drop %). A chance diz o peso no sorteio; elegível diz se o banco virtual da caixa consegue pagar o item neste momento.\n\nItem que custa até o preço da abertura sai sempre — a própria abertura paga por ele. Item mais caro aparece como “Não (banco)” até o saldo alcançar o valor de mercado exato dele.',
+      'É a pergunta: “esta skin pode sair agora?”\n\nChance (Drop %) = peso na roleta. Elegível = o banco virtual consegue pagar o item neste momento.\n\nItem que custa até o preço da abertura sai sempre. Item mais caro só libera quando o saldo do banco ≥ valor de mercado dele.',
     bullets: [
       'Elegível = Sim → pode sair nesta abertura.',
-      'Não (banco) → item mais caro que a abertura; aguarda o banco acumular.',
-      'Pool 4/6 → quatro itens liberados, dois travados agora.',
+      'Não (banco) → item caro; aguarda o banco acumular.',
+      'Pool 4/6 → quatro liberados, dois travados agora.',
     ],
     enumGroups: [CASE_EDITOR_FIELDS],
     tags: ['elegível', 'drop', 'banco virtual', 'saldo'],
@@ -108,11 +121,11 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'Como funciona o motor de drop na prática?',
     answer:
-      'Não é sorteio puro. Toda abertura injeta o valor esperado no banco virtual e o sistema sorteia por chance entre o pool inteiro.\n\nSe o item sorteado não estiver liberado pelo banco, o sorteio é refeito só entre os elegíveis, mantendo o peso relativo de cada um (re-roll). Se nada estiver liberado, entrega o item mais barato (fallback).\n\nPor isso você pode ver 100 aberturas “Direto” com filler — o sorteio acertou algo já liberado.',
+      'Toda abertura injeta o valor esperado no banco e sorteia por chance entre o pool.\n\nSe o item sorteado estiver travado, o sistema refaz o sorteio só entre elegíveis (re-roll), mantendo pesos relativos. Se ninguém estiver liberado, entrega o mais barato (fallback).',
     bullets: [
       'Sorteio ponderado pelas chances que você definiu.',
-      'Item travado pelo banco tem chance zero — não entra no re-roll.',
-      'Fallback só acontece se nenhum item estiver liberado.',
+      'Item travado tem chance zero no re-roll.',
+      'Fallback só se nenhum item estiver liberado.',
     ],
     enumGroups: [DROP_METHOD_ENUMS],
     tags: ['motor de drop', 're-roll', 'fallback', 'sorteio'],
@@ -122,92 +135,258 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'O que é o banco virtual da caixa?',
     answer:
-      'É a reserva que decide quais itens podem sair. A cada abertura o sistema injeta nele o valor esperado — o preço pago dividido por (1 + margem alvo). Com margem de 30%, injeta preço ÷ 1,30.\n\nO saldo é acumulativo: conforme sobe, os itens mais caros que o preço da abertura vão sendo liberados, do mais barato para o mais caro, assim que o saldo alcança o valor de mercado exato de cada um.\n\nQuando alguém ganha um item, o valor exato dele sai do banco. Se o saldo cair abaixo do preço de outros itens caros, eles voltam a travar na hora e só liberam quando novas aberturas recompuserem o saldo.\n\nNo painel do influencer o banco de teste é separado do banco real.',
+      'É a reserva que decide quais itens podem sair. A cada abertura humana o sistema injeta preço ÷ (1 + margem alvo).\n\nQuando alguém ganha um item, o valor exato sai do banco. Se o saldo cair, itens caros travam de novo até novas aberturas recomporem o saldo.\n\nInfluencer usa ledger de teste separado. Caixas no mesmo economyPoolId compartilham o banco.',
     bullets: [
-      'Injeção por abertura = preço ÷ (1 + margem alvo).',
-      'Item até o preço da abertura sai sempre; mais caro exige saldo ≥ valor dele.',
-      'Ganhar um item retira o valor exato do banco.',
-      'Bot de battle só retira do banco (não paga abertura); o saldo para em zero.',
+      'Injeção = openPrice / (1 + margem%).',
+      'bankDelta = injeção − valor do item entregue.',
+      'Item ≤ preço da abertura: sempre elegível.',
+      'Bot de battle: bankDelta = 0 (não mexe no banco).',
     ],
-    tags: ['banco virtual', 'saldo', 'valor esperado', 'item caro', 'bot', 'battle'],
+    tags: ['banco virtual', 'saldo', 'valor esperado', 'pool', 'battle'],
   },
   {
     id: 'drop-4',
     category: 'caixas-economia',
     question: 'Onde vejo quanto uma caixa faturou e o que está liberado?',
     answer:
-      'Na lista de Caixas, clique no nome da caixa ou no ícone de gráfico para abrir os Detalhes.\n\nA tela mostra o faturamento e os prêmios pagos, o lucro e a margem realizada, o saldo atual do banco virtual, qual item está mais perto de liberar e uma tabela item a item com quantas vezes cada skin já saiu, quanto ela já pagou em prêmios e a situação dela no banco.\n\nO gráfico dos últimos 30 dias compara o que entrou (barra) com o que saiu em prêmios (linha).',
+      'Na lista de Caixas, abra os Detalhes. A tela mostra faturamento, prêmios, lucro, margem realizada, saldo do banco, próximo item a liberar e tabela item a item.\n\nO gráfico dos últimos 30 dias compara o que entrou com o que saiu em prêmios. A visão Produção/Dev filtra aberturas reais vs teste.',
     bullets: [
-      'Os números respeitam a visão: Produção mostra aberturas reais, Dev mostra as de teste.',
-      'Chance real ao lado da chance configurada revela desvios do sorteio.',
-      'A barra de progresso por item mostra quanto do saldo exigido o banco já cobre.',
-      'O botão Aberturas abre o histórico já filtrado por esta caixa.',
+      'Chance real ao lado da configurada revela desvios.',
+      'Barra de progresso = quanto do banco exigido já está coberto.',
+      'Botão Aberturas abre o histórico filtrado por esta caixa.',
     ],
     tags: ['detalhes', 'faturamento', 'banco virtual', 'elegível', 'caixa'],
-  },
-  {
-    id: 'battle-1',
-    category: 'caixas-economia',
-    question: 'Como funciona o bot de case battle?',
-    answer:
-      'O bot sorteia com a mesma elegibilidade do jogador (mesmo banco virtual e mesmas chances liberadas).\n\nO prêmio do bot não altera o banco da caixa — não injeta, não retira e não zera o saldo. Receita, payout e totalOpens continuam só das aberturas humanas.\n\nEle tem saldo próprio (começa em 1.000.000): cada rodada debita o preço; quando acaba, recarrega para 1.000.000. Se o bot vencer a battle, o pot humano fica com a casa.',
-    bullets: [
-      'Elegibilidade igual ao player no sorteio.',
-      'Prêmio do bot não mexe no banco da caixa.',
-      'Saldo do bot: paga a abertura; recarrega para 1M quando acaba.',
-      'Receita / payout / totalOpens só contam abertura humana.',
-    ],
-    tags: ['battle', 'bot', 'banco virtual', 'saldo', 'caixa'],
   },
   {
     id: 'case-1',
     category: 'caixas-economia',
     question: 'Como criar uma caixa passo a passo?',
     answer:
-      '1) Preencha nome, slug, moeda e imagem.\n\n2) Busque skins no catálogo e adicione na tabela.\n\n3) Ajuste as chances (Drop %) de cada item.\n\n4) Revise o painel de economia — VE, pool elegível e margem.\n\n5) Defina preço de tabela, desconto e preço final.\n\n6) Salve quando não houver alertas vermelhos.',
+      '1) Nome, slug, moeda e imagem.\n\n2) Busque skins e adicione na tabela.\n\n3) Ajuste Drop %.\n\n4) Revise VE, pool elegível e margem.\n\n5) Defina tabela, desconto e preço final.\n\n6) Salve sem alertas vermelhos.',
     bullets: [
-      'Use “Usar sugerido” para preço de tabela automático.',
-      'Confira se a soma das chances fecha em 100%.',
-      'Preset justo no editor ajuda a montar caixa de vitrine rápido.',
+      '“Usar sugerido” aplica o preço de tabela automático.',
+      'Soma das chances deve fechar ~100% (com tolerância).',
+      'Precisa existir ao menos um item ≤ preço da abertura.',
     ],
     tags: ['criar caixa', 'editor', 'passo a passo'],
-  },
-  {
-    id: 'case-2',
-    category: 'caixas-economia',
-    question: 'Para que serve o preset de teste no editor?',
-    answer:
-      'É um atalho para montar uma caixa de demonstração com skins de preços parecidos e chances balanceadas.\n\nServe para testar o painel e mostrar o produto — não substitui uma caixa de produção pensada para o seu público.\n\nCaixas antigas de teste (filler barato + item caro de vitrine) ainda podem existir no banco; o preset novo é mais justo para demo.',
-    tags: ['preset', 'teste', 'dev', 'editor'],
   },
   {
     id: 'case-3',
     category: 'caixas-economia',
     question: 'Por que um item caro não sai mesmo com chance configurada?',
     answer:
-      'Porque chance e liberação são coisas diferentes.\n\nA chance coloca o item na roleta. O banco virtual decide se ele pode sair agora.\n\nNuma caixa de $0,21 com Charm de $33, o item só libera quando o banco alcançar os $33 — mesmo que ele tenha 0,1% de chance no papel. A coluna “Banco exigido” mostra o valor e a estimativa de aberturas.',
+      'Chance coloca o item na roleta; o banco decide se ele pode sair agora.\n\nNuma caixa de $0,21 com Charm de $33, o item só libera quando o banco alcançar $33 — mesmo com 0,1% no papel.',
     bullets: [
-      'Injeção pequena por abertura → item caro demora mais para liberar.',
-      'Banco já cheio (muitas aberturas) → item caro pode sair mais cedo.',
-      'Alguém ganhou o item caro → o banco esvazia e ele trava de novo.',
+      'Injeção pequena → item caro demora mais.',
+      'Muitas aberturas → libera mais cedo.',
+      'Alguém ganhou o caro → banco esvazia e trava de novo.',
     ],
     tags: ['item caro', 'chance', 'banco virtual', 'saldo'],
   },
+
+  // ── Upgrade ──────────────────────────────────────────────
+  {
+    id: 'upgrade-1',
+    category: 'upgrade',
+    question: 'Como funciona o upgrade?',
+    answer:
+      'O jogador aposta skins do inventário (e opcionalmente saldo) contra uma skin alvo do catálogo.\n\nO valor do alvo usa o preço com taxa da categoria. A roleta decide vitória ou derrota: ganhou → fica com o alvo; perdeu → queima a aposta.\n\nA chance já embute a margem da casa via fator fixo 71 — estilo csgo.net.',
+    bullets: [
+      'Stake = soma dos itens apostados (+ cash da carteira, se houver).',
+      'Alvo = priceWithTax do catálogo (base × (1 + taxa%)).',
+      'Vitória entrega o alvo; derrota consome o stake.',
+    ],
+    tags: ['upgrade', 'chance', 'roleta', 'fator 71'],
+  },
+  {
+    id: 'upgrade-2',
+    category: 'upgrade',
+    question: 'Como a chance do upgrade é calculada?',
+    answer:
+      'chance% = (valor apostado ÷ valor do alvo) × 71, limitada entre 1% e 95%.\n\nExemplo: aposta 100 em alvo 1000 → (100/1000) × 71 = 7,1%.\n\nO pool tem 100.000 tickets; tickets de vitória = floor(chance%/100 × 100.000). O ponteiro sorteia um ticket — se cair na faixa win, ganha.',
+    fields: UPGRADE_FORMULA_FIELDS,
+    enumGroups: [UPGRADE_RULE_ENUMS],
+    tags: ['upgrade', 'cálculo', 'chance', 'tickets', '71'],
+  },
+  {
+    id: 'upgrade-3',
+    category: 'upgrade',
+    question: 'As faixas de derrota mudam a probabilidade?',
+    answer:
+      'Não. As faixas (muito perto, perto, meio, longe) só redistribuem onde o ponteiro para no arco perdido — para a animação não ficar sempre “colada” na borda.\n\nP(vitória) continua sendo exatamente a chance% calculada. Não use as faixas para “ajustar margem”.',
+    bullets: [
+      'Só estética / UX da roleta.',
+      'Margem da casa = fator 71 + teto 95%.',
+      'Abaixo de 1% o upgrade nem abre.',
+    ],
+    tags: ['upgrade', 'derrota', 'roleta', 'margem'],
+  },
+  {
+    id: 'upgrade-4',
+    category: 'upgrade',
+    question: 'Como sugerir um alvo para uma chance desejada?',
+    answer:
+      'Inversa da fórmula: alvo ideal = (aposta × 71) ÷ chance desejada.\n\nSe o jogador tem 50 de stake e quer ~10% de chance, o alvo ideal fica perto de 355. O site usa isso para filtrar skins do catálogo na faixa certa.',
+    tags: ['upgrade', 'alvo ideal', 'catálogo', 'chance'],
+  },
+
+  // ── Arena ────────────────────────────────────────────────
+  {
+    id: 'arena-1',
+    category: 'arena',
+    question: 'Como funciona a Arena de jogo?',
+    answer:
+      'O jogador paga a entrada (preço da jogada ou ticket), entra na partida Unity e destrói alvos. A cada 5 destroys de uma raridade, recebe 1 crate daquela raridade.\n\nA moeda da carteira é congelada na entrada. O script da partida sorteia o grupo COMMON (94%), RARE (5%) ou JACKPOT (1%).',
+    bullets: [
+      'Preço = lista − desconto (BRL/USD/EUR), configurável no admin.',
+      'Pagamento: carteira primeiro; ticket cobre o restante quando aplicável.',
+      'Duração ~40s + grace; disconnect tem grace curto antes de forfeit.',
+    ],
+    enumGroups: [ARENA_SCRIPT_ENUMS, ARENA_PROGRESS_ENUMS],
+    tags: ['arena', 'partida', 'progresso', 'crate', 'ticket'],
+  },
+  {
+    id: 'arena-2',
+    category: 'arena',
+    question: 'Como a crate da Arena sorteia e paga?',
+    answer:
+      'A abertura da crate usa elegibilidade parecida com a das caixas, mas sem margem: cada open injeta o preço cheio no banco daquela moeda (BRL/USD/EUR separados).\n\nO pool de tickets é 10.000.000 (mais fino que o das caixas). O prêmio credita só na moeda congelada da partida — sem fallback de FX cruzado.',
+    bullets: [
+      'Injeção = openPrice (inteiro), não preço ÷ (1+margem).',
+      'Bancos por moeda: bankBalanceBrl / Usd / Eur.',
+      'Só uma crate ativa por raridade no admin.',
+    ],
+    tags: ['arena', 'crate', 'banco', 'elegível', 'sorteio'],
+  },
+  {
+    id: 'arena-3',
+    category: 'arena',
+    question: 'O que configuro no admin da Arena?',
+    answer:
+      'Crates: nome, raridade, cor, itens e chances (soma 100%). Preço da jogada é global por moeda na listagem.\n\nPlays: histórico de partidas (entrada, resultado, crates ganhas). O Aim Trainer (Unity) troca um launch token por JWT para jogar.',
+    bullets: [
+      'Crate ativa precisa de itens habilitados somando 100%.',
+      'Valores de prêmio por raridade são constantes do backend (ex.: Common BRL 1, Insane BRL 500).',
+      'Use a visão Dev para plays de influencer.',
+    ],
+    tags: ['arena', 'admin', 'crate', 'preço', 'plays'],
+  },
+
+  // ── Battles ──────────────────────────────────────────────
+  {
+    id: 'battle-modes',
+    category: 'battles',
+    question: 'Como funcionam modos e formatos de battle?',
+    answer:
+      'Modo classic: maior valor total de drops vence. Modo crazy: menor valor vence.\n\nFormatos: solo (FFA), 2v2 e 3v3. Em times, soma-se o valor do time; o pot humano é dividido entre os assentos humanos vencedores.',
+    enumGroups: [BATTLE_MODE_ENUMS, BATTLE_FORMAT_ENUMS],
+    tags: ['battle', 'classic', 'crazy', '2v2', '3v3'],
+  },
+  {
+    id: 'battle-settle',
+    category: 'battles',
+    question: 'Como o pot é dividido no fim da battle?',
+    answer:
+      'Humanos vencedores recebem os drops via divisão greedy por valor: a próxima skin mais cara vai para quem está com menos valor acumulado — equilibrando as fatias.\n\nEmpate entre humanos: o pot é repartido entre os empatados. Se o bot vence, o pot humano fica com a casa (não distribui skins aos players).',
+    bullets: [
+      'Só assentos humanos entram no payout.',
+      'Bot nunca “paga” o banco da caixa nem gera receita/payout nas métricas.',
+      'Cancelar lobby/countdown/running reembolsa o escrow dos humanos.',
+    ],
+    tags: ['battle', 'settlement', 'pot', 'empate', 'bot'],
+  },
+  {
+    id: 'battle-1',
+    category: 'battles',
+    question: 'Como funciona o bot de case battle?',
+    answer:
+      'O bot sorteia com a mesma elegibilidade do jogador (mesmo snapshot de banco e chances liberadas).\n\nO prêmio do bot não altera o banco da caixa — bankDelta = 0; receita, payout e opens continuam só humanos.\n\nEle tem saldo próprio (começa em 1.000.000): cada rodada debita o preço; quando acaba, recarrega para 1M. Peso = chance de ser escolhido na vaga.',
+    bullets: [
+      'Elegibilidade igual ao player no sorteio.',
+      'Prêmio do bot não mexe no banco.',
+      'Create de bot no modal (foto, nome, peso).',
+      'Se o bot vence, pot humano fica com a casa.',
+    ],
+    tags: ['battle', 'bot', 'banco virtual', 'saldo'],
+  },
+
+  // ── Câmbio e pagamentos ──────────────────────────────────
+  {
+    id: 'cambio-1',
+    category: 'cambio-pagamentos',
+    question: 'Como funciona o câmbio da plataforma?',
+    answer:
+      'Todas as cotações são em base USD. Converter BRL→EUR (ou qualquer par) passa pelo pivô dólar.\n\nA SkinsBack é sempre tentada primeiro (alinha com o catálogo). Se falhar, entra a API de reserva que você marcou em Câmbio: AwesomeAPI ou Frankfurter.\n\nA cotação não segue o Google — cada provedor tem a própria tabela. Isso não é bug.',
+    enumGroups: [CAMBIO_PROVIDER_ENUMS],
+    tags: ['câmbio', 'FX', 'skinsback', 'cotação', 'USD'],
+  },
+  {
+    id: 'cambio-2',
+    category: 'cambio-pagamentos',
+    question: 'Onde o câmbio entra na operação?',
+    answer:
+      'Depósitos: valor pago (Pix BRL ou cripto USD) vira crédito na moeda da carteira.\n\nMovimentação FX entre carteiras do usuário: zera a origem e credita o destino pela cotação do momento.\n\nCobrança de caixa: se a carteira ativa ≠ moeda da caixa, converte o preço antes de debitar.',
+    bullets: [
+      'Snapshot de valor da skin no drop também usa as taxas do momento.',
+      'Arena congela a moeda na entrada — prêmio não faz FX cruzado depois.',
+      'Tela Câmbio: aba Câmbio (reserva) + aba APIs de pagamento.',
+    ],
+    tags: ['câmbio', 'depósito', 'carteira', 'caixa', 'arena'],
+  },
+  {
+    id: 'payment-1',
+    category: 'cambio-pagamentos',
+    question: 'Como funcionam as APIs de pagamento?',
+    answer:
+      'Pix via Woovi e cripto via XGate. As chaves ficam criptografadas no backend — o admin só vê máscaras e pode rotacionar segredos.\n\nCada provedor tem cashback % opcional e teto por moeda da carteira (BRL/USD/EUR). Histórico de Pix e cripto fica em Depósitos.',
+    bullets: [
+      'Woovi: produção vs sandbox pela URL da API.',
+      'XGate: credenciais de cripto.',
+      'Nunca grave chave em texto puro em ticket ou print.',
+    ],
+    tags: ['pagamento', 'woovi', 'xgate', 'pix', 'cripto', 'cashback'],
+  },
+
+  // ── Cupons e depósitos ───────────────────────────────────
+  {
+    id: 'deposit-1',
+    category: 'cupons-depositos',
+    question: 'Como o crédito do depósito é calculado?',
+    answer:
+      'O valor pago é convertido para a moeda da carteira. Em cima disso entram cashback e bônus de cupom.\n\nTotal = pago convertido + cashback (com teto) + bônus do cupom (USD → carteira).',
+    fields: DEPOSIT_CREDIT_FIELDS,
+    tags: ['depósito', 'cashback', 'cupom', 'crédito'],
+  },
+  {
+    id: 'coupon-1',
+    category: 'cupons-depositos',
+    question: 'Como funcionam os cupons?',
+    answer:
+      'Cupom tem dono influencer, código, validade e tipo de recompensa. Percentual e tickets são iguais em todas as carteiras; valores em dinheiro são definidos por moeda — sem câmbio no valor fixo do cupom.\n\nMuitos tipos (desconto de caixa, bônus de chance no upgrade, etc.) podem estar marcados como futuro no catálogo — use só os ativos em produção.',
+    bullets: [
+      'Create/edição no modal da tela Cupons.',
+      'Influencer dono é buscado sempre no sandbox de influencers.',
+      'Depósito: cupom soma bônus USD convertido na carteira.',
+    ],
+    tags: ['cupom', 'influencer', 'recompensa', 'depósito'],
+  },
+
+  // ── Usuários e inventário ────────────────────────────────
   {
     id: 'users-1',
     category: 'usuarios-inventario',
     question: 'Qual a diferença entre usuário padrão e influencer?',
     answer:
-      'Usuário padrão joga com saldo real — o que deposita e o que ganha segue as regras normais de saque.\n\nInfluencer é conta de teste/demo: joga com saldo bônus, não saca, e serve para gravar ou mostrar a plataforma sem dinheiro real.',
+      'Usuário padrão joga com saldo real — depósito e ganhos seguem regras de saque.\n\nInfluencer é conta de teste/demo: joga com saldo bônus, não saca, e as aberturas vão para o ledger de teste (visão Dev).',
     enumGroups: [USER_TYPE_ENUMS],
-    tags: ['usuário', 'influencer', 'afiliado', 'teste'],
+    tags: ['usuário', 'influencer', 'teste'],
   },
   {
     id: 'users-2',
     category: 'usuarios-inventario',
     question: 'O que é saldo real vs saldo bônus?',
     answer:
-      'Saldo real é dinheiro de verdade na carteira — veio de depósito e pode ser sacado conforme as regras do site.\n\nSaldo bônus é crédito fictício para influencers. Abre caixas, mas não vira saque.\n\n“Total para caixas” mostra quanto a pessoa pode gastar abrindo (real + bônus). “Sacável” mostra só o real.',
+      'Saldo real = dinheiro de depósito, sacável. Saldo bônus = crédito de influencer, não sacável.\n\nGastos (caixa, battle, arena, upgrade) consomem bônus primeiro na carteira ativa. “Total para caixas” = real + bônus; “Sacável” = só real.',
     enumGroups: [WALLET_BALANCE_ENUMS],
     tags: ['saldo', 'bônus', 'carteira', 'saque'],
   },
@@ -216,73 +395,49 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'usuarios-inventario',
     question: 'Como funciona o inventário do site?',
     answer:
-      'Quando o jogador ganha uma skin e escolhe guardar, ela vai para o inventário do site — separado do inventário Steam.\n\nCada item guarda o valor fixo do momento em que foi ganho (em USD, BRL e EUR). Esse valor não muda se o preço de mercado oscilar depois.\n\nNo admin você vê itens agrupados (ex.: +99 unidades da mesma skin) e o total em valor.',
+      'Skin guardada após abertura vai ao inventário do site (não é o inventário Steam).\n\nCada item guarda snapshot de valor (USD/BRL/EUR) no momento do drop — não muda se o mercado oscilar. Converter credita o valor na moeda da carteira (real ou bônus, conforme o tipo de usuário).',
     bullets: [
-      'Ativo = ainda na plataforma, não virou saldo.',
-      'Convertido = jogador trocou por dinheiro na carteira.',
-      'Totais aparecem na moeda da carteira do usuário.',
+      'Ativo = ainda na plataforma.',
+      'Convertido = virou saldo; não volta.',
+      'Admin lista só inventário do site.',
     ],
     enumGroups: [INVENTORY_STATUS_ENUMS],
-    tags: ['inventário', 'skin', 'guardar', 'valor fixo'],
-  },
-  {
-    id: 'users-4',
-    category: 'usuarios-inventario',
-    question: 'O que acontece quando o jogador converte um item?',
-    answer:
-      'O item sai do inventário e o valor fixo (na moeda da carteira do usuário) entra como saldo.\n\nInfluencer recebe em saldo bônus. Jogador padrão recebe em saldo real.\n\nA conversão usa o snapshot de moedas gravado no momento do drop — não recalcula com cotação de hoje.',
-    bullets: [
-      'Valor congelado no drop = previsibilidade para o jogador.',
-      'Moeda da carteira define em qual moeda credita.',
-      'Item convertido não volta ao inventário.',
-    ],
-    tags: ['converter', 'saldo', 'carteira', 'inventário'],
+    tags: ['inventário', 'skin', 'converter', 'valor fixo'],
   },
   {
     id: 'users-5',
     category: 'usuarios-inventario',
-    question: 'Como funcionam as três carteiras na ficha do usuário?',
+    question: 'Como funcionam as três carteiras?',
     answer:
-      'Cada usuário tem saldo separado em BRL, USD e EUR. Trocar a moeda no perfil só escolhe qual carteira está ativa — o dinheiro não é convertido.\n\nNa ficha do admin você vê as três carteiras (saldo real, bônus e total). Influencer recebe bônus na moeda que você escolher no crédito.',
+      'Cada usuário tem BRL, USD e EUR separados. Trocar a moeda no perfil só escolhe a carteira ativa — não converte sozinho.\n\nPara mover valor entre moedas, o fluxo de FX zera a origem e credita o destino pela cotação do momento (usa a cadeia de câmbio).',
     bullets: [
       'Compras debitam só a carteira ativa.',
-      'Bônus de influencer entra na moeda selecionada.',
-      'Saldo bônus não pode ser sacado.',
+      'Crédito de influencer entra na moeda escolhida.',
+      'Bônus nunca é sacável.',
     ],
-    tags: ['carteira', 'moeda', 'bônus', 'influencer'],
+    tags: ['carteira', 'moeda', 'FX', 'influencer'],
   },
-  {
-    id: 'users-6',
-    category: 'usuarios-inventario',
-    question: 'O que aparece no inventário do usuário no admin?',
-    answer:
-      'Só o inventário do site: skins ganhas em aberturas de caixa na plataforma. Elas entram no saldo quando o jogador (ou o admin, no caso de influencer) converte.\n\nO inventário Steam do usuário não é listado na ficha.',
-    tags: ['inventário', 'skins', 'usuário', 'site'],
-  },
+
+  // ── Skins e catálogo ─────────────────────────────────────
   {
     id: 'skins-1',
     category: 'skins-catalogo',
     question: 'De onde vêm os preços das skins?',
     answer:
-      'Do catálogo SkinsBack, integrado ao painel. Cada skin tem preço base e, quando aplicável, taxa da categoria de arma.\n\nAo montar uma caixa, o sistema busca o preço atualizado. O valor fica gravado na caixa como snapshot — se o mercado mudar, você pode atualizar recarregando itens.',
+      'Do catálogo SkinsBack. Cada skin tem preço base; a taxa da categoria de arma gera o preço com taxa.\n\npriceWithTax = base × (1 + taxPercent/100). Esse valor alimenta VE (modo com taxa), upgrade (alvo) e exibição no catálogo.',
     bullets: [
-      'Preço base = valor bruto da API.',
-      'Preço com taxa = base + % da categoria (Rifle, Pistol, etc.).',
-      'Modo VE define se o cálculo usa base ou com taxa.',
+      'Preço base = bruto da API.',
+      '“All” é fallback quando o tipo de arma não casa.',
+      'Snapshot na caixa: se o mercado mudar, recarregue itens no editor.',
     ],
-    tags: ['preço', 'skinsback', 'catálogo', 'taxa'],
+    tags: ['preço', 'skinsback', 'taxa', 'catálogo'],
   },
   {
     id: 'skins-2',
     category: 'skins-catalogo',
     question: 'Para que servem as categorias de arma?',
     answer:
-      'Cada tipo (Rifle, Pistol, Faca, etc.) pode ter uma taxa percentual. Essa taxa aumenta o preço exibido no catálogo e, quando configurado, entra no cálculo do valor esperado da caixa.\n\nÉ uma forma de ajustar margem por tipo de item sem editar skin por skin.',
-    bullets: [
-      'Taxa 0% = sem acréscimo.',
-      'Taxa 10% = +10% sobre o preço base.',
-      '“All” é fallback para itens sem tipo identificado.',
-    ],
+      'Cada tipo (Rifle, Knife, etc.) tem taxa %. É a alavanca de margem por família de item sem editar skin a skin.\n\nTaxa 0% = sem acréscimo; 10% = +10% sobre a base.',
     tags: ['categorias', 'taxa', 'arma', 'preço'],
   },
   {
@@ -290,28 +445,18 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'skins-catalogo',
     question: 'Como funciona a moeda no painel?',
     answer:
-      'Existem três contextos que às vezes confundem:\n\n1) Moeda do admin (Configurações) — como você vê preços ao navegar.\n\n2) Moeda da caixa — o que o jogador paga e o que os itens usam naquela caixa.\n\n3) Moeda da carteira do usuário — em que moeda ele recebe ao converter itens.',
+      'Três contextos: (1) moeda do admin em Configurações — como você vê preços; (2) moeda da caixa — cobrança e VE; (3) moeda da carteira do usuário — conversão e crédito.',
     enumGroups: [CURRENCY_ENUMS],
-    tags: ['moeda', 'BRL', 'USD', 'EUR', 'configurações'],
+    tags: ['moeda', 'BRL', 'USD', 'EUR'],
   },
-  {
-    id: 'skins-4',
-    category: 'skins-catalogo',
-    question: 'Como buscar skins no catálogo?',
-    answer:
-      'Na página Skins, use busca por nome, filtro de tipo de arma, raridade e faixa de preço. A moeda do filtro segue a preferência do painel.\n\nNo editor de caixas, a busca funciona parecido: clique na skin para adicionar direto na tabela.',
-    bullets: [
-      'Detalhe da skin mostra imagem, raridade e descrição quando disponível.',
-      'Preços mudam com o mercado — revise caixas antigas periodicamente.',
-    ],
-    tags: ['busca', 'catálogo', 'skins', 'filtro'],
-  },
+
+  // ── Operação ─────────────────────────────────────────────
   {
     id: 'operacao-1',
     category: 'operacao',
     question: 'O que cada número do painel de economia significa?',
     answer:
-      'O bloco “Economia da caixa (tempo real)” é o seu painel de controle antes de publicar. Ele reage enquanto você edita chances e preços.\n\nUse-o para responder: “esta caixa fecha a conta?” e “quantos itens podem sair neste preço?”',
+      'O bloco “Economia da caixa (tempo real)” responde: “esta caixa fecha a conta?” e “quantos itens podem sair neste preço?” enquanto você edita.',
     enumGroups: [ECONOMY_PANEL_FIELDS],
     tags: ['economia', 'painel', 'VE', 'margem'],
   },
@@ -320,11 +465,11 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'operacao',
     question: 'Por que não consigo salvar a caixa?',
     answer:
-      'O sistema bloqueia quando algo está inconsistente. Os motivos mais comuns:\n\n• Soma das chances longe de 100%.\n• Nenhum item cabe no preço da abertura (a caixa não pagaria nem a primeira abertura).\n• Preço final menor que o valor esperado (margem negativa).\n• Item ativo sem preço válido no catálogo.',
+      'Bloqueios comuns: soma das chances longe de 100%; nenhum item ≤ preço da abertura; preço final < VE (margem negativa); item ativo sem preço válido.',
     bullets: [
-      'Leia o banner vermelho — ele lista o que corrigir.',
-      'Ícone ? ao lado dos campos abre ajuda rápida no editor.',
-      'Inclua um item mais barato que o preço da abertura ou aumente o preço.',
+      'Leia o banner vermelho.',
+      'Ícone ? nos campos abre ajuda rápida.',
+      'Inclua filler barato ou aumente o preço.',
     ],
     tags: ['salvar', 'validação', 'erro', 'caixa'],
   },
@@ -333,17 +478,22 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'operacao',
     question: 'Tolerância, banco exigido e margem alvo — qual a diferença?',
     answer:
-      'São três coisas com nomes parecidos, mas funções diferentes.\n\nTolerância = folga matemática para a soma das chances fechar em 100%.\n\nBanco exigido = saldo que o banco virtual precisa ter para aquela skin poder sair (o valor de mercado dela, quando ela custa mais que a abertura).\n\nMargem alvo = meta da caixa inteira: define o preço sugerido e quanto entra no banco por abertura.',
+      'Tolerância = folga matemática na soma das chances.\n\nBanco exigido = saldo necessário para liberar aquela skin cara.\n\nMargem alvo = meta da caixa: sugere preço e define a injeção (preço ÷ (1 + margem)).',
     enumGroups: [CASE_EDITOR_FIELDS],
-    tags: ['tolerância', 'banco virtual', 'margem', 'chance', 'campos'],
+    tags: ['tolerância', 'banco virtual', 'margem', 'campos'],
   },
   {
-    id: 'operacao-4',
+    id: 'operacao-prod-dev',
     category: 'operacao',
-    question: 'Onde encontro ajuda rápida nos campos do editor?',
+    question: 'O que muda entre visão Produção e Dev?',
     answer:
-      'Ao lado de vários campos do editor de caixas há um botão ?. Ele abre uma explicação curta daquele campo específico.\n\nEsta página de documentação é a referência completa — use a busca acima quando quiser entender o fluxo inteiro ou tirar dúvida de suporte.',
-    tags: ['ajuda', 'editor', 'campos', 'suporte'],
+      'Produção: usuários padrão, aberturas reais, depósitos e faturamento reais. Influencers ficam de fora das listagens.\n\nDev: influencers e testes — aberturas e créditos bônus no ledger de teste, sem misturar com produção. Use Dev para demos e QA.',
+    bullets: [
+      'Toggle no topo do painel (ambiente de dados).',
+      'Métricas do dashboard respeitam a visão ativa.',
+      'Cupom: busca de influencer ignora a visão e lista influencers do servidor.',
+    ],
+    tags: ['produção', 'dev', 'sandbox', 'influencer', 'métricas'],
   },
 ]
 
@@ -355,6 +505,11 @@ export const DOCUMENTATION_CATEGORIES: Array<{
   { id: 'all', label: 'Todas', icon: HelpCircle },
   { id: 'visao-geral', label: 'Visão geral', icon: BookOpenText },
   { id: 'caixas-economia', label: 'Caixas e economia', icon: Package },
+  { id: 'upgrade', label: 'Upgrade', icon: Calculator },
+  { id: 'arena', label: 'Arena', icon: Crosshair },
+  { id: 'battles', label: 'Battles', icon: Swords },
+  { id: 'cambio-pagamentos', label: 'Câmbio e pagamentos', icon: ArrowLeftRight },
+  { id: 'cupons-depositos', label: 'Cupons e depósitos', icon: TicketPercent },
   { id: 'usuarios-inventario', label: 'Usuários e inventário', icon: Users },
   { id: 'skins-catalogo', label: 'Skins e catálogo', icon: Gem },
   { id: 'operacao', label: 'Operação', icon: Settings },
@@ -362,42 +517,48 @@ export const DOCUMENTATION_CATEGORIES: Array<{
 
 export const DOCUMENTATION_POPULAR_TAGS = [
   'valor esperado',
-  'margem',
-  'drop',
-  'caixa',
-  'influencer',
-  'inventário',
-  'saldo',
   'banco virtual',
-  'skins',
-  'elegível',
+  'upgrade',
+  'fator 71',
+  'arena',
   'battle',
   'bot',
+  'câmbio',
+  'depósito',
+  'cashback',
+  'cupom',
+  'influencer',
+  'carteira',
+  'elegível',
 ]
 
 export const DOCUMENTATION_SUMMARY = [
   {
-    label: 'Fluxo da caixa',
+    label: 'Caixas',
+    category: 'caixas-economia' as const,
     value:
-      'Escolher skins → definir chances → calcular valor médio → precificar → abrir → inventário ou saldo',
+      'VE → margem → preço → injeção no banco → sorteio com elegibilidade / re-roll / fallback',
     icon: Package,
   },
   {
-    label: 'Valor esperado',
+    label: 'Upgrade',
+    category: 'upgrade' as const,
     value:
-      'Média do que a caixa devolve por abertura — base para preço sugerido e margem',
+      'Chance = (aposta ÷ alvo) × 71, entre 1% e 95%. Pool de 100k tickets; faixas de derrota só visuais',
     icon: Calculator,
   },
   {
-    label: 'Motor de drop',
+    label: 'Arena e battles',
+    category: 'arena' as const,
     value:
-      'Sorteio por chance + regras de margem + re-roll + item de segurança (fallback)',
-    icon: Coins,
+      'Arena: 5 destroys → crate, banco sem margem. Battle: classic/crazy, bot com bankDelta 0',
+    icon: Crosshair,
   },
   {
-    label: 'Carteira e inventário',
+    label: 'Câmbio e carteira',
+    category: 'cambio-pagamentos' as const,
     value:
-      'Saldo real vs bônus; inventário do site com valor fixo; conversão na moeda do usuário',
+      'FX via pivô USD (SkinsBack → reserva). Três carteiras; bônus gasta primeiro; só real saca',
     icon: Wallet,
   },
 ]

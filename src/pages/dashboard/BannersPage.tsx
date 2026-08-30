@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   BannerImageUploader,
   isPendingBannerImage,
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { IconButton } from '@/components/ui/IconButton'
 import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { TextBadge } from '@/components/StatusPill'
 import { ThemeText } from '@/components/ui/ThemeText'
@@ -119,6 +120,7 @@ export default function BannersPage() {
   const [deleteBanner, deleteState] = useDeleteBannerMutation()
 
   const [createForm, setCreateForm] = useState<BannerFormState>(emptyForm)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<BannerFormState>(emptyForm)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -127,6 +129,17 @@ export default function BannersPage() {
   const resetCreateForm = () => {
     setCreateForm(emptyForm())
     setFormError(null)
+  }
+
+  const openCreateModal = () => {
+    resetCreateForm()
+    setCreateModalOpen(true)
+  }
+
+  const closeCreateModal = () => {
+    if (createState.isLoading) return
+    setCreateModalOpen(false)
+    resetCreateForm()
   }
 
   const startEdit = (banner: SiteBanner) => {
@@ -175,8 +188,7 @@ export default function BannersPage() {
     }
   }
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const submitCreate = async () => {
     setFormError(null)
 
     if (!createForm.image) {
@@ -198,6 +210,7 @@ export default function BannersPage() {
         active: createForm.active,
         imageUrl,
       }).unwrap()
+      setCreateModalOpen(false)
       resetCreateForm()
     } catch (err) {
       setFormError(getErrorMessage(err))
@@ -349,40 +362,15 @@ export default function BannersPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle subtitle="Carrossel widescreen no topo da home (estilo csgo.net).">
-        Banners
-      </PageTitle>
-
-      <Surface variant="settingsPanel" className="!p-5">
-        <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <PageTitle subtitle="Carrossel widescreen no topo da home (estilo csgo.net).">
+          Banners
+        </PageTitle>
+        <Button type="button" className="gap-2" onClick={openCreateModal}>
+          <Plus className="h-4 w-4" />
           Novo banner
-        </ThemeText>
-        <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-          Envie a arte, recorte em 21:9 e defina título/CTA opcionais nos 3 idiomas. A ordem menor
-          aparece primeiro.
-        </ThemeText>
-
-        <form onSubmit={handleCreate} className="space-y-4">
-          {renderFields(createForm, setCreateForm, createState.isLoading)}
-
-          <div className="flex justify-end">
-            <Button type="submit" isLoading={createState.isLoading}>
-              Criar banner
-            </Button>
-          </div>
-        </form>
-
-        {formError && !editingId ? (
-          <ThemeText as="p" tone="danger" className="mt-3 text-sm">
-            {formError}
-          </ThemeText>
-        ) : null}
-        {createState.isError ? (
-          <ThemeText as="p" tone="danger" className="mt-3 text-sm">
-            {getErrorMessage(createState.error)}
-          </ThemeText>
-        ) : null}
-      </Surface>
+        </Button>
+      </div>
 
       <Surface variant="card" className="!p-0">
         {isLoading ? (
@@ -460,27 +448,18 @@ export default function BannersPage() {
                   return (
                     <tr key={banner._id} className={listTable.tr}>
                       <td className={listTable.td}>
-                        <img
-                          src={banner.imageUrl}
-                          alt=""
-                          className="h-14 w-28 rounded-lg object-cover"
-                        />
+                        <div className="h-12 w-28 overflow-hidden rounded-lg border border-border bg-surface-secondary">
+                          {banner.imageUrl ? (
+                            <img
+                              src={banner.imageUrl}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : null}
+                        </div>
                       </td>
                       <td className={listTable.tdStrong}>
-                        <ThemeText as="p" tone="primary" className="font-medium">
-                          {banner.title?.trim() || 'Sem título'}
-                        </ThemeText>
-                        {banner.eyebrow?.trim() ? (
-                          <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-                            Acima: {banner.eyebrow}
-                          </ThemeText>
-                        ) : null}
-                        {banner.ctaLabel ? (
-                          <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-                            CTA: {banner.ctaLabel}
-                            {banner.ctaHref ? ` → ${banner.ctaHref}` : ''}
-                          </ThemeText>
-                        ) : null}
+                        {banner.title?.trim() || 'Sem título'}
                       </td>
                       <td className={listTable.td}>
                         <ThemeText as="span" tone="secondary" className="tabular-nums">
@@ -524,6 +503,50 @@ export default function BannersPage() {
           </p>
         ) : null}
       </Surface>
+
+      <Modal
+        open={createModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeCreateModal()
+          else setCreateModalOpen(true)
+        }}
+        title="Novo banner"
+        description="Envie a arte, recorte em 21:9 e defina título/CTA opcionais nos 3 idiomas. A ordem menor aparece primeiro."
+        size="full"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeCreateModal}
+              disabled={createState.isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              isLoading={createState.isLoading}
+              onClick={() => void submitCreate()}
+            >
+              Criar banner
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {renderFields(createForm, setCreateForm, createState.isLoading)}
+          {formError && !editingId ? (
+            <ThemeText as="p" tone="danger" className="text-sm">
+              {formError}
+            </ThemeText>
+          ) : null}
+          {createState.isError ? (
+            <ThemeText as="p" tone="danger" className="text-sm">
+              {getErrorMessage(createState.error)}
+            </ThemeText>
+          ) : null}
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -1,3 +1,8 @@
+import { Chip } from '@heroui/react'
+import { Button } from '@/components/ui/Button'
+import { Surface } from '@/components/ui/Surface'
+import { ThemeText } from '@/components/ui/ThemeText'
+import { PageTitle } from '@/components/ui/Title'
 import { DocumentationAccordion } from '@/features/documentation/components/DocumentationAccordion'
 import { DocumentationCategories } from '@/features/documentation/components/DocumentationCategories'
 import {
@@ -5,12 +10,8 @@ import {
   DocumentationSummary,
 } from '@/features/documentation/components/DocumentationFooter'
 import { DocumentationHero } from '@/features/documentation/components/DocumentationHero'
-import {
-  DocumentationActiveTag,
-  DocumentationTags,
-} from '@/features/documentation/components/DocumentationTags'
+import { DocumentationTags } from '@/features/documentation/components/DocumentationTags'
 import { useDocumentationFilters } from '@/features/documentation/hooks/useDocumentationFilters'
-import { ThemeText } from '@/components/ui/ThemeText'
 
 export default function DocumentationPage() {
   const {
@@ -19,60 +20,77 @@ export default function DocumentationPage() {
     selectedCategory,
     selectedTag,
     filteredItems,
+    hasFilters,
     handleCategoryClick,
     handleTagClick,
+    clearFilters,
   } = useDocumentationFilters()
 
-  const showTags = !searchQuery && selectedCategory === 'all'
+  const showLanding =
+    !searchQuery.trim() && selectedCategory === 'all' && !selectedTag
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <DocumentationHero
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
+    <div>
+      <PageTitle subtitle="Referência operacional do admin: caixas, upgrade, arena, battles, câmbio, carteiras e fluxos do dia a dia.">
+        Documentação
+      </PageTitle>
 
-      {showTags ? <DocumentationSummary /> : null}
+      <Surface variant="card">
+        <DocumentationHero
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          resultCount={filteredItems.length}
+        />
 
-      {showTags ? (
-        <DocumentationTags
-          selectedTag={selectedTag}
+        {showLanding ? (
+          <DocumentationSummary
+            selectedCategory={selectedCategory}
+            onCategoryClick={handleCategoryClick}
+          />
+        ) : null}
+
+        <DocumentationCategories
+          selectedCategory={selectedCategory}
+          onCategoryClick={handleCategoryClick}
+        />
+
+        {showLanding ? (
+          <DocumentationTags
+            selectedTag={selectedTag}
+            onTagClick={handleTagClick}
+          />
+        ) : null}
+
+        {hasFilters ? (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {selectedTag ? (
+              <Chip size="sm" variant="soft" color="accent">
+                {selectedTag}
+              </Chip>
+            ) : null}
+            <Button type="button" size="sm" variant="ghost" onClick={clearFilters}>
+              Limpar filtros
+            </Button>
+          </div>
+        ) : null}
+
+        <DocumentationAccordion
+          items={filteredItems}
+          searchQuery={searchQuery}
           onTagClick={handleTagClick}
         />
-      ) : null}
 
-      {selectedTag ? (
-        <DocumentationActiveTag
-          tag={selectedTag}
-          onClear={() => handleTagClick(selectedTag)}
-        />
-      ) : null}
+        <DocumentationFooter />
+      </Surface>
 
-      <DocumentationCategories
-        selectedCategory={selectedCategory}
-        onCategoryClick={handleCategoryClick}
-      />
-
-      <DocumentationAccordion
-        items={filteredItems}
-        searchQuery={searchQuery}
-        onTagClick={handleTagClick}
-      />
-
-      <DocumentationFooter />
-
-      <ThemeText
-        as="p"
-        tone="faint"
-        className="mt-8 text-center text-xs"
-      >
+      <ThemeText as="p" tone="faint" className="mt-6 text-xs">
         Última atualização:{' '}
         {new Date().toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: 'long',
           year: 'numeric',
         })}{' '}
-        · Versão 1.0
+        · Versão 1.2
       </ThemeText>
     </div>
   )

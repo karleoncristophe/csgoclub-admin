@@ -1,41 +1,57 @@
 import { Link } from 'react-router-dom'
 import {
+  ArrowLeftRight,
   ArrowRight,
-  Gem,
-  Layers,
-  MessageCircle,
+  Crosshair,
   Package,
+  Swords,
   Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { Surface, surfaceClass } from '@/components/ui/Surface'
+import { surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { DOCUMENTATION_SUMMARY } from '@/features/documentation/lib/constants'
+import type { DocumentationCategory } from '@/features/documentation/lib/types'
 
-const docFooterLinkClass =
-  'gap-2 border-zinc-200 bg-white dark:border-zinc-600 dark:bg-zinc-800/90 dark:text-zinc-100 dark:hover:border-zinc-500 dark:hover:bg-zinc-700'
+type DocumentationSummaryProps = {
+  selectedCategory: DocumentationCategory
+  onCategoryClick: (category: DocumentationCategory) => void
+}
 
-export function DocumentationSummary() {
+export function DocumentationSummary({
+  selectedCategory,
+  onCategoryClick,
+}: DocumentationSummaryProps) {
   return (
-    <section className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {DOCUMENTATION_SUMMARY.map((item) => {
         const Icon = item.icon
+        const active = selectedCategory === item.category
         return (
-          <Surface variant="docSummaryCard" key={item.label}>
-            <div className={surfaceClass('docIconWrap', 'mb-4 !h-10 !w-10')}>
-              <Icon className="h-5 w-5" />
+          <button
+            key={item.label}
+            type="button"
+            onClick={() => onCategoryClick(active ? 'all' : item.category)}
+            className={surfaceClass(
+              'docSummaryCard',
+              `h-full w-full text-left transition-colors ${
+                active
+                  ? 'ring-2 ring-accent/40'
+                  : 'hover:border-accent/30 hover:bg-accent-soft/30'
+              }`,
+            )}
+            aria-pressed={active}
+          >
+            <div className={surfaceClass('docIconWrap', 'mb-3 !h-9 !w-9')}>
+              <Icon className="h-4 w-4" aria-hidden />
             </div>
-            <ThemeText
-              as="p"
-              tone="muted"
-              className="text-xs font-semibold uppercase tracking-[0.14em]"
-            >
+            <ThemeText as="span" tone="primary" className="block text-sm font-semibold">
               {item.label}
             </ThemeText>
-            <ThemeText as="p" tone="secondary" className="mt-3 text-sm leading-7">
+            <ThemeText as="span" tone="secondary" className="mt-2 block text-sm leading-6">
               {item.value}
             </ThemeText>
-          </Surface>
+          </button>
         )
       })}
     </section>
@@ -44,59 +60,43 @@ export function DocumentationSummary() {
 
 export function DocumentationFooter() {
   return (
-    <Surface
-      variant="docSection"
-      className="mt-12 overflow-hidden border-brand-200/60 bg-gradient-to-br from-brand-50/80 via-white to-white dark:border-brand-500/25 dark:bg-gradient-to-br dark:from-brand-500/10 dark:via-zinc-900/95 dark:to-zinc-950 dark:ring-1 dark:ring-inset dark:ring-brand-400/10"
-    >
-      <div className="flex flex-col items-center px-4 py-8 text-center sm:px-8 sm:py-10">
-        <div
-          className={surfaceClass(
-            'docIconWrap',
-            'mb-5 !h-14 !w-14 rounded-2xl dark:bg-brand-500/20 dark:ring-brand-400/30',
-          )}
-        >
-          <MessageCircle className="h-7 w-7" aria-hidden />
-        </div>
-        <ThemeText as="h2" tone="primary" className="text-2xl font-bold">
-          Precisa ir direto à operação?
-        </ThemeText>
-        <ThemeText
-          as="p"
-          tone="secondary"
-          className="mt-3 max-w-xl text-sm leading-relaxed dark:text-zinc-300"
-        >
-          Acesse as telas relacionadas ao que você está consultando nesta
-          documentação.
-        </ThemeText>
-
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link to="/dashboard/cases">
-            <Button type="button" size="lg" className="gap-2 shadow-lg shadow-brand-600/20">
-              <Package className="h-4 w-4" aria-hidden />
-              Caixas
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Button>
-          </Link>
-          <Link to="/dashboard/users">
-            <Button type="button" size="lg" variant="secondary" className={docFooterLinkClass}>
-              <Users className="h-4 w-4" aria-hidden />
-              Usuários
-            </Button>
-          </Link>
-          <Link to="/dashboard/skins">
-            <Button type="button" size="lg" variant="secondary" className={docFooterLinkClass}>
-              <Gem className="h-4 w-4" aria-hidden />
-              Skins
-            </Button>
-          </Link>
-          <Link to="/dashboard/categorias">
-            <Button type="button" size="lg" variant="secondary" className={docFooterLinkClass}>
-              <Layers className="h-4 w-4" aria-hidden />
-              Categorias
-            </Button>
-          </Link>
-        </div>
+    <div className="mt-8 flex flex-col gap-3 border-t border-separator pt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <ThemeText as="p" tone="secondary" className="text-sm">
+        Ir para a operação
+      </ThemeText>
+      <div className="flex flex-wrap gap-2">
+        <Link to="/dashboard/cases">
+          <Button type="button" size="sm" variant="secondary" className="gap-2">
+            <Package className="h-4 w-4" aria-hidden />
+            Caixas
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          </Button>
+        </Link>
+        <Link to="/dashboard/cambio">
+          <Button type="button" size="sm" variant="secondary" className="gap-2">
+            <ArrowLeftRight className="h-4 w-4" aria-hidden />
+            Câmbio
+          </Button>
+        </Link>
+        <Link to="/dashboard/battles">
+          <Button type="button" size="sm" variant="secondary" className="gap-2">
+            <Swords className="h-4 w-4" aria-hidden />
+            Battles
+          </Button>
+        </Link>
+        <Link to="/dashboard/arena">
+          <Button type="button" size="sm" variant="secondary" className="gap-2">
+            <Crosshair className="h-4 w-4" aria-hidden />
+            Arena
+          </Button>
+        </Link>
+        <Link to="/dashboard/users">
+          <Button type="button" size="sm" variant="secondary" className="gap-2">
+            <Users className="h-4 w-4" aria-hidden />
+            Usuários
+          </Button>
+        </Link>
       </div>
-    </Surface>
+    </div>
   )
 }

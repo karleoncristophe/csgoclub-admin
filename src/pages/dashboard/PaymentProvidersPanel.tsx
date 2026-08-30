@@ -8,6 +8,8 @@ import {
   useGetPaymentProvidersQuery,
   useUpsertPaymentProviderMutation,
   type PaymentProviderCredential,
+  type PaymentProviderSecrets,
+  type UpsertPaymentProviderBody,
 } from '@/redux/store/api/payment/api.payment'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
@@ -16,40 +18,128 @@ function formatWhen(iso?: string) {
   return new Date(iso).toLocaleString('pt-BR')
 }
 
-function XgateProviderCard({ item }: { item: PaymentProviderCredential }) {
+function nestedSecrets(item: PaymentProviderCredential): PaymentProviderSecrets {
+  if (item.provider === 'woovi') return item.woovi ?? {}
+  return item.xgate ?? {}
+}
+
+function fieldPlaceholder(item: PaymentProviderCredential, key: string): string | undefined {
+  const secrets = nestedSecrets(item)
+  if (key === 'email') return secrets.emailMasked ?? 'email@empresa.com'
+  if (key === 'password') {
+    return secrets.hasPassword ? secrets.passwordMasked : '••••••••'
+  }
+  if (key === 'appId') {
+    return secrets.hasAppId ? secrets.appIdMasked : 'AppID da Woovi'
+  }
+  if (key === 'apiBaseUrl') return secrets.apiBaseUrl
+  return undefined
+}
+
+function fieldDescription(item: PaymentProviderCredential, key: string): string | undefined {
+  const secrets = nestedSecrets(item)
+  if (key === 'password' && secrets.hasPassword) {
+    return 'Deixe em branco para manter a senha já salva.'
+  }
+  if (key === 'password') {
+    return 'Senha da conta. Guardada criptografada.'
+  }
+  if (key === 'appId' && secrets.hasAppId) {
+    return 'Deixe em branco para manter o AppID já salvo.'
+  }
+  if (key === 'appId') {
+    return 'AppID da API (header Authorization, sem Bearer). Guardado criptografado.'
+  }
+  return undefined
+}
+
+function parseOptionalMoney(raw: string, label: string): number | null {
+  const trimmed = raw.trim().replace(',', '.')
+  if (!trimmed) return null
+  const value = Number(trimmed)
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`${label} precisa ser um número maior ou igual a 0.`)
+  }
+  return value
+}
+
+function ProviderCard({ item }: { item: PaymentProviderCredential }) {
   const [save, saveState] = useUpsertPaymentProviderMutation()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [apiBaseUrl, setApiBaseUrl] = useState('')
+  const [fields, setFields] = useState<Record<string, string>>({})
+  const [cashbackPercent, setCashbackPercent] = useState('0')
+  const [cashbackMaxUsd, setCashbackMaxUsd] = useState('')
+  const [cashbackMaxBrl, setCashbackMaxBrl] = useState('')
+  const [cashbackMaxEur, setCashbackMaxEur] = useState('')
   const [active, setActive] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
   useEffect(() => {
-    setEmail('')
-    setPassword('')
-    setApiBaseUrl(item.xgate?.apiBaseUrl ?? 'https://api.xgateglobal.com')
+    const secrets = nestedSecrets(item)
+    const next: Record<string, string> = {}
+    for (const field of item.catalog.fields) {
+      if (field.type === 'url') {
+        next[field.key] = String(secrets.apiBaseUrl ?? '')
+      } else {
+        next[field.key] = ''
+      }
+    }
+    setFields(next)
+    setCashbackPercent(String(item.cashbackPercent ?? 0))
+    setCashbackMaxUsd(item.cashbackMaxUsd != null ? String(item.cashbackMaxUsd) : '')
+    setCashbackMaxBrl(item.cashbackMaxBrl != null ? String(item.cashbackMaxBrl) : '')
+    setCashbackMaxEur(item.cashbackMaxEur != null ? String(item.cashbackMaxEur) : '')
     setActive(item.status === 'ACTIVE')
   }, [item])
 
   const handleSave = async () => {
     setFormError(null)
+    const parsedCashback = Number(cashbackPercent.replace(',', '.'))
+    if (!Number.isFinite(parsedCashback) || parsedCashback < 0 || parsedCashback > 100) {
+      setFormError('Cashback precisa ser um número entre 0 e 100.')
+      return
+    }
     try {
+      const config: Record<string, string | undefined> = {}
+      for (const field of item.catalog.fields) {
+        const value = fields[field.key]?.trim()
+        config[field.key] = value || undefined
+      }
+      const body: UpsertPaymentProviderBody = {
+        status: active ? 'ACTIVE' : 'INACTIVE',
+        cashbackPercent: parsedCashback,
+        cashbackMaxUsd: parseOptionalMoney(cashbackMaxUsd, 'Teto USD'),
+        cashbackMaxBrl: parseOptionalMoney(cashbackMaxBrl, 'Teto BRL'),
+        cashbackMaxEur: parseOptionalMoney(cashbackMaxEur, 'Teto EUR'),
+      }
+      if (item.provider === 'woovi') {
+        body.woovi = {
+          appId: config.appId,
+          apiBaseUrl: config.apiBaseUrl,
+        }
+      } else {
+        body.xgate = {
+          email: config.email,
+          password: config.password,
+          apiBaseUrl: config.apiBaseUrl,
+        }
+      }
       await save({
         provider: item.provider,
-        body: {
-          status: active ? 'ACTIVE' : 'INACTIVE',
-          xgate: {
-            email: email.trim() || undefined,
-            password: password.trim() || undefined,
-            apiBaseUrl: apiBaseUrl.trim() || undefined,
-          },
-        },
+        body,
       }).unwrap()
-      setPassword('')
+      setFields((current) => {
+        const cleared = { ...current }
+        for (const field of item.catalog.fields) {
+          if (field.type === 'password') cleared[field.key] = ''
+        }
+        return cleared
+      })
     } catch (err) {
       setFormError(getErrorMessage(err))
     }
   }
+
+  const isPix = item.catalog.methods.includes('pix')
 
   return (
     <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-700">
@@ -74,38 +164,63 @@ function XgateProviderCard({ item }: { item: PaymentProviderCredential }) {
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
+        {item.catalog.fields.map((field) => (
+          <Input
+            autoComplete={field.type === 'password' ? 'new-password' : 'off'}
+            description={fieldDescription(item, field.key)}
+            key={field.key}
+            label={field.label}
+            name={`${item.provider}-${field.key}`}
+            onChange={(event) =>
+              setFields((current) => ({ ...current, [field.key]: event.target.value }))
+            }
+            placeholder={fieldPlaceholder(item, field.key)}
+            type={field.type === 'url' ? 'url' : field.type}
+            value={fields[field.key] ?? ''}
+          />
+        ))}
         <Input
-          autoComplete="off"
-          label="Email"
-          name={`xgate-email-${item.provider}`}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder={item.xgate?.emailMasked ?? 'email@empresa.com'}
-          type="email"
-          value={email}
+          description="Percentual creditado a mais sobre cada depósito pago (ex.: 2 = +2%)."
+          label="Cashback no depósito (%)"
+          name={`${item.provider}-cashback`}
+          onChange={(event) => setCashbackPercent(event.target.value)}
+          type="number"
+          value={cashbackPercent}
         />
         <Input
-          autoComplete="new-password"
-          description={
-            item.xgate?.hasPassword
-              ? 'Deixe em branco para manter a senha já salva.'
-              : 'Senha da conta XGate. Guardada criptografada.'
-          }
-          label="Senha"
-          name={`xgate-password-${item.provider}`}
-          onChange={(event) => setPassword(event.target.value)}
-          placeholder={item.xgate?.hasPassword ? item.xgate.passwordMasked : '••••••••'}
-          type="password"
-          value={password}
+          description="Teto do cashback quando a carteira do jogador está em USD. Vazio = sem teto."
+          label="Teto de cashback (USD)"
+          name={`${item.provider}-cashback-max-usd`}
+          onChange={(event) => setCashbackMaxUsd(event.target.value)}
+          placeholder="Ex.: 10"
+          type="number"
+          value={cashbackMaxUsd}
         />
         <Input
-          label="URL da API"
-          name={`xgate-url-${item.provider}`}
-          onChange={(event) => setApiBaseUrl(event.target.value)}
-          value={apiBaseUrl}
+          description="Teto do cashback quando a carteira está em BRL. Vazio = sem teto."
+          label="Teto de cashback (BRL)"
+          name={`${item.provider}-cashback-max-brl`}
+          onChange={(event) => setCashbackMaxBrl(event.target.value)}
+          placeholder="Ex.: 10"
+          type="number"
+          value={cashbackMaxBrl}
+        />
+        <Input
+          description="Teto do cashback quando a carteira está em EUR. Vazio = sem teto."
+          label="Teto de cashback (EUR)"
+          name={`${item.provider}-cashback-max-eur`}
+          onChange={(event) => setCashbackMaxEur(event.target.value)}
+          placeholder="Ex.: 5"
+          type="number"
+          value={cashbackMaxEur}
         />
         <Switch
           checked={active}
-          description="Se inativa, o depósito em cripto some do site."
+          description={
+            isPix
+              ? 'Se inativa, o Pix some do site.'
+              : 'Se inativa, o depósito em cripto some do site.'
+          }
           label="Ativa"
           onChange={setActive}
         />
@@ -122,7 +237,7 @@ function XgateProviderCard({ item }: { item: PaymentProviderCredential }) {
           onClick={() => void handleSave()}
           type="button"
         >
-          Salvar chaves
+          Salvar
         </Button>
       </div>
     </div>
@@ -139,8 +254,8 @@ export function PaymentProvidersPanel() {
           APIs de pagamento
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
-          Chaves ficam criptografadas (nunca em texto puro). Por ora só cripto via
-          XGate. Outras APIs entram aqui depois, cada uma com o próprio câmbio.
+          Chaves ficam criptografadas (nunca em texto puro). Cripto via XGate e Pix via
+          Woovi. O cashback pode ter um teto por moeda da carteira (USD, BRL ou EUR).
         </ThemeText>
       </div>
 
@@ -156,7 +271,7 @@ export function PaymentProvidersPanel() {
 
       <div className="space-y-4">
         {(data ?? []).map((item) => (
-          <XgateProviderCard item={item} key={item.provider} />
+          <ProviderCard item={item} key={item.provider} />
         ))}
       </div>
     </Surface>

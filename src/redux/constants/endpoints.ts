@@ -116,4 +116,6 @@ export const CAMBIO = {
 export const PAYMENT = {
   PROVIDERS: '/admin/payment/providers',
   PROVIDER: (provider: string) => `/admin/payment/providers/${provider}`,
+  DEPOSITS: '/admin/payment/deposits',
+  DEPOSIT_APPROVE: (id: string) => `/admin/payment/deposits/${id}/approve`,
 } as const

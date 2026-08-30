@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, Check } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Surface } from '@/components/ui/Surface'
+import { Tabs } from '@/components/ui/Tabs'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import {
@@ -10,6 +12,17 @@ import {
 } from '@/redux/store/api/cambio/api.cambio'
 import { PaymentProvidersPanel } from '@/pages/dashboard/PaymentProvidersPanel'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+
+const TABS = [
+  { id: 'cambio', label: 'Câmbio' },
+  { id: 'apis', label: 'APIs' },
+] as const
+
+type CambioTab = (typeof TABS)[number]['id']
+
+function isCambioTab(value: string | null): value is CambioTab {
+  return TABS.some((tab) => tab.id === value)
+}
 
 const PROVIDER_COPY: Record<string, { label: string; description: string }> = {
   skinsback: {
@@ -35,6 +48,9 @@ function formatWhen(iso?: string) {
 }
 
 export default function CambioPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const tab: CambioTab = isCambioTab(tabParam) ? tabParam : 'cambio'
   const { data, isLoading, isError, error } = useGetCambioSettingsQuery()
   const [saveSettings, saveState] = useUpdateCambioSettingsMutation()
   const [provider, setProvider] = useState('')
@@ -57,12 +73,28 @@ export default function CambioPage() {
 
   const dirty = Boolean(data && provider && provider !== data.provider)
 
+  if (tabParam === 'transacoes') {
+    return <Navigate replace to="/dashboard/deposits" />
+  }
+
+  const setTab = (next: string) => {
+    const params = new URLSearchParams(searchParams)
+    if (next === 'cambio') params.delete('tab')
+    else params.set('tab', next)
+    setSearchParams(params, { replace: true })
+  }
+
   return (
     <div className="space-y-6">
-      <PageTitle subtitle="Câmbio da carteira e chaves das APIs de pagamento (cripto por enquanto).">
+      <PageTitle subtitle="Câmbio da carteira e chaves das APIs de pagamento. O histórico de Pix e cripto fica em Depósitos.">
         Câmbio
       </PageTitle>
 
+      <Tabs activeId={tab} onChange={setTab} tabs={[...TABS]} />
+
+      {tab === 'apis' ? <PaymentProvidersPanel /> : null}
+      {tab === 'cambio' ? (
+        <>
       <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} />
         <div className="space-y-1">
@@ -166,8 +198,8 @@ export default function CambioPage() {
           </ThemeText>
         ) : null}
       </Surface>
-
-      <PaymentProvidersPanel />
+        </>
+      ) : null}
     </div>
   )
 }

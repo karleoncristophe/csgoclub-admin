@@ -13,7 +13,10 @@ export interface TabsProps {
   ariaLabel?: string
 }
 
-/** API compacta do admin sobre as tabs acessíveis do HeroUI. */
+/**
+ * Tabs de seção (underline) — preferir SegmentedTabs para filtros em pill.
+ * Usa o mesmo padrão pill do HeroUI para evitar o Indicator estourar a largura.
+ */
 export function Tabs({
   tabs,
   activeId,
@@ -25,18 +28,14 @@ export function Tabs({
     <HeroTabs
       selectedKey={activeId}
       onSelectionChange={(key) => key != null && onChange(String(key))}
-      className={className}
+      className={`min-w-0 ${className}`}
     >
-      <HeroTabs.ListContainer className="border-b border-separator">
-        <HeroTabs.List aria-label={ariaLabel} className="gap-1">
+      <HeroTabs.ListContainer className="max-w-full">
+        <HeroTabs.List aria-label={ariaLabel}>
           {tabs.map((tab) => (
-            <HeroTabs.Tab
-              key={tab.id}
-              id={tab.id}
-              className="min-h-9 px-3 text-sm font-medium text-muted data-[selected=true]:text-accent"
-            >
+            <HeroTabs.Tab key={tab.id} id={tab.id}>
               {tab.label}
-              <HeroTabs.Indicator className="bg-accent" />
+              <HeroTabs.Indicator />
             </HeroTabs.Tab>
           ))}
         </HeroTabs.List>

@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/Button'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { Pagination } from '@/components/ui/Pagination'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
@@ -137,8 +138,10 @@ export default function BattlesAdminPage() {
   const [name, setName] = useState('')
   const [weight, setWeight] = useState('1')
   const [createImage, setCreateImage] = useState<CaseImageValue>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [pageError, setPageError] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   useEffect(() => {
     if (page > totalPages) {
@@ -146,8 +149,26 @@ export default function BattlesAdminPage() {
     }
   }, [page, totalPages])
 
+  function resetCreateForm() {
+    setName('')
+    setWeight('1')
+    setCreateImage(null)
+    setCreateError(null)
+  }
+
+  function openCreateModal() {
+    resetCreateForm()
+    setCreateModalOpen(true)
+  }
+
+  function closeCreateModal() {
+    if (creating || uploadingAvatar) return
+    setCreateModalOpen(false)
+    resetCreateForm()
+  }
+
   async function handleCreate() {
-    setError(null)
+    setCreateError(null)
     try {
       setUploadingAvatar(isPendingCaseImage(createImage))
       const avatarUrl = await uploadBotAvatar(createImage)
@@ -157,11 +178,10 @@ export default function BattlesAdminPage() {
         active: true,
         avatarUrl,
       }).unwrap()
-      setName('')
-      setWeight('1')
-      setCreateImage(null)
+      setCreateModalOpen(false)
+      resetCreateForm()
     } catch (e) {
-      setError(getErrorMessage(e))
+      setCreateError(getErrorMessage(e))
     } finally {
       setUploadingAvatar(false)
     }
@@ -173,53 +193,30 @@ export default function BattlesAdminPage() {
         Battles
       </PageTitle>
 
-      {error ? (
+      {pageError ? (
         <ThemeText as="p" className="text-sm text-red-500">
-          {error}
+          {pageError}
         </ThemeText>
       ) : null}
 
-      <Surface variant="settingsPanel" className="space-y-4 !p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-brand-600" />
           <ThemeText as="h2" className="text-lg font-semibold">
             Bots
           </ThemeText>
         </div>
+        <Button type="button" className="gap-2" onClick={openCreateModal}>
+          <Plus className="h-4 w-4" />
+          Criar bot
+        </Button>
+      </div>
 
-        <div className="flex flex-wrap items-end gap-4">
-          <CaseImageUploader
-            variant="avatar"
-            value={createImage}
-            onChange={setCreateImage}
-            disabled={creating || uploadingAvatar}
-          />
-          <Input
-            label="Nome"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Crusher"
-          />
-          <Input
-            label="Peso"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-          />
-          <Button
-            disabled={creating || uploadingAvatar || !name.trim()}
-            isLoading={creating || uploadingAvatar}
-            onClick={handleCreate}
-          >
-            <Plus className="mr-1 h-4 w-4" />
-            Criar bot
-          </Button>
-        </div>
-        <ThemeText as="p" tone="secondary" className="text-xs">
-          O bot sorteia com a mesma elegibilidade do jogador. O prêmio dele não
-          mexe no banco da caixa. Tem saldo próprio que começa em 1.000.000 e
-          recarrega quando acaba. Peso = chance de ser escolhido na vaga.
-        </ThemeText>
-      </Surface>
+      <ThemeText as="p" tone="secondary" className="text-xs">
+        O bot sorteia com a mesma elegibilidade do jogador. O prêmio dele não
+        mexe no banco da caixa. Tem saldo próprio que começa em 1.000.000 e
+        recarrega quando acaba. Peso = chance de ser escolhido na vaga.
+      </ThemeText>
 
       <div className={listTable.wrap}>
           <table className={listTable.table}>
@@ -250,7 +247,7 @@ export default function BattlesAdminPage() {
                 bots.map((bot) => (
                   <tr key={bot._id}>
                     <td className={listTable.td}>
-                      <BotAvatarEditor bot={bot} onError={setError} />
+                      <BotAvatarEditor bot={bot} onError={setPageError} />
                     </td>
                     <td className={listTable.td}>{bot.name}</td>
                     <td className={listTable.td}>
@@ -456,6 +453,65 @@ export default function BattlesAdminPage() {
           </ThemeText>
         ) : null}
       </Surface>
+
+      <Modal
+        open={createModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeCreateModal()
+          else setCreateModalOpen(true)
+        }}
+        title="Criar bot"
+        description="Foto, nome e peso. O bot entra ativo na fila de battles."
+        size="md"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeCreateModal}
+              disabled={creating || uploadingAvatar}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={creating || uploadingAvatar || !name.trim()}
+              isLoading={creating || uploadingAvatar}
+              onClick={() => void handleCreate()}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Criar bot
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <CaseImageUploader
+            variant="avatar"
+            value={createImage}
+            onChange={setCreateImage}
+            disabled={creating || uploadingAvatar}
+          />
+          <Input
+            label="Nome"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Crusher"
+          />
+          <Input
+            label="Peso"
+            type="number"
+            min={1}
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+          />
+          {createError ? (
+            <ThemeText as="p" className="text-sm text-red-500">
+              {createError}
+            </ThemeText>
+          ) : null}
+        </div>
+      </Modal>
     </div>
   )
 }

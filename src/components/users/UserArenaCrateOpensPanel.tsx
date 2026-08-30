@@ -58,12 +58,12 @@ export function UserArenaCrateOpensPanel({ userId }: UserArenaCrateOpensPanelPro
   const totalPages = Math.max(1, data?.totalPages ?? 1)
 
   return (
-    <Surface variant="settingsPanel" className="!p-5">
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+    <Surface variant="settingsPanel" className="!p-4">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <SectionTitle className="mb-1">Histórico Arena</SectionTitle>
-          <ThemeText as="p" tone="secondary" className="text-sm">
-            Skins sorteadas ao abrir crates ganhas na Arena.
+          <SectionTitle className="mb-0.5">Histórico Arena</SectionTitle>
+          <ThemeText as="p" tone="faint" className="text-xs">
+            Skins sorteadas ao abrir crates da Arena.
           </ThemeText>
         </div>
         <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">

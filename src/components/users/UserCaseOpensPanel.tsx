@@ -15,7 +15,7 @@ import {
   type AdminCaseOpenListItem,
 } from '@/redux/store/api/users/api.users'
 import { getErrorMessage } from '@/utils/getErrorMessage'
-import { userStatCardSpaciousClass } from './userPanelClasses'
+import { userStatCardClass } from './userPanelClasses'
 
 function formatMoney(value: number, currency = 'USD') {
   return new Intl.NumberFormat('pt-BR', {
@@ -50,17 +50,23 @@ function StatCard({
   label: string
   value: string
   hint: string
-  variant?: keyof typeof userStatCardSpaciousClass
+  variant?: 'default' | 'brand' | 'amber' | 'rose'
 }) {
+  const cardClass =
+    variant === 'brand'
+      ? userStatCardClass.brand
+      : variant === 'amber'
+        ? userStatCardClass.amber
+        : userStatCardClass.default
   return (
-    <div className={userStatCardSpaciousClass[variant]}>
-      <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
+    <div className={cardClass}>
+      <ThemeText as="p" tone="label" className="text-[10px] uppercase tracking-wide">
         {label}
       </ThemeText>
-      <ThemeText as="p" tone="primary" className="mt-1 text-lg font-semibold">
+      <ThemeText as="p" tone="primary" className="mt-0.5 text-sm font-semibold">
         {value}
       </ThemeText>
-      <ThemeText as="p" tone="faint" className="mt-2 text-xs leading-relaxed">
+      <ThemeText as="p" tone="faint" className="mt-0.5 text-[11px] leading-snug">
         {hint}
       </ThemeText>
     </div>
@@ -102,12 +108,12 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
   const totalPages = Math.max(1, data?.totalPages ?? 1)
 
   return (
-    <Surface variant="settingsPanel" className="!p-5">
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+    <Surface variant="settingsPanel" className="!p-4">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <SectionTitle className="mb-1">Histórico de caixas</SectionTitle>
-          <ThemeText as="p" tone="secondary" className="text-sm">
-            Skins sorteadas nas aberturas de caixas deste cliente.
+          <SectionTitle className="mb-0.5">Histórico de caixas</SectionTitle>
+          <ThemeText as="p" tone="faint" className="text-xs">
+            Skins sorteadas nas aberturas de caixas.
           </ThemeText>
         </div>
         <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
@@ -117,28 +123,28 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
       </div>
 
       {summary ? (
-        <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="Total pago"
             value={formatMoney(summary.totalPaid)}
-            hint="Soma do preço pago nas aberturas"
+            hint="Preço pago"
             variant="brand"
           />
           <StatCard
             label="Total ganho"
             value={formatMoney(summary.totalWonValue)}
-            hint="Soma do valor dos itens dropados"
+            hint="Itens dropados"
           />
           <StatCard
             label="Guardados"
             value={String(summary.keptCount)}
-            hint={`${summary.convertedCount} convertidos · ${summary.pendingCount} pendentes`}
+            hint={`${summary.convertedCount} conv. · ${summary.pendingCount} pend.`}
             variant="amber"
           />
           <StatCard
             label="Teste"
             value={String(summary.testOpensCount)}
-            hint="Aberturas de influencer / teste"
+            hint="Influencer / teste"
             variant="rose"
           />
         </div>

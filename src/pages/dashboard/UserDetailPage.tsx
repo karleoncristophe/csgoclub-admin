@@ -13,13 +13,13 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
-import { SectionTitle } from '@/components/ui/Title'
 import { StatusPill, TextBadge } from '@/components/StatusPill'
 import { UserCaseOpensPanel } from '@/components/users/UserCaseOpensPanel'
 import { UserArenaCrateOpensPanel } from '@/components/users/UserArenaCrateOpensPanel'
 import { UserEditPanel } from '@/components/users/UserEditPanel'
 import { UserKycPanel } from '@/components/users/UserKycPanel'
 import { UserSiteInventoryPanel } from '@/components/users/UserSiteInventoryPanel'
+import { UserWalletPanel } from '@/components/users/UserWalletPanel'
 import { steamCommunityProfileUrl } from '@/components/users/SteamIdLink'
 import { labelUserAppRole } from '@/i18n/enumLabels'
 import { useGetUserByIdQuery } from '@/redux/store/api/users/api.users'
@@ -76,18 +76,18 @@ function CopyableField({
   }
 
   return (
-    <div className="group rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 transition hover:border-brand-200/80 hover:bg-brand-50/30 dark:border-zinc-800 dark:bg-zinc-950/40 dark:hover:border-brand-800/60 dark:hover:bg-brand-950/20">
-      <ThemeText as="p" tone="label" className="text-xs uppercase tracking-wide">
+    <div className="rounded-xl border border-separator bg-surface-secondary px-3 py-2.5">
+      <ThemeText as="p" tone="label" className="text-[10px] uppercase tracking-wide">
         {label}
       </ThemeText>
-      <div className="mt-2 flex items-start justify-between gap-3">
+      <div className="mt-1 flex items-center justify-between gap-2">
         {href ? (
           <a
             href={href}
             target="_blank"
             rel="noreferrer"
-            className={`min-w-0 break-all text-sm text-brand-600 hover:underline dark:text-brand-400 ${
-              mono ? 'font-mono text-[13px]' : 'font-medium'
+            className={`min-w-0 truncate text-sm text-brand-600 hover:underline dark:text-brand-400 ${
+              mono ? 'font-mono text-xs' : 'font-medium'
             }`}
           >
             {value}
@@ -96,73 +96,38 @@ function CopyableField({
           <ThemeText
             as="p"
             tone="primary"
-            className={`min-w-0 break-all text-sm ${mono ? 'font-mono text-[13px]' : 'font-medium'}`}
+            className={`min-w-0 truncate text-sm ${mono ? 'font-mono text-xs' : 'font-medium'}`}
           >
             {value}
           </ThemeText>
         )}
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-0.5">
           {href ? (
             <a
               href={href}
               target="_blank"
               rel="noreferrer"
               aria-label={`Abrir ${label}`}
-              className="rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 transition hover:border-brand-300 hover:text-brand-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-brand-700 dark:hover:text-brand-400"
+              className="rounded-md p-1.5 text-muted transition hover:bg-default hover:text-foreground"
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="h-3.5 w-3.5" />
             </a>
           ) : null}
           <button
             type="button"
             onClick={handleCopy}
-            className="rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 transition hover:border-brand-300 hover:text-brand-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-brand-700 dark:hover:text-brand-400"
+            className="rounded-md p-1.5 text-muted transition hover:bg-default hover:text-foreground"
             aria-label={`Copiar ${label}`}
           >
             {copied ? (
-              <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
             ) : (
-              <Copy className="h-4 w-4" />
+              <Copy className="h-3.5 w-3.5" />
             )}
           </button>
         </div>
       </div>
     </div>
-  )
-}
-
-function InfoTile({
-  icon: Icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: typeof Clock
-  label: string
-  value: string
-  hint?: string
-}) {
-  return (
-    <Surface variant="metricTile" className="!p-4">
-      <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300">
-          <Icon className="h-5 w-5" strokeWidth={1.75} />
-        </span>
-        <div className="min-w-0">
-          <ThemeText as="p" tone="label" className="text-xs uppercase">
-            {label}
-          </ThemeText>
-          <ThemeText as="p" tone="primary" className="mt-1 text-sm font-semibold">
-            {value}
-          </ThemeText>
-          {hint ? (
-            <ThemeText as="p" tone="faint" className="mt-0.5 text-xs">
-              {hint}
-            </ThemeText>
-          ) : null}
-        </div>
-      </div>
-    </Surface>
   )
 }
 
@@ -197,7 +162,7 @@ export default function UserDetailPage() {
   const createdRelative = formatRelative(data?.createdAt)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Link
         to="/dashboard/users"
         className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 transition hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
@@ -207,7 +172,7 @@ export default function UserDetailPage() {
       </Link>
 
       {isLoading ? (
-        <div className="flex items-center gap-2 py-16 text-sm text-muted">
+        <div className="flex items-center gap-2 py-10 text-sm text-muted">
           <span className="h-5 w-5 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
           Carregando perfil do usuário...
         </div>
@@ -219,46 +184,31 @@ export default function UserDetailPage() {
 
       {data ? (
         <>
-          <Surface
-            variant="settingsPanel"
-            className="relative overflow-hidden !p-0"
-          >
-            <div
-              className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/10 via-transparent to-brand-700/5 dark:from-brand-500/15 dark:to-brand-900/10"
-              aria-hidden
-            />
-            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-400/10 blur-3xl dark:bg-brand-500/15" aria-hidden />
-            <div className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-brand-600/10 blur-3xl dark:bg-brand-700/10" aria-hidden />
-
-            <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div className="relative shrink-0">
-                  <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 opacity-70 blur-sm dark:from-brand-500 dark:to-brand-800" />
-                  {avatar ? (
-                    <img
-                      src={avatar}
-                      alt=""
-                      className="relative h-28 w-28 rounded-full border-4 border-white object-cover shadow-xl shadow-brand-900/20 dark:border-zinc-900 dark:shadow-black/40 sm:h-32 sm:w-32"
-                    />
-                  ) : (
-                    <span className="relative flex h-28 w-28 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-brand-500 to-brand-700 text-3xl font-bold text-white shadow-xl dark:border-zinc-900 sm:h-32 sm:w-32">
-                      {data.name?.[0]?.toUpperCase() ?? '?'}
-                    </span>
-                  )}
-                </div>
-
+          <Surface variant="settingsPanel" className="!p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                {avatar ? (
+                  <img
+                    src={avatar}
+                    alt=""
+                    className="h-14 w-14 shrink-0 rounded-full border border-separator object-cover"
+                  />
+                ) : (
+                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-600 text-lg font-bold text-white">
+                    {data.name?.[0]?.toUpperCase() ?? '?'}
+                  </span>
+                )}
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
+                    <h1 className="truncate text-xl font-bold tracking-tight text-foreground">
                       {data.name}
                     </h1>
                     <StatusPill active={data.active} deleted={data.deleted} />
                   </div>
-
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                     <TextBadge>
-                      <span className="inline-flex items-center gap-1.5">
-                        <Shield className="h-3.5 w-3.5" />
+                      <span className="inline-flex items-center gap-1">
+                        <Shield className="h-3 w-3" />
                         {labelUserAppRole(data.role)}
                       </span>
                     </TextBadge>
@@ -269,32 +219,20 @@ export default function UserDetailPage() {
                     ) : null}
                     {data.kycVerified || data.kycStatus === 'approved' ? (
                       <TextBadge>
-                        <span className="text-emerald-700 dark:text-emerald-300">KYC verificado</span>
+                        <span className="text-emerald-700 dark:text-emerald-300">KYC</span>
                       </TextBadge>
                     ) : data.kycStatus && data.kycStatus !== 'not_started' ? (
-                      <TextBadge>
-                        <span className="text-sky-700 dark:text-sky-300">
-                          KYC: {data.kycStatus}
-                        </span>
-                      </TextBadge>
+                      <TextBadge>KYC: {data.kycStatus}</TextBadge>
                     ) : null}
                   </div>
-
-                  <ThemeText as="p" tone="secondary" className="mt-3 max-w-xl text-sm leading-relaxed">
-                    Perfil Steam vinculado à plataforma CS2Club. Último acesso{' '}
-                    {lastLoginRelative ? (
-                      <span className="font-medium text-foreground">
-                        {lastLoginRelative}
-                      </span>
-                    ) : (
-                      'sem registro'
-                    )}
-                    .
+                  <ThemeText as="p" tone="faint" className="mt-1.5 text-xs">
+                    Login {lastLoginRelative ?? 'sem registro'} · conta{' '}
+                    {createdRelative ?? formatDateTime(data.createdAt)}
                   </ThemeText>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 lg:justify-end">
+              <div className="flex flex-wrap gap-2 sm:justify-end">
                 <Link to={`/dashboard/trades?userId=${data._id}`} className="inline-flex">
                   <Button variant="secondary" size="sm">
                     <ArrowLeftRight className="h-4 w-4" />
@@ -310,60 +248,51 @@ export default function UserDetailPage() {
                   >
                     <Button variant="secondary" size="sm">
                       <ExternalLink className="h-4 w-4" />
-                      Perfil Steam
+                      Steam
                     </Button>
                   </a>
                 ) : null}
-                <a
-                  href={`https://steamcommunity.com/profiles/${data.steamId}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex"
-                >
-                  <Button variant="ghost" size="sm">
-                    Abrir por Steam ID
-                  </Button>
-                </a>
               </div>
             </div>
-          </Surface>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <InfoTile
-              icon={Clock}
-              label="Último login"
-              value={formatDateTime(data.lastLoginAt, 'long')}
-              hint={lastLoginRelative ?? undefined}
-            />
-            <InfoTile
-              icon={Calendar}
-              label="Conta criada"
-              value={formatDateTime(data.createdAt, 'long')}
-              hint={createdRelative ?? undefined}
-            />
-          </div>
-
-          <Surface variant="settingsPanel" className="!p-5">
-            <SectionTitle className="mb-5">Identidade Steam</SectionTitle>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="flex items-center gap-2 rounded-xl border border-separator bg-surface-secondary px-3 py-2">
+                <Clock className="h-3.5 w-3.5 shrink-0 text-muted" />
+                <div className="min-w-0">
+                  <ThemeText as="p" tone="label" className="text-[10px] uppercase">
+                    Último login
+                  </ThemeText>
+                  <ThemeText as="p" tone="primary" className="truncate text-xs font-medium">
+                    {formatDateTime(data.lastLoginAt)}
+                  </ThemeText>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border border-separator bg-surface-secondary px-3 py-2">
+                <Calendar className="h-3.5 w-3.5 shrink-0 text-muted" />
+                <div className="min-w-0">
+                  <ThemeText as="p" tone="label" className="text-[10px] uppercase">
+                    Criado em
+                  </ThemeText>
+                  <ThemeText as="p" tone="primary" className="truncate text-xs font-medium">
+                    {formatDateTime(data.createdAt)}
+                  </ThemeText>
+                </div>
+              </div>
               <CopyableField
                 label="Steam ID"
                 value={data.steamId}
                 href={data.steamId ? steamCommunityProfileUrl(data.steamId) : undefined}
               />
               <CopyableField label="ID interno" value={data._id} />
-              <CopyableField label="Nome exibido" value={data.name} mono={false} />
-              <CopyableField label="URL do perfil" value={data.profileUrl} href={data.profileUrl} />
             </div>
           </Surface>
 
-          <UserKycPanel user={data} />
+          <div className="grid gap-4 xl:grid-cols-2">
+            <UserKycPanel user={data} />
+            <UserEditPanel user={data} onUpdated={() => refetch()} />
+          </div>
 
-          <UserEditPanel user={data} onUpdated={() => refetch()} />
-
-          <UserCaseOpensPanel userId={data._id} />
-
-          <UserArenaCrateOpensPanel userId={data._id} />
+          <UserWalletPanel user={data} />
 
           <UserSiteInventoryPanel
             userId={data._id}
@@ -371,6 +300,10 @@ export default function UserDetailPage() {
             walletCurrency={data.walletCurrency}
             onConverted={() => refetch()}
           />
+
+          <UserCaseOpensPanel userId={data._id} />
+
+          <UserArenaCrateOpensPanel userId={data._id} />
         </>
       ) : null}
     </div>

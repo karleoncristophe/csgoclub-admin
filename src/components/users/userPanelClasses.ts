@@ -22,9 +22,7 @@ export const userStatCardSpaciousClass = {
 
 export const userBalanceTileClass = {
   default:
-    'rounded-xl border border-border bg-surface-secondary p-3',
-  accent:
-    'rounded-xl border border-accent/20 bg-accent-soft p-3',
+    'rounded-xl border border-separator bg-surface-secondary px-3 py-2.5',
 } as const
 
 export const userHighlightBoxClass =

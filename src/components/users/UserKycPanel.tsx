@@ -53,15 +53,15 @@ export function UserKycPanel({ user }: UserKycPanelProps) {
   const sessions = data?.sessions ?? []
 
   return (
-    <Surface variant="settingsPanel" className="!p-5">
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+    <Surface variant="settingsPanel" className="!p-4">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <SectionTitle className="mb-2 flex items-center gap-2">
-            <IdCard className="h-5 w-5 text-brand-600 dark:text-brand-400" />
-            Verificação KYC
+          <SectionTitle className="mb-0.5 flex items-center gap-2 text-base">
+            <IdCard className="h-4 w-4 text-brand-600 dark:text-brand-400" />
+            KYC
           </SectionTitle>
-          <ThemeText as="p" tone="secondary" className="text-sm">
-            Status e histórico de sessões Didit do usuário.
+          <ThemeText as="p" tone="faint" className="text-xs">
+            Status e sessões Didit.
           </ThemeText>
         </div>
         <Button

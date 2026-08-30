@@ -27,27 +27,21 @@ function BalanceTile({
   label,
   value,
   hint,
-  accent = false,
 }: {
   label: string
   value: string
   hint?: string
-  accent?: boolean
 }) {
   return (
-    <div className={accent ? userBalanceTileClass.accent : userBalanceTileClass.default}>
-      <ThemeText as="p" tone="label" className="text-xs uppercase tracking-wide">
+    <div className={userBalanceTileClass.default}>
+      <ThemeText as="p" tone="label" className="text-[10px] uppercase tracking-wide">
         {label}
       </ThemeText>
-      <ThemeText
-        as="p"
-        tone="primary"
-        className={`mt-2 text-xl font-bold ${accent ? 'dark:text-brand-100' : ''}`}
-      >
+      <ThemeText as="p" tone="primary" className="mt-0.5 text-sm font-bold">
         {value}
       </ThemeText>
       {hint ? (
-        <ThemeText as="p" tone="faint" className="mt-1 text-xs">
+        <ThemeText as="p" tone="faint" className="mt-0.5 text-[11px]">
           {hint}
         </ThemeText>
       ) : null}
@@ -89,20 +83,17 @@ export function UserWalletPanel({ user }: UserWalletPanelProps) {
   const wallets = user.wallets
 
   return (
-    <Surface variant="settingsPanel" className="!p-5">
-      <SectionTitle className="mb-2 flex items-center gap-2">
-        <Coins className="h-5 w-5 text-brand-600 dark:text-brand-400" />
+    <Surface variant="settingsPanel" className="!p-4">
+      <SectionTitle className="mb-1 flex items-center gap-2 text-base">
+        <Coins className="h-4 w-4 text-brand-600 dark:text-brand-400" />
         Carteira
       </SectionTitle>
-      <ThemeText as="p" tone="secondary" className="mb-5 text-sm">
-        Três carteiras independentes. A moeda ativa do perfil escolhe qual o
-        jogador usa — o saldo não é convertido.
-        {isInfluencer
-          ? ' Bônus entra só na moeda que você selecionar abaixo.'
-          : ''}
+      <ThemeText as="p" tone="faint" className="mb-3 text-xs">
+        Três carteiras independentes — a moeda ativa define qual o jogador usa.
+        {isInfluencer ? ' Bônus entra só na moeda selecionada abaixo.' : ''}
       </ThemeText>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {SKINS_CURRENCY_OPTIONS.map((option) => {
           const slice = wallets?.[option.value]
           const isActive = user.walletCurrency === option.value
@@ -114,23 +105,19 @@ export function UserWalletPanel({ user }: UserWalletPanelProps) {
           return (
             <div
               key={option.value}
-              className={`rounded-2xl border p-4 ${
-                isActive
-                  ? 'border-brand-300 bg-brand-50/40 dark:border-brand-400/40 dark:bg-brand-500/10'
-                  : 'border-border/80'
-              }`}
+              className="rounded-xl border border-separator bg-surface p-3"
             >
-              <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="mb-2 flex items-center justify-between gap-2">
                 <ThemeText tone="primary" className="text-sm font-semibold">
                   {option.label}
                 </ThemeText>
                 {isActive ? (
-                  <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[11px] font-medium text-white">
+                  <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-medium text-white">
                     Ativa
                   </span>
                 ) : null}
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-2 sm:grid-cols-3">
                 <BalanceTile
                   label="Saldo real"
                   value={formatMoney(balance, option.value)}
@@ -140,7 +127,6 @@ export function UserWalletPanel({ user }: UserWalletPanelProps) {
                   label="Saldo bônus"
                   value={formatMoney(bonus, option.value)}
                   hint="Não sacável"
-                  accent
                 />
                 <BalanceTile
                   label="Total"
@@ -154,16 +140,15 @@ export function UserWalletPanel({ user }: UserWalletPanelProps) {
       </div>
 
       {isInfluencer ? (
-        <div className="mt-6 rounded-xl border border-border p-3/80 dark:bg-zinc-900/40">
-          <div className="mb-3 flex items-center gap-2">
+        <div className="mt-4 rounded-xl border border-separator bg-surface-secondary p-3">
+          <div className="mb-2 flex items-center gap-2">
             <Gift className="h-4 w-4 text-brand-600 dark:text-brand-400" />
             <ThemeText as="p" tone="primary" className="text-sm font-medium">
               Adicionar saldo bônus
             </ThemeText>
           </div>
-          <ThemeText as="p" tone="secondary" className="mb-3 text-xs">
-            O valor entra só na carteira escolhida. Não converte para as outras
-            moedas e não pode ser sacado.
+          <ThemeText as="p" tone="faint" className="mb-3 text-xs">
+            Entra só na carteira escolhida. Não converte e não pode ser sacado.
           </ThemeText>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1">

@@ -35,9 +35,14 @@ export function SegmentedTabs({
       className={`min-w-0 ${className}`}
     >
       <HeroTabs.ListContainer className="max-w-full">
-        <HeroTabs.List aria-label={ariaLabel}>
+        <HeroTabs.List aria-label={ariaLabel} className="gap-1">
           {items.map((item) => (
-            <HeroTabs.Tab key={item.id} id={item.id} isDisabled={item.disabled}>
+            <HeroTabs.Tab
+              key={item.id}
+              id={item.id}
+              isDisabled={item.disabled}
+              className="!w-auto shrink-0 whitespace-nowrap"
+            >
               {item.label}
               <HeroTabs.Indicator />
             </HeroTabs.Tab>

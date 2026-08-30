@@ -166,22 +166,29 @@ html {
 }
 
 /* Compatibility bridge: existing CS2Club components follow the active HeroUI palette. */
-/* Keep native Hero tables and the shared legacy-table bridge on the same hover token. */
+/* Keep native Hero tables and the shared listTable bridge on the same hover token. */
 .table__row:hover:not([data-selected='true']),
-.table__row[data-hovered='true']:not([data-selected='true']) {
+.table__row[data-hovered='true']:not([data-selected='true']),
+.list-table-row:hover {
   background-color: color-mix(in oklab, var(--accent) 8%, var(--surface));
 }
 
 /* One compact HeroUI table treatment across the admin: single outer radius,
    no nested padding/gutter (that mismatch shows as a crescent in the corners). */
 .table-root,
-.table-root--primary {
+.table-root--primary,
+.list-table-wrap {
   overflow: hidden;
   border: 1px solid var(--separator);
   border-radius: var(--radius);
   background: var(--surface);
   padding: 0;
   box-shadow: none;
+}
+
+.list-table-wrap {
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .table__content {

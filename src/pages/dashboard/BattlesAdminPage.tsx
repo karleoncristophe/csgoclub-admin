@@ -227,7 +227,7 @@ export default function BattlesAdminPage() {
       <div className={listTable.wrap}>
           <table className={listTable.table}>
             <thead>
-              <tr>
+              <tr className={listTable.theadRow}>
                 <th className={listTable.th}>Foto</th>
                 <th className={listTable.th}>Nome</th>
                 <th className={listTable.th}>Saldo</th>
@@ -236,7 +236,7 @@ export default function BattlesAdminPage() {
                 <th className={listTable.th} />
               </tr>
             </thead>
-            <tbody>
+            <tbody className={listTable.tbody}>
               {botsLoading ? (
                 <tr>
                   <td className={listTable.td} colSpan={6}>
@@ -251,7 +251,7 @@ export default function BattlesAdminPage() {
                 </tr>
               ) : (
                 bots.map((bot) => (
-                  <tr key={bot._id}>
+                  <tr key={bot._id} className={listTable.tr}>
                     <td className={listTable.td}>
                       <BotAvatarEditor bot={bot} onError={setPageError} />
                     </td>
@@ -338,7 +338,7 @@ export default function BattlesAdminPage() {
         <div className={listTable.wrap}>
           <table className={listTable.table}>
             <thead>
-              <tr>
+              <tr className={listTable.theadRow}>
                 <th className={listTable.th}>ID</th>
                 <th className={listTable.th}>Jogadores</th>
                 <th className={listTable.th}>Status</th>
@@ -348,7 +348,7 @@ export default function BattlesAdminPage() {
                 <th className={listTable.th} />
               </tr>
             </thead>
-            <tbody>
+            <tbody className={listTable.tbody}>
               {battlesLoading ? (
                 <tr>
                   <td className={listTable.td} colSpan={7}>

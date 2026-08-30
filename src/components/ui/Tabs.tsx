@@ -33,7 +33,11 @@ export function Tabs({
       <HeroTabs.ListContainer className="max-w-full">
         <HeroTabs.List aria-label={ariaLabel}>
           {tabs.map((tab) => (
-            <HeroTabs.Tab key={tab.id} id={tab.id}>
+            <HeroTabs.Tab
+              key={tab.id}
+              id={tab.id}
+              className="!w-auto shrink-0 whitespace-nowrap"
+            >
               {tab.label}
               <HeroTabs.Indicator />
             </HeroTabs.Tab>

@@ -381,7 +381,24 @@ export function PaymentDepositsPanel() {
           totalCount={couponsData?.total}
           value={couponCode}
         />
-        <div className="flex flex-col gap-1.5">
+      </div>
+
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="w-full sm:max-w-[12rem]">
+          <Select
+            label="Itens por página"
+            name="payment-deposit-page-size"
+            onChange={(event) => setFilter('limit', event.target.value)}
+            value={String(itemsPerPage)}
+          >
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="flex w-full flex-col gap-1.5 sm:max-w-md sm:items-stretch">
           <ThemeText as="p" className="text-sm font-medium text-foreground">
             Período
           </ThemeText>
@@ -394,18 +411,6 @@ export function PaymentDepositsPanel() {
             presetLabel={periodPresetLabel}
           />
         </div>
-        <Select
-          label="Itens por página"
-          name="payment-deposit-page-size"
-          onChange={(event) => setFilter('limit', event.target.value)}
-          value={String(itemsPerPage)}
-        >
-          {PAGE_SIZE_OPTIONS.map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </Select>
       </div>
 
       {isError ? <Surface variant="errorBanner">{getErrorMessage(error)}</Surface> : null}

@@ -113,7 +113,7 @@ export default function ArenaCratesPage() {
                   <th className={listTable.th} />
                 </tr>
               </thead>
-              <tbody>
+              <tbody className={listTable.tbody}>
                 {data.map((crate) => (
                   <tr key={crate._id} className={listTable.tr}>
                     <td className={listTable.td}>

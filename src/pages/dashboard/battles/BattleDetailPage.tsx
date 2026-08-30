@@ -309,7 +309,7 @@ export default function BattleDetailPage() {
                     <div className={listTable.wrap}>
                       <table className={listTable.table}>
                         <thead>
-                          <tr>
+                          <tr className={listTable.theadRow}>
                             <th className={listTable.th}>Jogador</th>
                             <th className={listTable.th}>Skin</th>
                             <th className={listTable.th}>Raridade</th>
@@ -317,9 +317,12 @@ export default function BattleDetailPage() {
                             <th className={listTable.th}>Método</th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody className={listTable.tbody}>
                           {dropsByRound[round].map(({ seat, drop }, i) => (
-                            <tr key={`${seat.index}-${drop.skinName}-${i}`}>
+                            <tr
+                              key={`${seat.index}-${drop.skinName}-${i}`}
+                              className={listTable.tr}
+                            >
                               <td className={listTable.td}>
                                 <div className="flex items-center gap-2">
                                   {seat.avatarUrl ? (

@@ -124,7 +124,7 @@ export default function CasesPage() {
                   <th className={listTable.th} />
                 </tr>
               </thead>
-              <tbody>
+              <tbody className={listTable.tbody}>
                 {data.map((lootCase) => (
                   <tr key={lootCase._id} className={listTable.tr}>
                     <td className={listTable.td}>

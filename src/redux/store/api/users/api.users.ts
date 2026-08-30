@@ -34,6 +34,8 @@ export type UserAdminDetail = AppUser & {
   userType: 'standard' | 'influencer'
   balance: number
   bonusBalance: number
+  influencerSkinWithdrawEnabled?: boolean
+  influencerSkinWithdrawLimitUsd?: number
   totalSpendable: number
   withdrawableBalance: number
   walletCurrency: SkinsCurrency
@@ -376,6 +378,8 @@ export const usersApi = createApi({
         isTestAffiliate?: boolean
         addBonusBalance?: number
         addBonusCurrency?: SkinsCurrency
+        influencerSkinWithdrawEnabled?: boolean
+        addInfluencerSkinWithdrawLimitUsd?: number
       }
     >({
       query: ({ id, ...body }) => ({

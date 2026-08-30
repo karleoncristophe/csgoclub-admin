@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 import { Surface } from '@/components/ui/Surface'
 import { Switch } from '@/components/ui/Switch'
 import { ThemeText } from '@/components/ui/ThemeText'
@@ -12,6 +13,16 @@ import {
   type UpsertPaymentProviderBody,
 } from '@/redux/store/api/payment/api.payment'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+
+const WOOVI_PRODUCTION_API = 'https://api.woovi.com'
+const WOOVI_SANDBOX_API = 'https://api.woovi-sandbox.com'
+
+function wooviApiBaseUrl(value?: string) {
+  if (value?.includes('woovi-sandbox') || value?.includes('openpix-sandbox')) {
+    return WOOVI_SANDBOX_API
+  }
+  return WOOVI_PRODUCTION_API
+}
 
 function formatWhen(iso?: string) {
   if (!iso) return '—'
@@ -50,6 +61,9 @@ function fieldDescription(item: PaymentProviderCredential, key: string): string 
   if (key === 'appId') {
     return 'AppID da API (header Authorization, sem Bearer). Guardado criptografado.'
   }
+  if (key === 'apiBaseUrl' && item.provider === 'woovi') {
+    return 'AppID de teste só funciona no sandbox. AppID de produção só em api.woovi.com.'
+  }
   return undefined
 }
 
@@ -77,7 +91,9 @@ function ProviderCard({ item }: { item: PaymentProviderCredential }) {
     const secrets = nestedSecrets(item)
     const next: Record<string, string> = {}
     for (const field of item.catalog.fields) {
-      if (field.type === 'url') {
+      if (field.key === 'apiBaseUrl' && item.provider === 'woovi') {
+        next[field.key] = wooviApiBaseUrl(secrets.apiBaseUrl)
+      } else if (field.type === 'url') {
         next[field.key] = String(secrets.apiBaseUrl ?? '')
       } else {
         next[field.key] = ''
@@ -164,21 +180,37 @@ function ProviderCard({ item }: { item: PaymentProviderCredential }) {
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {item.catalog.fields.map((field) => (
-          <Input
-            autoComplete={field.type === 'password' ? 'new-password' : 'off'}
-            description={fieldDescription(item, field.key)}
-            key={field.key}
-            label={field.label}
-            name={`${item.provider}-${field.key}`}
-            onChange={(event) =>
-              setFields((current) => ({ ...current, [field.key]: event.target.value }))
-            }
-            placeholder={fieldPlaceholder(item, field.key)}
-            type={field.type === 'url' ? 'url' : field.type}
-            value={fields[field.key] ?? ''}
-          />
-        ))}
+        {item.catalog.fields.map((field) =>
+          field.key === 'apiBaseUrl' && item.provider === 'woovi' ? (
+            <Select
+              description={fieldDescription(item, field.key)}
+              key={field.key}
+              label="Ambiente"
+              name={`${item.provider}-${field.key}`}
+              onChange={(event) =>
+                setFields((current) => ({ ...current, [field.key]: event.target.value }))
+              }
+              value={wooviApiBaseUrl(fields[field.key])}
+            >
+              <option value={WOOVI_PRODUCTION_API}>Produção (api.woovi.com)</option>
+              <option value={WOOVI_SANDBOX_API}>Teste / sandbox (api.woovi-sandbox.com)</option>
+            </Select>
+          ) : (
+            <Input
+              autoComplete={field.type === 'password' ? 'new-password' : 'off'}
+              description={fieldDescription(item, field.key)}
+              key={field.key}
+              label={field.label}
+              name={`${item.provider}-${field.key}`}
+              onChange={(event) =>
+                setFields((current) => ({ ...current, [field.key]: event.target.value }))
+              }
+              placeholder={fieldPlaceholder(item, field.key)}
+              type={field.type === 'url' ? 'url' : field.type}
+              value={fields[field.key] ?? ''}
+            />
+          ),
+        )}
         <Input
           description="Percentual creditado a mais sobre cada depósito pago (ex.: 2 = +2%)."
           label="Cashback no depósito (%)"

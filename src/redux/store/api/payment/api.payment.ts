@@ -127,6 +127,7 @@ export type ApprovePaymentDepositBody = {
   force?: boolean
   amount?: number
   note?: string
+  password?: string
 }
 
 export const paymentApi = createApi({

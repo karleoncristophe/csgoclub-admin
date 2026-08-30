@@ -41,32 +41,53 @@ type NavSection = { title: string; items: readonly NavItem[] }
 
 const NAV_SECTIONS: readonly NavSection[] = [
   {
-    title: 'Geral',
+    title: 'Visão geral',
+    items: [{ href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard }],
+  },
+  {
+    title: 'Pessoas',
     items: [
-      { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
       { href: '/dashboard/users', label: 'Usuários', Icon: Users },
       { href: '/dashboard/admins', label: 'Admins', Icon: ShieldCheck, masterOnly: true },
+    ],
+  },
+  {
+    title: 'Catálogo',
+    items: [
       { href: '/dashboard/skins', label: 'Skins', Icon: Gem },
+      { href: '/dashboard/categorias', label: 'Categorias', Icon: Layers },
       { href: '/dashboard/cases', label: 'Caixas', Icon: Package },
+      { href: '/dashboard/vitrines', label: 'Vitrines', Icon: LayoutGrid },
+      { href: '/dashboard/banners', label: 'Banners', Icon: Image },
+    ],
+  },
+  {
+    title: 'Operações',
+    items: [
       { href: '/dashboard/case-opens', label: 'Aberturas', Icon: History },
       { href: '/dashboard/trades', label: 'Trades', Icon: ArrowLeftRight },
       { href: '/dashboard/deposits', label: 'Depósitos', Icon: Wallet },
       { href: '/dashboard/coupons', label: 'Cupons', Icon: TicketPercent },
+      { href: '/dashboard/cambio', label: 'Câmbio', Icon: Banknote },
+    ],
+  },
+  {
+    title: 'Modos de jogo',
+    items: [
       { href: '/dashboard/battles', label: 'Battles', Icon: Swords },
       { href: '/dashboard/arena', label: 'Arena', Icon: Crosshair },
       { href: '/dashboard/arena/plays', label: 'Jogadas', Icon: Target },
-      { href: '/dashboard/vitrines', label: 'Vitrines', Icon: LayoutGrid },
-      { href: '/dashboard/banners', label: 'Banners', Icon: Image },
-      { href: '/dashboard/categorias', label: 'Categorias', Icon: Layers },
-      { href: '/dashboard/cambio', label: 'Câmbio', Icon: Banknote },
+    ],
+  },
+  {
+    title: 'Ajuda',
+    items: [
       { href: '/dashboard/documentation', label: 'Documentação', Icon: BookOpenText },
     ],
   },
   {
     title: 'Conta',
-    items: [
-      { href: '/dashboard/settings', label: 'Configurações', Icon: Settings },
-    ],
+    items: [{ href: '/dashboard/settings', label: 'Configurações', Icon: Settings }],
   },
 ]
 

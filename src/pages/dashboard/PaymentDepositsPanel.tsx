@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -75,8 +75,12 @@ function defaultApproveAmount(item: AdminPaymentDeposit) {
   return item.expectedUsdAmount ?? item.usdAmount ?? item.cryptoAmount ?? ''
 }
 
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100] as const
+const DEFAULT_PAGE_SIZE = 20
+
 export function PaymentDepositsPanel() {
   const [page, setPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_PAGE_SIZE)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<AdminPaymentDepositStatus | ''>('')
   const [method, setMethod] = useState('')
@@ -84,16 +88,18 @@ export function PaymentDepositsPanel() {
   const [selected, setSelected] = useState<AdminPaymentDeposit | null>(null)
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
+  const [password, setPassword] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
   const debouncedSearch = useDebounce(search.trim(), 300)
+  const safePage = Math.max(page, 1)
 
-  const { data, isLoading, isError, error } = useGetPaymentDepositsQuery(
+  const { data, isLoading, isFetching, isError, error } = useGetPaymentDepositsQuery(
     {
-      page,
-      limit: 20,
-      status,
-      method,
-      provider,
+      page: safePage,
+      limit: itemsPerPage,
+      ...(status ? { status } : {}),
+      ...(method ? { method } : {}),
+      ...(provider ? { provider } : {}),
       ...(debouncedSearch ? { search: debouncedSearch } : {}),
     },
     { pollingInterval: 10_000, refetchOnFocus: true },
@@ -102,20 +108,33 @@ export function PaymentDepositsPanel() {
 
   const rows = data?.data ?? []
   const summary = data?.summary
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, data?.totalPages ?? 1)
+  const currentPage = Math.min(safePage, totalPages)
+  const pageLimit = data?.limit ?? itemsPerPage
+  const pageStart = total === 0 ? 0 : (currentPage - 1) * pageLimit + 1
+  const pageEnd = Math.min(currentPage * pageLimit, total)
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
   const openApprove = (item: AdminPaymentDeposit) => {
     setSelected(item)
     setAmount(String(defaultApproveAmount(item) || ''))
     setNote(item.approveNote ?? '')
+    setPassword('')
     setFormError(null)
   }
 
   const closeApprove = () => {
     setSelected(null)
+    setPassword('')
     setFormError(null)
   }
 
   const amountCurrency = selected?.method === 'pix' ? 'BRL' : 'USD'
+  const isPix = selected?.method === 'pix'
 
   const handleApprove = async (force: boolean) => {
     if (!selected) return
@@ -127,7 +146,8 @@ export function PaymentDepositsPanel() {
         body: {
           force,
           amount: Number.isFinite(parsedAmount) && parsedAmount >= 1 ? parsedAmount : undefined,
-          note: note.trim() || undefined,
+          note: isPix ? undefined : note.trim() || undefined,
+          password: isPix ? password : undefined,
         },
       }).unwrap()
       closeApprove()
@@ -165,7 +185,7 @@ export function PaymentDepositsPanel() {
         ))}
       </div>
 
-      <div className="mb-4 grid gap-3 md:grid-cols-4">
+      <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <Input
           label="Busca"
           name="payment-deposit-search"
@@ -217,6 +237,21 @@ export function PaymentDepositsPanel() {
           <option value="">Todas</option>
           <option value="woovi">Woovi</option>
           <option value="xgate">XGate</option>
+        </Select>
+        <Select
+          label="Itens por página"
+          name="payment-deposit-page-size"
+          onChange={(event) => {
+            setItemsPerPage(Number(event.target.value))
+            setPage(1)
+          }}
+          value={String(itemsPerPage)}
+        >
+          {PAGE_SIZE_OPTIONS.map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
         </Select>
       </div>
 
@@ -308,38 +343,61 @@ export function PaymentDepositsPanel() {
         </table>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <ThemeText as="p" tone="secondary" className="text-xs">
+          {total === 0
+            ? 'Nenhum depósito nesta página'
+            : `Mostrando ${pageStart}–${pageEnd} de ${total}`}
+          {isFetching && !isLoading ? ' · atualizando…' : ''}
+        </ThemeText>
         <Pagination
-          onPageChange={setPage}
-          page={data?.page ?? page}
-          totalPages={data?.totalPages ?? 1}
+          onPageChange={(next) => setPage(Math.min(Math.max(next, 1), totalPages))}
+          page={currentPage}
+          totalPages={totalPages}
         />
       </div>
 
       <Modal
-        description="Primeiro consulta a API da gateway. Se ela ainda não confirmar e o jogador tiver comprovante, force a aprovação."
+        description={
+          isPix
+            ? 'Confirme com a senha da sua conta do admin. A aprovação entra na audiência.'
+            : 'Primeiro consulta a API da gateway. Se ela ainda não confirmar e o jogador tiver comprovante, force a aprovação.'
+        }
         footer={
           <div className="flex flex-wrap justify-end gap-2">
             <Button onClick={closeApprove} type="button" variant="ghost">
               Cancelar
             </Button>
-            <Button
-              disabled={approveState.isLoading || !selected}
-              isLoading={approveState.isLoading}
-              onClick={() => void handleApprove(false)}
-              type="button"
-              variant="secondary"
-            >
-              Consultar e creditar
-            </Button>
-            <Button
-              disabled={approveState.isLoading || !selected || note.trim().length < 8}
-              isLoading={approveState.isLoading}
-              onClick={() => void handleApprove(true)}
-              type="button"
-            >
-              Aprovar com comprovante
-            </Button>
+            {isPix ? (
+              <Button
+                disabled={approveState.isLoading || !selected || !password.trim()}
+                isLoading={approveState.isLoading}
+                onClick={() => void handleApprove(true)}
+                type="button"
+              >
+                Aprovar
+              </Button>
+            ) : (
+              <>
+                <Button
+                  disabled={approveState.isLoading || !selected}
+                  isLoading={approveState.isLoading}
+                  onClick={() => void handleApprove(false)}
+                  type="button"
+                  variant="secondary"
+                >
+                  Consultar e creditar
+                </Button>
+                <Button
+                  disabled={approveState.isLoading || !selected || note.trim().length < 8}
+                  isLoading={approveState.isLoading}
+                  onClick={() => void handleApprove(true)}
+                  type="button"
+                >
+                  Aprovar com comprovante
+                </Button>
+              </>
+            )}
           </div>
         }
         onOpenChange={(open) => {
@@ -369,13 +427,25 @@ export function PaymentDepositsPanel() {
               type="number"
               value={amount}
             />
-            <Input
-              description="Hash da transação, e2e do Pix, protocolo do suporte. Obrigatório para forçar."
-              label="Comprovante"
-              name="approve-note"
-              onChange={(event) => setNote(event.target.value)}
-              value={note}
-            />
+            {isPix ? (
+              <Input
+                autoComplete="current-password"
+                description="Senha da sua conta neste painel. Não é gravada; só confirma a identidade na audiência."
+                label="Senha do admin"
+                name="approve-password"
+                onChange={(event) => setPassword(event.target.value)}
+                type="password"
+                value={password}
+              />
+            ) : (
+              <Input
+                description="Hash da transação ou protocolo do suporte. Obrigatório para forçar."
+                label="Comprovante"
+                name="approve-note"
+                onChange={(event) => setNote(event.target.value)}
+                value={note}
+              />
+            )}
           </div>
         ) : null}
       </Modal>

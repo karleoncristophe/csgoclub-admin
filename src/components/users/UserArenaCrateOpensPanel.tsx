@@ -1,21 +1,16 @@
 import { Link } from 'react-router-dom'
-import { ExternalLink, Package } from 'lucide-react'
+import { ExternalLink, Package, Sparkles } from 'lucide-react'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { TextBadge } from '@/components/StatusPill'
 import { Pagination } from '@/components/ui/Pagination'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
-import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { listTable, linkBrand } from '@/components/ui/listTable'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import { parsePositiveInt, useUrlFilters } from '@/hooks/useUrlFilters'
-import {
-  useGetUserCaseOpensQuery,
-  type AdminCaseOpenListItem,
-} from '@/redux/store/api/users/api.users'
+import { useGetArenaCrateOpensQuery } from '@/redux/store/api/arena/api.arena'
 import { getErrorMessage } from '@/utils/getErrorMessage'
-import { userStatCardSpaciousClass } from './userPanelClasses'
 
 function formatMoney(value: number, currency = 'USD') {
   return new Intl.NumberFormat('pt-BR', {
@@ -35,135 +30,48 @@ function formatDateTime(value?: string) {
   }).format(date)
 }
 
-function dispositionLabel(value: AdminCaseOpenListItem['disposition']) {
-  if (value === 'kept') return 'Guardado'
-  if (value === 'converted') return 'Convertido'
-  return 'Pendente'
-}
-
-function StatCard({
-  label,
-  value,
-  hint,
-  variant = 'default',
-}: {
-  label: string
-  value: string
-  hint: string
-  variant?: keyof typeof userStatCardSpaciousClass
-}) {
-  return (
-    <div className={userStatCardSpaciousClass[variant]}>
-      <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
-        {label}
-      </ThemeText>
-      <ThemeText as="p" tone="primary" className="mt-1 text-lg font-semibold">
-        {value}
-      </ThemeText>
-      <ThemeText as="p" tone="faint" className="mt-2 text-xs leading-relaxed">
-        {hint}
-      </ThemeText>
-    </div>
-  )
-}
-
-type UserCaseOpensPanelProps = {
+type UserArenaCrateOpensPanelProps = {
   userId: string
 }
 
-const USER_OPENS_FILTER_DEFAULTS = {
-  opensDisp: '',
-  opensPage: '1',
+const FILTER_DEFAULTS = {
+  arenaOpensPage: '1',
 }
 
-export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
+export function UserArenaCrateOpensPanel({ userId }: UserArenaCrateOpensPanelProps) {
   const dataEnvironment = usePlatformDataEnvironment()
   const isSandbox = dataEnvironment === 'SANDBOX'
-  const { filters, setFilters, setFilter } = useUrlFilters(USER_OPENS_FILTER_DEFAULTS)
-  const disposition = filters.opensDisp as
-    | 'pending'
-    | 'kept'
-    | 'converted'
-    | ''
-  const page = parsePositiveInt(filters.opensPage, 1)
+  const { filters, setFilter } = useUrlFilters(FILTER_DEFAULTS)
+  const page = parsePositiveInt(filters.arenaOpensPage, 1)
   const pageSize = 20
   const safePage = Math.max(page, 1)
 
-  const { data, isLoading, isFetching, isError, error } = useGetUserCaseOpensQuery({
+  const { data, isLoading, isFetching, isError, error } = useGetArenaCrateOpensQuery({
     userId,
     page: safePage,
     limit: pageSize,
     dataEnvironment,
-    ...(disposition ? { disposition } : {}),
   })
 
-  const summary = data?.summary
   const opens = data?.data ?? []
+  const total = data?.total ?? 0
   const totalPages = Math.max(1, data?.totalPages ?? 1)
 
   return (
     <Surface variant="settingsPanel" className="!p-5">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <SectionTitle className="mb-1">Histórico de caixas</SectionTitle>
+          <SectionTitle className="mb-1">Histórico Arena</SectionTitle>
           <ThemeText as="p" tone="secondary" className="text-sm">
-            Skins sorteadas nas aberturas de caixas deste cliente.
+            Skins sorteadas ao abrir crates ganhas na Arena.
           </ThemeText>
         </div>
         <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
-          <Package className="h-3.5 w-3.5" />
-          {summary?.totalOpens ?? 0} aberturas
+          <Sparkles className="h-3.5 w-3.5" />
+          {total} aberturas
         </span>
       </div>
 
-      {summary ? (
-        <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            label="Total pago"
-            value={formatMoney(summary.totalPaid)}
-            hint="Soma do preço pago nas aberturas"
-            variant="brand"
-          />
-          <StatCard
-            label="Total ganho"
-            value={formatMoney(summary.totalWonValue)}
-            hint="Soma do valor dos itens dropados"
-          />
-          <StatCard
-            label="Guardados"
-            value={String(summary.keptCount)}
-            hint={`${summary.convertedCount} convertidos · ${summary.pendingCount} pendentes`}
-            variant="amber"
-          />
-          <StatCard
-            label="Teste"
-            value={String(summary.testOpensCount)}
-            hint="Aberturas de influencer / teste"
-            variant="rose"
-          />
-        </div>
-      ) : null}
-
-      <SegmentedTabs
-        ariaLabel="Destino da abertura"
-        className="mb-3"
-        value={disposition || 'all'}
-        items={[
-          { id: 'all', label: 'Todas' },
-          { id: 'pending', label: 'Pendentes' },
-          { id: 'kept', label: 'Guardados' },
-          { id: 'converted', label: 'Convertidos' },
-        ]}
-        onChange={(next) => {
-          setFilters(
-            {
-              opensDisp: next === 'all' ? '' : next,
-              opensPage: '1',
-            },
-            { resetPage: false },
-          )
-        }}
-      />
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100">
           {isSandbox ? 'Só teste (Dev)' : 'Só reais (Produção)'}
@@ -172,7 +80,7 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
 
       {isLoading ? (
         <ThemeText as="p" tone="secondary" className="py-8 text-sm">
-          Carregando histórico…
+          Carregando histórico Arena…
         </ThemeText>
       ) : null}
 
@@ -183,12 +91,12 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
       {!isLoading && !isError && opens.length === 0 ? (
         <div className="py-8 text-center">
           <ThemeText as="p" tone="secondary" className="text-sm">
-            Nenhuma abertura de caixa nesta visão
+            Nenhuma abertura de crate Arena nesta visão
             {isSandbox ? ' (Dev / teste)' : ' (Produção)'}.
           </ThemeText>
           <ThemeText as="p" tone="faint" className="mt-2 text-xs">
-            Se o cliente abriu caixas na outra visão, troque Produção ↔ Influencer no menu.
-            {disposition ? ' Ou limpe o filtro de destino.' : null}
+            Só entram aberturas registradas após o histórico Arena. Troque a visão se
+            precisar ver testes vs produção.
           </ThemeText>
         </div>
       ) : null}
@@ -199,7 +107,7 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
             <thead>
               <tr className={listTable.theadRow}>
                 <th className={listTable.th}>Quando</th>
-                <th className={listTable.th}>Caixa</th>
+                <th className={listTable.th}>Crate</th>
                 <th className={listTable.th}>Item recebido</th>
                 <th className={`${listTable.th} text-right`}>Valores</th>
                 <th className={listTable.th}>Destino</th>
@@ -211,16 +119,9 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
                 <tr key={open._id} className={listTable.tr}>
                   <td className={listTable.tdMuted}>{formatDateTime(open.createdAt)}</td>
                   <td className={listTable.tdStrong}>
-                    <div className="flex min-w-[160px] items-center gap-2">
-                      {open.case.imageUrl ? (
-                        <img
-                          src={open.case.imageUrl}
-                          alt=""
-                          className="h-9 w-9 shrink-0 rounded-lg border border-separator object-contain"
-                        />
-                      ) : null}
-                      <span className="truncate">{open.case.name}</span>
-                    </div>
+                    <Link to={`/dashboard/arena/${open.crateId}`} className={linkBrand}>
+                      {open.crate.name}
+                    </Link>
                   </td>
                   <td className={listTable.td}>
                     <div className="flex min-w-[200px] items-center gap-3">
@@ -242,19 +143,7 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
                           <Package className="h-5 w-5 text-muted" />
                         )}
                       </SkinRarityVisual>
-                      <div className="min-w-0">
-                        <span className="line-clamp-2">{open.wonSkinName}</span>
-                        {open.wonItemRarityName ? (
-                          <ThemeText
-                            as="span"
-                            tone="secondary"
-                            className="mt-0.5 block text-xs"
-                            style={{ color: open.wonItemRarityColor }}
-                          >
-                            {open.wonItemRarityName}
-                          </ThemeText>
-                        ) : null}
-                      </div>
+                      <span className="line-clamp-2">{open.wonSkinName}</span>
                     </div>
                   </td>
                   <td className={`${listTable.tdMuted} text-right tabular-nums`}>
@@ -264,19 +153,26 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
                     </div>
                   </td>
                   <td className={listTable.td}>
-                    <div className="flex flex-wrap gap-1.5">
-                      <TextBadge>{dispositionLabel(open.disposition)}</TextBadge>
-                      {open.isTestOpen ? <TextBadge>Teste</TextBadge> : null}
-                    </div>
+                    <TextBadge>Convertido</TextBadge>
                   </td>
                   <td className={`${listTable.td} text-right`}>
-                    <Link
-                      to={`/dashboard/case-opens/${open._id}`}
-                      className={`${linkBrand} inline-flex items-center gap-1`}
-                    >
-                      Detalhe
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </Link>
+                    <div className="flex flex-col items-end gap-1">
+                      <Link
+                        to={`/dashboard/arena/crate-opens/${open._id}`}
+                        className={`${linkBrand} inline-flex items-center gap-1`}
+                      >
+                        Detalhe
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Link>
+                      {open.matchId ? (
+                        <Link
+                          to={`/dashboard/arena/plays/${open.matchId}`}
+                          className="text-xs text-muted hover:text-foreground"
+                        >
+                          Jogada
+                        </Link>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -291,7 +187,7 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
             page={safePage}
             totalPages={totalPages}
             onPageChange={(next) =>
-              setFilter('opensPage', String(next), { resetPage: false })
+              setFilter('arenaOpensPage', String(next), { resetPage: false })
             }
           />
         </div>

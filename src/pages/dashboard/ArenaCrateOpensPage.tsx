@@ -265,7 +265,16 @@ export default function ArenaCrateOpensPage() {
                 {opens.length === 0 ? (
                   <tr>
                     <td className={listTable.empty} colSpan={7}>
-                      Nenhuma abertura encontrada.
+                      <div className="mx-auto max-w-md space-y-2 py-2">
+                        <p>
+                          Nenhuma abertura de crate Arena nesta visão
+                          {isSandbox ? ' (Dev / teste)' : ' (Produção)'}.
+                        </p>
+                        <p className="text-xs text-muted">
+                          Só entram aberturas novas (depois deste recurso). Aberturas
+                          antigas não aparecem. Confira também Produção ↔ Influencer.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (

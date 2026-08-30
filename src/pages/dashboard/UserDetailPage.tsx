@@ -16,6 +16,7 @@ import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
 import { StatusPill, TextBadge } from '@/components/StatusPill'
 import { UserCaseOpensPanel } from '@/components/users/UserCaseOpensPanel'
+import { UserArenaCrateOpensPanel } from '@/components/users/UserArenaCrateOpensPanel'
 import { UserEditPanel } from '@/components/users/UserEditPanel'
 import { UserKycPanel } from '@/components/users/UserKycPanel'
 import { UserSiteInventoryPanel } from '@/components/users/UserSiteInventoryPanel'
@@ -361,6 +362,8 @@ export default function UserDetailPage() {
           <UserEditPanel user={data} onUpdated={() => refetch()} />
 
           <UserCaseOpensPanel userId={data._id} />
+
+          <UserArenaCrateOpensPanel userId={data._id} />
 
           <UserSiteInventoryPanel
             userId={data._id}

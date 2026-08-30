@@ -6,6 +6,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
+import { parsePositiveInt, useUrlFilters } from '@/hooks/useUrlFilters'
 import {
   useConvertAllUserSiteInventoryMutation,
   useGetUserSiteInventoryQuery,
@@ -101,6 +102,11 @@ type UserSiteInventoryPanelProps = {
   onConverted?: () => void
 }
 
+const USER_INVENTORY_FILTER_DEFAULTS = {
+  invStatus: 'active',
+  invPage: '1',
+}
+
 export function UserSiteInventoryPanel({
   userId,
   isInfluencer,
@@ -109,8 +115,12 @@ export function UserSiteInventoryPanel({
 }: UserSiteInventoryPanelProps) {
   const { confirm } = useConfirm()
   const productsAnchorRef = useRef<HTMLDivElement>(null)
-  const [page, setPage] = useState(1)
-  const [status, setStatus] = useState<'active' | 'converted' | ''>('active')
+  const { filters, setFilters, setFilter } = useUrlFilters(USER_INVENTORY_FILTER_DEFAULTS)
+  const status =
+    filters.invStatus === 'all'
+      ? ''
+      : (filters.invStatus as 'active' | 'converted' | '')
+  const page = parsePositiveInt(filters.invPage, 1)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const pageSize = 12
   const safePage = Math.max(page, 1)
@@ -139,9 +149,9 @@ export function UserSiteInventoryPanel({
 
   useEffect(() => {
     if (page > totalPages) {
-      setPage(totalPages)
+      setFilter('invPage', String(totalPages), { resetPage: false })
     }
-  }, [page, totalPages])
+  }, [page, totalPages, setFilter])
 
   const handleConvertAll = async () => {
     setSuccessMessage(null)
@@ -161,7 +171,7 @@ export function UserSiteInventoryPanel({
       setSuccessMessage(
         `${result.convertedCount} item(ns) convertidos — ${formatMoney(result.creditedAmount, displayCurrency)} creditados.`,
       )
-      setPage(1)
+      setFilter('invPage', '1', { resetPage: false })
       onConverted?.()
     } catch {
       // erro exibido via convertState.error
@@ -200,16 +210,18 @@ export function UserSiteInventoryPanel({
             </Button>
           ) : null}
           <select
-            value={status}
+            value={filters.invStatus || 'active'}
             onChange={(event) => {
-              setStatus(event.target.value as 'active' | 'converted' | '')
-              setPage(1)
+              setFilters(
+                { invStatus: event.target.value, invPage: '1' },
+                { resetPage: false },
+              )
             }}
             className="h-10 min-w-[9.5rem] rounded-xl border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
           >
             <option value="active">Ativos</option>
             <option value="converted">Convertidos</option>
-            <option value="">Todos</option>
+            <option value="all">Todos</option>
           </select>
         </div>
       </div>
@@ -382,7 +394,13 @@ export function UserSiteInventoryPanel({
             page={currentPage}
             totalPages={totalPages}
             scrollTargetRef={productsAnchorRef}
-            onPageChange={(next) => setPage(Math.min(Math.max(next, 1), totalPages))}
+            onPageChange={(next) =>
+              setFilter(
+                'invPage',
+                String(Math.min(Math.max(next, 1), totalPages)),
+                { resetPage: false },
+              )
+            }
           />
 
           {isFetching && !isLoading ? (

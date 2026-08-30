@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   formatSkinsPrice,
@@ -19,6 +19,11 @@ import {
 } from '@/redux/store/api/skins/api.skins'
 import { useGetWeaponCategoriesQuery } from '@/redux/store/api/weapon-categories/api.weapon-categories'
 import useDebounce from '@/hooks/useDebounce'
+import {
+  parseBoundedInt,
+  parsePositiveInt,
+  useUrlFilters,
+} from '@/hooks/useUrlFilters'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import {
   getSkinWeaponName,
@@ -28,6 +33,16 @@ import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 
 const PAGE_SIZE_OPTIONS = [12, 24, 30, 48, 60, 100] as const
 const DEFAULT_PAGE_SIZE = 30
+
+const SKINS_FILTER_DEFAULTS = {
+  q: '',
+  weapon: '',
+  rarity: '',
+  minP: '0',
+  maxP: '100',
+  page: '1',
+  limit: String(DEFAULT_PAGE_SIZE),
+}
 
 function clampPercent(value: number) {
   if (!Number.isFinite(value)) return 0
@@ -51,20 +66,57 @@ function toPercentPriceRange(
 export default function SkinsPage() {
   const productsAnchorRef = useRef<HTMLDivElement>(null)
   const { skinsCurrency, setSkinsCurrency } = useAdminPreferences()
-  const [searchInput, setSearchInput] = useState('')
-  const [weaponTypeFilter, setWeaponTypeFilter] = useState('')
-  const [rarityFilter, setRarityFilter] = useState('')
-  const [minPercentInput, setMinPercentInput] = useState(0)
-  const [maxPercentInput, setMaxPercentInput] = useState(100)
-  const [page, setPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_PAGE_SIZE)
+  const { filters, setFilters, setFilter } = useUrlFilters(SKINS_FILTER_DEFAULTS)
+
+  const [searchInput, setSearchInput] = useState(filters.q)
+  useEffect(() => {
+    setSearchInput(filters.q)
+  }, [filters.q])
+
+  const [minPercentInput, setMinPercentInput] = useState(() =>
+    clampPercent(Number(filters.minP)),
+  )
+  const [maxPercentInput, setMaxPercentInput] = useState(() =>
+    clampPercent(Number(filters.maxP)),
+  )
+  useEffect(() => {
+    setMinPercentInput(clampPercent(Number(filters.minP)))
+  }, [filters.minP])
+  useEffect(() => {
+    setMaxPercentInput(clampPercent(Number(filters.maxP)))
+  }, [filters.maxP])
 
   const debouncedSearch = useDebounce(searchInput.trim(), 350)
   const debouncedMinPercent = useDebounce(minPercentInput, 350)
   const debouncedMaxPercent = useDebounce(maxPercentInput, 350)
 
+  useEffect(() => {
+    if (debouncedSearch === filters.q) return
+    setFilters({ q: debouncedSearch })
+  }, [debouncedSearch, filters.q, setFilters])
+
+  useEffect(() => {
+    const minP = String(clampPercent(debouncedMinPercent))
+    const maxP = String(clampPercent(debouncedMaxPercent))
+    if (minP === filters.minP && maxP === filters.maxP) return
+    setFilters({ minP, maxP })
+  }, [
+    debouncedMinPercent,
+    debouncedMaxPercent,
+    filters.minP,
+    filters.maxP,
+    setFilters,
+  ])
+
   const minPercent = Math.min(debouncedMinPercent, debouncedMaxPercent)
   const maxPercent = Math.max(debouncedMinPercent, debouncedMaxPercent)
+  const page = parsePositiveInt(filters.page, 1)
+  const itemsPerPage = parseBoundedInt(
+    filters.limit,
+    DEFAULT_PAGE_SIZE,
+    PAGE_SIZE_OPTIONS[0],
+    PAGE_SIZE_OPTIONS[PAGE_SIZE_OPTIONS.length - 1],
+  )
   const safePage = Math.max(page, 1)
 
   const { data: weaponCategories = [] } = useGetWeaponCategoriesQuery()
@@ -72,8 +124,8 @@ export default function SkinsPage() {
   const { data, isLoading, isFetching, isError, error } = useGetSkinsCatalogQuery({
     currency: skinsCurrency,
     search: debouncedSearch || undefined,
-    weaponType: weaponTypeFilter || undefined,
-    rarity: rarityFilter || undefined,
+    weaponType: filters.weapon || undefined,
+    rarity: filters.rarity || undefined,
     minPricePercent: minPercent,
     maxPricePercent: maxPercent,
     limit: itemsPerPage,
@@ -105,7 +157,11 @@ export default function SkinsPage() {
   const pageStart = catalogTotal === 0 ? 0 : (currentPage - 1) * pageLimit + 1
   const pageEnd = Math.min(currentPage * pageLimit, catalogTotal)
 
-  const resetPage = () => setPage(1)
+  useEffect(() => {
+    if (page > totalPages) {
+      setFilter('page', String(totalPages), { resetPage: false })
+    }
+  }, [page, totalPages, setFilter])
 
   return (
     <div className="space-y-6">
@@ -121,7 +177,7 @@ export default function SkinsPage() {
             value={skinsCurrency}
             onChange={(e) => {
               setSkinsCurrency(e.target.value as SkinsCurrency)
-              resetPage()
+              setFilter('page', '1', { resetPage: false })
             }}
           >
             {SKINS_CURRENCY_OPTIONS.map((option) => (
@@ -136,21 +192,15 @@ export default function SkinsPage() {
             name="searchSkin"
             placeholder="Ex.: AK-47, AWP, Fade..."
             value={searchInput}
-            onChange={(e) => {
-              setSearchInput(e.target.value)
-              resetPage()
-            }}
+            onChange={(e) => setSearchInput(e.target.value)}
             autoComplete="off"
           />
 
           <Select
             label="Tipo da arma"
             name="weaponType"
-            value={weaponTypeFilter}
-            onChange={(e) => {
-              setWeaponTypeFilter(e.target.value)
-              resetPage()
-            }}
+            value={filters.weapon}
+            onChange={(e) => setFilter('weapon', e.target.value)}
           >
             <option value="">Todos</option>
             {weaponCategories.map((category) => (
@@ -163,11 +213,8 @@ export default function SkinsPage() {
           <Select
             label="Raridade"
             name="rarity"
-            value={rarityFilter}
-            onChange={(e) => {
-              setRarityFilter(e.target.value)
-              resetPage()
-            }}
+            value={filters.rarity}
+            onChange={(e) => setFilter('rarity', e.target.value)}
           >
             <option value="">Todas</option>
             {rarityOptions.map((option) => (
@@ -181,10 +228,7 @@ export default function SkinsPage() {
             label="Itens por página"
             name="pageSize"
             value={String(itemsPerPage)}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value))
-              resetPage()
-            }}
+            onChange={(e) => setFilter('limit', e.target.value)}
           >
             {PAGE_SIZE_OPTIONS.map((size) => (
               <option key={size} value={size}>
@@ -200,10 +244,7 @@ export default function SkinsPage() {
             min={0}
             max={100}
             value={String(minPercentInput)}
-            onChange={(e) => {
-              setMinPercentInput(clampPercent(Number(e.target.value)))
-              resetPage()
-            }}
+            onChange={(e) => setMinPercentInput(clampPercent(Number(e.target.value)))}
           />
 
           <Input
@@ -213,10 +254,7 @@ export default function SkinsPage() {
             min={0}
             max={100}
             value={String(maxPercentInput)}
-            onChange={(e) => {
-              setMaxPercentInput(clampPercent(Number(e.target.value)))
-              resetPage()
-            }}
+            onChange={(e) => setMaxPercentInput(clampPercent(Number(e.target.value)))}
           />
         </div>
 
@@ -267,7 +305,7 @@ export default function SkinsPage() {
           <SegmentedTabs
             ariaLabel="Tipo da arma"
             className="mt-3"
-            value={weaponTypeFilter || 'all'}
+            value={filters.weapon || 'all'}
             items={[
               { id: 'all', label: 'Todos' },
               ...typeCounters.map(([type, count]) => ({
@@ -275,10 +313,7 @@ export default function SkinsPage() {
                 label: `${type} (${count})`,
               })),
             ]}
-            onChange={(next) => {
-              setWeaponTypeFilter(next === 'all' ? '' : next)
-              resetPage()
-            }}
+            onChange={(next) => setFilter('weapon', next === 'all' ? '' : next)}
           />
         </div>
 
@@ -288,7 +323,7 @@ export default function SkinsPage() {
             <SegmentedTabs
               ariaLabel="Raridade"
               className="mt-3"
-              value={rarityFilter || 'all'}
+              value={filters.rarity || 'all'}
               items={[
                 { id: 'all', label: 'Todas' },
                 ...rarityOptions.map((option) => ({
@@ -296,10 +331,7 @@ export default function SkinsPage() {
                   label: `${option.name} (${option.count})`,
                 })),
               ]}
-              onChange={(next) => {
-                setRarityFilter(next === 'all' ? '' : next)
-                resetPage()
-              }}
+              onChange={(next) => setFilter('rarity', next === 'all' ? '' : next)}
             />
           </div>
         ) : null}
@@ -387,7 +419,11 @@ export default function SkinsPage() {
           page={currentPage}
           totalPages={totalPages}
           scrollTargetRef={productsAnchorRef}
-          onPageChange={(next) => setPage(Math.min(Math.max(next, 1), totalPages))}
+          onPageChange={(next) =>
+            setFilter('page', String(Math.min(Math.max(next, 1), totalPages)), {
+              resetPage: false,
+            })
+          }
         />
 
         {isFetching && !isLoading ? (

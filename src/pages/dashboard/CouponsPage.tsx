@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -14,6 +14,8 @@ import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import { listTable } from '@/components/ui/listTable'
+import useDebounce from '@/hooks/useDebounce'
+import { useUrlFilters } from '@/hooks/useUrlFilters'
 import {
   useCreateCouponMutation,
   useDeleteCouponMutation,
@@ -32,6 +34,11 @@ import {
   SkinsCurrency,
 } from '@/constants/skinsCurrency'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+
+const COUPONS_FILTER_DEFAULTS = {
+  q: '',
+  active: 'all',
+}
 
 type CouponAmountFormSlice = {
   minimumAmount: string
@@ -150,13 +157,25 @@ const FALLBACK_REWARD_TYPE_OPTIONS: Array<{ value: AdminCouponRewardType; label:
 export default function CouponsPage() {
   const { confirm } = useConfirm()
   const [createModalOpen, setCreateModalOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const [activeFilter, setActiveFilter] = useState<'all' | 'true' | 'false'>('all')
+  const { filters, setFilters, setFilter } = useUrlFilters(COUPONS_FILTER_DEFAULTS)
+
+  const [searchInput, setSearchInput] = useState(filters.q)
+  useEffect(() => {
+    setSearchInput(filters.q)
+  }, [filters.q])
+
+  const debouncedSearch = useDebounce(searchInput.trim(), 350)
+  useEffect(() => {
+    if (debouncedSearch === filters.q) return
+    setFilters({ q: debouncedSearch })
+  }, [debouncedSearch, filters.q, setFilters])
+
+  const activeFilter = filters.active as 'all' | 'true' | 'false'
 
   const { data, isLoading, isError, error, isFetching } = useGetCouponsQuery({
     page: 1,
     limit: 100,
-    search: search.trim() || undefined,
+    search: debouncedSearch || undefined,
     ...(activeFilter === 'all' ? {} : { active: activeFilter === 'true' }),
   })
   const { data: rewardPresetsData } = useGetCouponRewardPresetsQuery()
@@ -362,14 +381,14 @@ export default function CouponsPage() {
             label="Buscar"
             name="couponSearch"
             placeholder="Código, descrição ou influencer"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
           <Select
             label="Status"
             name="couponStatus"
             value={activeFilter}
-            onChange={(e) => setActiveFilter(e.target.value as 'all' | 'true' | 'false')}
+            onChange={(e) => setFilter('active', e.target.value)}
           >
             <option value="all">Todos</option>
             <option value="true">Ativos</option>

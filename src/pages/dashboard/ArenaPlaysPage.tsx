@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Crosshair, Package, Search } from 'lucide-react'
 import {
@@ -18,6 +18,7 @@ import { PageTitle } from '@/components/ui/Title'
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { listTable, linkBrand } from '@/components/ui/listTable'
 import useDebounce from '@/hooks/useDebounce'
+import { parsePositiveInt, useUrlFilters } from '@/hooks/useUrlFilters'
 import {
   useGetArenaMatchesQuery,
   type ArenaMatchStatus,
@@ -29,6 +30,13 @@ import { UserAvatarLink } from '@/components/users/UserAvatarLink'
 import { userStatCardSpaciousClass } from '@/components/users/userPanelClasses'
 
 const PAGE_SIZE = 20
+
+const ARENA_PLAYS_FILTER_DEFAULTS = {
+  q: '',
+  status: '',
+  pay: '',
+  page: '1',
+}
 
 const STATUS_FILTERS: Array<{ value: ArenaMatchStatus | ''; label: string }> = [
   { value: '', label: 'Todas' },
@@ -71,11 +79,22 @@ function StatCard({
 }
 
 export default function ArenaPlaysPage() {
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [status, setStatus] = useState<ArenaMatchStatus | ''>('')
-  const [paymentMethod, setPaymentMethod] = useState<ArenaPaymentMethod | ''>('')
-  const debouncedSearch = useDebounce(search.trim(), 300)
+  const { filters, setFilters, setFilter } = useUrlFilters(ARENA_PLAYS_FILTER_DEFAULTS)
+
+  const [searchInput, setSearchInput] = useState(filters.q)
+  useEffect(() => {
+    setSearchInput(filters.q)
+  }, [filters.q])
+
+  const debouncedSearch = useDebounce(searchInput.trim(), 300)
+  useEffect(() => {
+    if (debouncedSearch === filters.q) return
+    setFilters({ q: debouncedSearch })
+  }, [debouncedSearch, filters.q, setFilters])
+
+  const page = parsePositiveInt(filters.page, 1)
+  const status = filters.status as ArenaMatchStatus | ''
+  const paymentMethod = filters.pay as ArenaPaymentMethod | ''
 
   const { data, isLoading, isFetching, isError, error } = useGetArenaMatchesQuery({
     page,
@@ -87,7 +106,13 @@ export default function ArenaPlaysPage() {
 
   const plays = data?.items ?? []
   const summary = data?.summary
-  const totalPages = data?.totalPages ?? 1
+  const totalPages = Math.max(1, data?.totalPages ?? 1)
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setFilter('page', String(totalPages), { resetPage: false })
+    }
+  }, [page, totalPages, setFilter])
 
   return (
     <div className="space-y-6">
@@ -138,11 +163,8 @@ export default function ArenaPlaysPage() {
             <Input
               label="Buscar"
               name="search"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
-                setPage(1)
-              }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Nome do jogador ou Steam ID…"
             />
           </div>
@@ -160,10 +182,7 @@ export default function ArenaPlaysPage() {
               id: option.value || 'all',
               label: option.label,
             }))}
-            onChange={(next) => {
-              setStatus(next === 'all' ? '' : (next as ArenaMatchStatus))
-              setPage(1)
-            }}
+            onChange={(next) => setFilter('status', next === 'all' ? '' : next)}
           />
           <SegmentedTabs
             ariaLabel="Forma de pagamento"
@@ -172,10 +191,7 @@ export default function ArenaPlaysPage() {
               id: option.value || 'all',
               label: option.label,
             }))}
-            onChange={(next) => {
-              setPaymentMethod(next === 'all' ? '' : (next as ArenaPaymentMethod))
-              setPage(1)
-            }}
+            onChange={(next) => setFilter('pay', next === 'all' ? '' : next)}
           />
         </div>
 
@@ -293,7 +309,9 @@ export default function ArenaPlaysPage() {
             className="mt-6"
             page={page}
             totalPages={totalPages}
-            onPageChange={setPage}
+            onPageChange={(next) =>
+              setFilter('page', String(next), { resetPage: false })
+            }
           />
         ) : null}
       </Surface>

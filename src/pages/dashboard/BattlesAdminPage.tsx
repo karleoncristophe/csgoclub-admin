@@ -15,6 +15,7 @@ import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import { listTable } from '@/components/ui/listTable'
+import { parsePositiveInt, useUrlFilters } from '@/hooks/useUrlFilters'
 import { deleteUploadFile, uploadSingleFile } from '@/lib/upload'
 import {
   useCancelAdminBattleMutation,
@@ -35,6 +36,10 @@ import {
 
 const BATTLES_PAGE_SIZE = 20
 const BOT_AVATAR_FOLDER = 'bots'
+
+const BATTLES_FILTER_DEFAULTS = {
+  page: '1',
+}
 
 function formatBotBalance(value: number | undefined) {
   return (value ?? 0).toLocaleString('pt-BR', {
@@ -119,7 +124,8 @@ function BotAvatarEditor({
 export default function BattlesAdminPage() {
   const { confirm } = useConfirm()
   const { data: bots = [], isLoading: botsLoading } = useGetBattleBotsQuery()
-  const [page, setPage] = useState(1)
+  const { filters, setFilter } = useUrlFilters(BATTLES_FILTER_DEFAULTS)
+  const page = parsePositiveInt(filters.page, 1)
   const safePage = Math.max(page, 1)
   const {
     data: battlesData,
@@ -145,9 +151,9 @@ export default function BattlesAdminPage() {
 
   useEffect(() => {
     if (page > totalPages) {
-      setPage(totalPages)
+      setFilter('page', String(totalPages), { resetPage: false })
     }
-  }, [page, totalPages])
+  }, [page, totalPages, setFilter])
 
   function resetCreateForm() {
     setName('')
@@ -443,7 +449,11 @@ export default function BattlesAdminPage() {
           page={currentPage}
           totalPages={totalPages}
           onPageChange={(next) =>
-            setPage(Math.min(Math.max(next, 1), totalPages))
+            setFilter(
+              'page',
+              String(Math.min(Math.max(next, 1), totalPages)),
+              { resetPage: false },
+            )
           }
         />
 

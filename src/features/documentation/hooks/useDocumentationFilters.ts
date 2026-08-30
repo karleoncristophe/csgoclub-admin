@@ -1,48 +1,67 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DOCUMENTATION_DATA } from '@/features/documentation/lib/constants'
 import type { DocumentationCategory } from '@/features/documentation/lib/types'
 import { filterDocumentation } from '@/features/documentation/lib/utils'
+import useDebounce from '@/hooks/useDebounce'
+import { useUrlFilters } from '@/hooks/useUrlFilters'
+
+const DOCUMENTATION_FILTER_DEFAULTS = {
+  q: '',
+  cat: 'all',
+  tag: '',
+}
 
 export function useDocumentationFilters() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] =
-    useState<DocumentationCategory>('all')
-  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const { filters, setFilters } = useUrlFilters(DOCUMENTATION_FILTER_DEFAULTS)
+
+  const [searchInput, setSearchInput] = useState(filters.q)
+  useEffect(() => {
+    setSearchInput(filters.q)
+  }, [filters.q])
+
+  const debouncedSearch = useDebounce(searchInput.trim(), 350)
+  useEffect(() => {
+    if (debouncedSearch === filters.q) return
+    setFilters({ q: debouncedSearch })
+  }, [debouncedSearch, filters.q, setFilters])
+
+  const selectedCategory = (filters.cat || 'all') as DocumentationCategory
+  const selectedTag = filters.tag || null
 
   const filteredItems = useMemo(
     () =>
       filterDocumentation(
         DOCUMENTATION_DATA,
-        searchQuery,
+        searchInput,
         selectedCategory,
         selectedTag,
       ),
-    [searchQuery, selectedCategory, selectedTag],
+    [searchInput, selectedCategory, selectedTag],
   )
 
   const handleCategoryClick = (category: DocumentationCategory) => {
-    setSelectedCategory(category)
-    setSelectedTag(null)
+    setFilters({ cat: category, tag: '' })
   }
 
   const handleTagClick = (tag: string) => {
-    setSelectedTag(tag === selectedTag ? null : tag)
-    setSelectedCategory('all')
+    setFilters({
+      tag: tag === filters.tag ? '' : tag,
+      cat: 'all',
+    })
   }
 
   const hasFilters = Boolean(
-    searchQuery.trim() || selectedCategory !== 'all' || selectedTag,
+    searchInput.trim() || selectedCategory !== 'all' || selectedTag,
   )
 
   const clearFilters = () => {
-    setSearchQuery('')
-    setSelectedCategory('all')
-    setSelectedTag(null)
+    setSearchInput('')
+    setFilters({ q: '', cat: 'all', tag: '' })
   }
 
   return {
-    searchQuery,
-    setSearchQuery,
+    searchQuery: searchInput,
+    setSearchQuery: setSearchInput,
     selectedCategory,
     selectedTag,
     filteredItems,

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Box, ExternalLink, Package } from 'lucide-react'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
@@ -9,6 +8,7 @@ import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
+import { parsePositiveInt, useUrlFilters } from '@/hooks/useUrlFilters'
 import {
   useGetUserCaseOpensQuery,
   type AdminCaseOpenListItem,
@@ -70,11 +70,21 @@ type UserCaseOpensPanelProps = {
   userId: string
 }
 
+const USER_OPENS_FILTER_DEFAULTS = {
+  opensDisp: '',
+  opensPage: '1',
+}
+
 export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
   const dataEnvironment = usePlatformDataEnvironment()
   const isSandbox = dataEnvironment === 'SANDBOX'
-  const [page, setPage] = useState(1)
-  const [disposition, setDisposition] = useState<'pending' | 'kept' | 'converted' | ''>('')
+  const { filters, setFilters, setFilter } = useUrlFilters(USER_OPENS_FILTER_DEFAULTS)
+  const disposition = filters.opensDisp as
+    | 'pending'
+    | 'kept'
+    | 'converted'
+    | ''
+  const page = parsePositiveInt(filters.opensPage, 1)
   const pageSize = 12
   const safePage = Math.max(page, 1)
 
@@ -144,10 +154,10 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
           { id: 'converted', label: 'Convertidos' },
         ]}
         onChange={(next) => {
-          setDisposition(
-            next === 'all' ? '' : (next as AdminCaseOpenListItem['disposition']),
-          )
-          setPage(1)
+          setFilters({
+            opensDisp: next === 'all' ? '' : next,
+            opensPage: '1',
+          }, { resetPage: false })
         }}
       />
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -274,7 +284,9 @@ export function UserCaseOpensPanel({ userId }: UserCaseOpensPanelProps) {
           <Pagination
             page={safePage}
             totalPages={totalPages}
-            onPageChange={setPage}
+            onPageChange={(next) =>
+              setFilter('opensPage', String(next), { resetPage: false })
+            }
           />
         </div>
       ) : null}

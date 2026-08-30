@@ -11,6 +11,11 @@ import { linkBrand, listTable } from '@/components/ui/listTable'
 import { StatusPill, TextBadge } from '@/components/StatusPill'
 import useDebounce from '@/hooks/useDebounce'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
+import {
+  parseBoundedInt,
+  parsePositiveInt,
+  useUrlFilters,
+} from '@/hooks/useUrlFilters'
 import { labelFilterBoolean, labelUserAppRole } from '@/i18n/enumLabels'
 import { useGetUsersQuery } from '@/redux/store/api/users/api.users'
 import { getErrorMessage } from '@/utils/getErrorMessage'
@@ -18,6 +23,15 @@ import { SteamIdLink } from '@/components/users/SteamIdLink'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100] as const
 const DEFAULT_PAGE_SIZE = 20
+
+const USERS_FILTER_DEFAULTS = {
+  q: '',
+  role: '',
+  active: '',
+  deleted: '',
+  page: '1',
+  limit: String(DEFAULT_PAGE_SIZE),
+}
 
 function formatDateTime(value?: string) {
   if (!value) return '—'
@@ -38,14 +52,27 @@ function parseActiveFilter(value: string): boolean | undefined {
 export default function UsersPage() {
   const dataEnvironment = usePlatformDataEnvironment()
   const isSandbox = dataEnvironment === 'SANDBOX'
-  const [searchInput, setSearchInput] = useState('')
-  const [roleFilter, setRoleFilter] = useState('')
-  const [activeFilter, setActiveFilter] = useState('')
-  const [includeDeleted, setIncludeDeleted] = useState(false)
-  const [page, setPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_PAGE_SIZE)
+  const { filters, setFilters, setFilter } = useUrlFilters(USERS_FILTER_DEFAULTS)
+
+  const [searchInput, setSearchInput] = useState(filters.q)
+  useEffect(() => {
+    setSearchInput(filters.q)
+  }, [filters.q])
 
   const debouncedSearch = useDebounce(searchInput.trim(), 350)
+  useEffect(() => {
+    if (debouncedSearch === filters.q) return
+    setFilters({ q: debouncedSearch })
+  }, [debouncedSearch, filters.q, setFilters])
+
+  const page = parsePositiveInt(filters.page, 1)
+  const itemsPerPage = parseBoundedInt(
+    filters.limit,
+    DEFAULT_PAGE_SIZE,
+    PAGE_SIZE_OPTIONS[0],
+    PAGE_SIZE_OPTIONS[PAGE_SIZE_OPTIONS.length - 1],
+  )
+  const includeDeleted = filters.deleted === '1'
   const safePage = Math.max(page, 1)
 
   const { data, isLoading, isFetching, isError, error } = useGetUsersQuery({
@@ -53,8 +80,8 @@ export default function UsersPage() {
     limit: itemsPerPage,
     dataEnvironment,
     search: debouncedSearch || undefined,
-    role: roleFilter ? (roleFilter as 'ADMIN' | 'USER') : undefined,
-    active: parseActiveFilter(activeFilter),
+    role: filters.role ? (filters.role as 'ADMIN' | 'USER') : undefined,
+    active: parseActiveFilter(filters.active),
     includeDeleted: includeDeleted || undefined,
   })
 
@@ -68,11 +95,9 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (page > totalPages) {
-      setPage(totalPages)
+      setFilter('page', String(totalPages), { resetPage: false })
     }
-  }, [page, totalPages])
-
-  const resetPage = () => setPage(1)
+  }, [page, totalPages, setFilter])
 
   return (
     <div className="space-y-6">
@@ -93,21 +118,15 @@ export default function UsersPage() {
             name="searchUser"
             placeholder="Nome, Steam ID ou _id..."
             value={searchInput}
-            onChange={(e) => {
-              setSearchInput(e.target.value)
-              resetPage()
-            }}
+            onChange={(e) => setSearchInput(e.target.value)}
             autoComplete="off"
           />
 
           <Select
             label="Papel"
             name="role"
-            value={roleFilter}
-            onChange={(e) => {
-              setRoleFilter(e.target.value)
-              resetPage()
-            }}
+            value={filters.role}
+            onChange={(e) => setFilter('role', e.target.value)}
           >
             <option value="">Todos</option>
             <option value="USER">{labelUserAppRole('USER')}</option>
@@ -117,11 +136,8 @@ export default function UsersPage() {
           <Select
             label="Ativo"
             name="active"
-            value={activeFilter}
-            onChange={(e) => {
-              setActiveFilter(e.target.value)
-              resetPage()
-            }}
+            value={filters.active}
+            onChange={(e) => setFilter('active', e.target.value)}
           >
             <option value="">Todos</option>
             <option value="true">{labelFilterBoolean('true')}</option>
@@ -132,10 +148,7 @@ export default function UsersPage() {
             label="Itens por página"
             name="pageSize"
             value={String(itemsPerPage)}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value))
-              resetPage()
-            }}
+            onChange={(e) => setFilter('limit', e.target.value)}
           >
             {PAGE_SIZE_OPTIONS.map((size) => (
               <option key={size} value={size}>
@@ -149,10 +162,9 @@ export default function UsersPage() {
               name="includeDeleted"
               label="Incluir removidos"
               checked={includeDeleted}
-              onChange={(e) => {
-                setIncludeDeleted(e.target.checked)
-                resetPage()
-              }}
+              onChange={(e) =>
+                setFilter('deleted', e.target.checked ? '1' : '')
+              }
             />
           </div>
         </div>
@@ -314,7 +326,11 @@ export default function UsersPage() {
           className="mt-6"
           page={currentPage}
           totalPages={totalPages}
-          onPageChange={(next) => setPage(Math.min(Math.max(next, 1), totalPages))}
+          onPageChange={(next) =>
+            setFilter('page', String(Math.min(Math.max(next, 1), totalPages)), {
+              resetPage: false,
+            })
+          }
         />
 
         {isFetching && !isLoading ? (

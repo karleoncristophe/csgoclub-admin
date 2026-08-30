@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Box, ExternalLink, Package, Search } from 'lucide-react'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { TextBadge } from '@/components/StatusPill'
@@ -12,6 +12,7 @@ import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { listTable, linkBrand } from '@/components/ui/listTable'
 import useDebounce from '@/hooks/useDebounce'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
+import { parsePositiveInt, useUrlFilters } from '@/hooks/useUrlFilters'
 import {
   useGetAllCaseOpensQuery,
   type AdminCaseOpenGlobalItem,
@@ -19,6 +20,15 @@ import {
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { SteamIdLink } from '@/components/users/SteamIdLink'
 import { filterChipClasses, userStatCardSpaciousClass } from '@/components/users/userPanelClasses'
+
+const PAGE_SIZE = 30
+
+const CASE_OPENS_FILTER_DEFAULTS = {
+  caseId: '',
+  q: '',
+  disposition: '',
+  page: '1',
+}
 
 function formatMoney(value: number, currency = 'USD') {
   return new Intl.NumberFormat('pt-BR', {
@@ -73,18 +83,27 @@ function StatCard({
 export default function CaseOpensPage() {
   const dataEnvironment = usePlatformDataEnvironment()
   const isSandbox = dataEnvironment === 'SANDBOX'
-  const [searchParams, setSearchParams] = useSearchParams()
-  const caseId = searchParams.get('caseId') ?? ''
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [disposition, setDisposition] = useState<'pending' | 'kept' | 'converted' | ''>('')
-  const debouncedSearch = useDebounce(search.trim(), 300)
-  const pageSize = 30
+  const { filters, setFilters, setFilter } = useUrlFilters(CASE_OPENS_FILTER_DEFAULTS)
+
+  const [searchInput, setSearchInput] = useState(filters.q)
+  useEffect(() => {
+    setSearchInput(filters.q)
+  }, [filters.q])
+
+  const debouncedSearch = useDebounce(searchInput.trim(), 300)
+  useEffect(() => {
+    if (debouncedSearch === filters.q) return
+    setFilters({ q: debouncedSearch })
+  }, [debouncedSearch, filters.q, setFilters])
+
+  const page = parsePositiveInt(filters.page, 1)
   const safePage = Math.max(page, 1)
+  const caseId = filters.caseId
+  const disposition = filters.disposition as AdminCaseOpenGlobalItem['disposition'] | ''
 
   const { data, isLoading, isFetching, isError, error } = useGetAllCaseOpensQuery({
     page: safePage,
-    limit: pageSize,
+    limit: PAGE_SIZE,
     dataEnvironment,
     ...(caseId ? { caseId } : {}),
     ...(disposition ? { disposition } : {}),
@@ -94,15 +113,18 @@ export default function CaseOpensPage() {
   const filteredCaseName = caseId ? data?.data[0]?.case.name : undefined
 
   const clearCaseFilter = () => {
-    const next = new URLSearchParams(searchParams)
-    next.delete('caseId')
-    setSearchParams(next, { replace: true })
-    setPage(1)
+    setFilters({ caseId: '', page: '1' }, { resetPage: false })
   }
 
   const summary = data?.summary
   const opens = data?.data ?? []
-  const totalPages = data?.totalPages ?? 1
+  const totalPages = Math.max(1, data?.totalPages ?? 1)
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setFilter('page', String(totalPages), { resetPage: false })
+    }
+  }, [page, totalPages, setFilter])
 
   return (
     <div className="space-y-6">
@@ -199,11 +221,8 @@ export default function CaseOpensPage() {
             <Input
               label="Buscar"
               name="search"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
-                setPage(1)
-              }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Usuário, Steam ID, skin ou caixa…"
             />
           </div>
@@ -223,14 +242,7 @@ export default function CaseOpensPage() {
             { id: 'kept', label: 'Guardados' },
             { id: 'converted', label: 'Convertidos' },
           ]}
-          onChange={(next) => {
-            setDisposition(
-              next === 'all'
-                ? ''
-                : (next as AdminCaseOpenGlobalItem['disposition']),
-            )
-            setPage(1)
-          }}
+          onChange={(next) => setFilter('disposition', next === 'all' ? '' : next)}
         />
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100">
@@ -336,7 +348,13 @@ export default function CaseOpensPage() {
 
         {totalPages > 1 ? (
           <div className="mt-5">
-            <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+            <Pagination
+              page={safePage}
+              totalPages={totalPages}
+              onPageChange={(next) =>
+                setFilter('page', String(next), { resetPage: false })
+              }
+            />
           </div>
         ) : null}
       </Surface>

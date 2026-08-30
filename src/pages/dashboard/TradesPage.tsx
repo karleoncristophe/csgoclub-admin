@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ArrowLeftRight, ExternalLink, Search } from 'lucide-react'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { TextBadge } from '@/components/StatusPill'
@@ -14,6 +14,11 @@ import { listTable, linkBrand } from '@/components/ui/listTable'
 import useDebounce from '@/hooks/useDebounce'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import {
+  parseBoundedInt,
+  parsePositiveInt,
+  useUrlFilters,
+} from '@/hooks/useUrlFilters'
+import {
   useGetAdminTradesQuery,
   type AdminTradeListItem,
   type AdminTradeSource,
@@ -22,6 +27,20 @@ import {
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { SteamIdLink } from '@/components/users/SteamIdLink'
 import { filterChipClasses, userStatCardSpaciousClass } from '@/components/users/userPanelClasses'
+
+const PAGE_SIZE_OPTIONS = [20, 30, 50, 100] as const
+const DEFAULT_PAGE_SIZE = 30
+
+const TRADES_FILTER_DEFAULTS = {
+  userId: '',
+  q: '',
+  status: '',
+  source: '',
+  from: '',
+  to: '',
+  page: '1',
+  limit: String(DEFAULT_PAGE_SIZE),
+}
 
 function formatMoney(value: number, currency = 'USD') {
   return new Intl.NumberFormat('pt-BR', {
@@ -81,17 +100,30 @@ function StatCard({
 export default function TradesPage() {
   const dataEnvironment = usePlatformDataEnvironment()
   const isSandbox = dataEnvironment === 'SANDBOX'
-  const [searchParams, setSearchParams] = useSearchParams()
-  const userId = searchParams.get('userId') ?? ''
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [status, setStatus] = useState<AdminTradeStatus | ''>('')
-  const [source, setSource] = useState<AdminTradeSource | ''>('')
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
-  const [pageSize, setPageSize] = useState(30)
-  const debouncedSearch = useDebounce(search.trim(), 300)
+  const { filters, setFilters, setFilter } = useUrlFilters(TRADES_FILTER_DEFAULTS)
+
+  const [searchInput, setSearchInput] = useState(filters.q)
+  useEffect(() => {
+    setSearchInput(filters.q)
+  }, [filters.q])
+
+  const debouncedSearch = useDebounce(searchInput.trim(), 300)
+  useEffect(() => {
+    if (debouncedSearch === filters.q) return
+    setFilters({ q: debouncedSearch })
+  }, [debouncedSearch, filters.q, setFilters])
+
+  const page = parsePositiveInt(filters.page, 1)
+  const pageSize = parseBoundedInt(
+    filters.limit,
+    DEFAULT_PAGE_SIZE,
+    PAGE_SIZE_OPTIONS[0],
+    PAGE_SIZE_OPTIONS[PAGE_SIZE_OPTIONS.length - 1],
+  )
   const safePage = Math.max(page, 1)
+  const userId = filters.userId
+  const status = filters.status as AdminTradeStatus | ''
+  const source = filters.source as AdminTradeSource | ''
 
   const { data, isLoading, isFetching, isError, error } = useGetAdminTradesQuery({
     page: safePage,
@@ -101,22 +133,25 @@ export default function TradesPage() {
     ...(status ? { status } : {}),
     ...(source ? { source } : {}),
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
-    ...(from ? { from } : {}),
-    ...(to ? { to } : {}),
+    ...(filters.from ? { from: filters.from } : {}),
+    ...(filters.to ? { to: filters.to } : {}),
   })
 
   const filteredUserName = userId ? data?.data[0]?.user?.name : undefined
 
   const clearUserFilter = () => {
-    const next = new URLSearchParams(searchParams)
-    next.delete('userId')
-    setSearchParams(next, { replace: true })
-    setPage(1)
+    setFilters({ userId: '', page: '1' }, { resetPage: false })
   }
 
   const summary = data?.summary
   const trades = data?.data ?? []
-  const totalPages = data?.totalPages ?? 1
+  const totalPages = Math.max(1, data?.totalPages ?? 1)
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setFilter('page', String(totalPages), { resetPage: false })
+    }
+  }, [page, totalPages, setFilter])
 
   return (
     <div className="space-y-6">
@@ -164,11 +199,8 @@ export default function TradesPage() {
             <Input
               label="Buscar"
               name="search"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
-                setPage(1)
-              }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Usuário, Steam ID, skin ou custom_id…"
             />
           </div>
@@ -176,32 +208,23 @@ export default function TradesPage() {
             label="De"
             name="from"
             type="date"
-            value={from}
-            onChange={(e) => {
-              setFrom(e.target.value)
-              setPage(1)
-            }}
+            value={filters.from}
+            onChange={(e) => setFilter('from', e.target.value)}
           />
           <Input
             label="Até"
             name="to"
             type="date"
-            value={to}
-            onChange={(e) => {
-              setTo(e.target.value)
-              setPage(1)
-            }}
+            value={filters.to}
+            onChange={(e) => setFilter('to', e.target.value)}
           />
           <Select
             label="Itens por página"
             name="pageSize"
             value={String(pageSize)}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value))
-              setPage(1)
-            }}
+            onChange={(e) => setFilter('limit', e.target.value)}
           >
-            {[20, 30, 50, 100].map((size) => (
+            {PAGE_SIZE_OPTIONS.map((size) => (
               <option key={size} value={size}>
                 {size}
               </option>
@@ -222,10 +245,7 @@ export default function TradesPage() {
               { id: 'withdrawn', label: 'Enviados' },
               { id: 'pending_withdraw', label: 'Pendentes' },
             ]}
-            onChange={(next) => {
-              setStatus(next === 'all' ? '' : (next as AdminTradeStatus))
-              setPage(1)
-            }}
+            onChange={(next) => setFilter('status', next === 'all' ? '' : next)}
           />
           <SegmentedTabs
             ariaLabel="Origem do trade"
@@ -236,10 +256,7 @@ export default function TradesPage() {
               { id: 'upgrade', label: 'Upgrade' },
               { id: 'battle', label: 'Battle' },
             ]}
-            onChange={(next) => {
-              setSource(next === 'all' ? '' : (next as AdminTradeSource))
-              setPage(1)
-            }}
+            onChange={(next) => setFilter('source', next === 'all' ? '' : next)}
           />
         </div>
         <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -386,7 +403,13 @@ export default function TradesPage() {
 
         {totalPages > 1 ? (
           <div className="mt-5">
-            <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+            <Pagination
+              page={safePage}
+              totalPages={totalPages}
+              onPageChange={(next) =>
+                setFilter('page', String(next), { resetPage: false })
+              }
+            />
           </div>
         ) : null}
       </Surface>

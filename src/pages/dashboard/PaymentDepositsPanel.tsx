@@ -20,6 +20,11 @@ import { listTable, linkBrand } from '@/components/ui/listTable'
 import { UserAvatarLink } from '@/components/users/UserAvatarLink'
 import useDebounce from '@/hooks/useDebounce'
 import {
+  parseBoundedInt,
+  parsePositiveInt,
+  useUrlFilters,
+} from '@/hooks/useUrlFilters'
+import {
   useApprovePaymentDepositMutation,
   useGetPaymentDepositsQuery,
   type AdminPaymentDeposit,
@@ -85,28 +90,63 @@ function defaultApproveAmount(item: AdminPaymentDeposit) {
   return item.expectedUsdAmount ?? item.usdAmount ?? item.cryptoAmount ?? ''
 }
 
+function parseDateParam(value: string): Date | null {
+  if (!value) return null
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100] as const
 const DEFAULT_PAGE_SIZE = 20
 
+const DEPOSITS_FILTER_DEFAULTS = {
+  q: '',
+  status: '',
+  method: '',
+  provider: '',
+  coupon: '',
+  from: '',
+  to: '',
+  page: '1',
+  limit: String(DEFAULT_PAGE_SIZE),
+}
+
 export function PaymentDepositsPanel() {
-  const [page, setPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_PAGE_SIZE)
-  const [search, setSearch] = useState('')
-  const [status, setStatus] = useState<AdminPaymentDepositStatus | ''>('')
-  const [method, setMethod] = useState('')
-  const [provider, setProvider] = useState('')
-  const [couponCode, setCouponCode] = useState('')
+  const { filters, setFilters, setFilter } = useUrlFilters(DEPOSITS_FILTER_DEFAULTS)
+
+  const [searchInput, setSearchInput] = useState(filters.q)
+  useEffect(() => {
+    setSearchInput(filters.q)
+  }, [filters.q])
+
+  const debouncedSearch = useDebounce(searchInput.trim(), 300)
+  useEffect(() => {
+    if (debouncedSearch === filters.q) return
+    setFilters({ q: debouncedSearch })
+  }, [debouncedSearch, filters.q, setFilters])
+
+  const page = parsePositiveInt(filters.page, 1)
+  const itemsPerPage = parseBoundedInt(
+    filters.limit,
+    DEFAULT_PAGE_SIZE,
+    PAGE_SIZE_OPTIONS[0],
+    PAGE_SIZE_OPTIONS[PAGE_SIZE_OPTIONS.length - 1],
+  )
+  const status = filters.status as AdminPaymentDepositStatus | ''
+  const method = filters.method
+  const provider = filters.provider
+  const couponCode = filters.coupon
+  const periodStart = parseDateParam(filters.from)
+  const periodEnd = parseDateParam(filters.to)
+
   const [couponSearch, setCouponSearch] = useState('')
   const [selectedCoupon, setSelectedCoupon] = useState<SearchableSelectOption | null>(null)
-  const [periodStart, setPeriodStart] = useState<Date | null>(null)
-  const [periodEnd, setPeriodEnd] = useState<Date | null>(null)
   const [periodOpen, setPeriodOpen] = useState(false)
   const [selected, setSelected] = useState<AdminPaymentDeposit | null>(null)
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
   const [password, setPassword] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
-  const debouncedSearch = useDebounce(search.trim(), 300)
   const safePage = Math.max(page, 1)
 
   const periodPresetLabel =
@@ -143,6 +183,23 @@ export function PaymentDepositsPanel() {
     [couponsData],
   )
 
+  useEffect(() => {
+    if (!couponCode) {
+      setSelectedCoupon(null)
+      return
+    }
+    const match = couponOptions.find((option) => option.value === couponCode)
+    if (match) {
+      setSelectedCoupon(match)
+      return
+    }
+    setSelectedCoupon((prev) =>
+      prev?.value === couponCode
+        ? prev
+        : { value: couponCode, label: couponCode },
+    )
+  }, [couponCode, couponOptions])
+
   const rows = data?.data ?? []
   const summary = data?.summary
   const totals = data?.totals
@@ -161,8 +218,10 @@ export function PaymentDepositsPanel() {
   const pageEnd = Math.min(currentPage * pageLimit, total)
 
   useEffect(() => {
-    if (page > totalPages) setPage(totalPages)
-  }, [page, totalPages])
+    if (page > totalPages) {
+      setFilter('page', String(totalPages), { resetPage: false })
+    }
+  }, [page, totalPages, setFilter])
 
   const openApprove = (item: AdminPaymentDeposit) => {
     setSelected(item)
@@ -259,20 +318,14 @@ export function PaymentDepositsPanel() {
         <Input
           label="Busca"
           name="payment-deposit-search"
-          onChange={(event) => {
-            setSearch(event.target.value)
-            setPage(1)
-          }}
+          onChange={(event) => setSearchInput(event.target.value)}
           placeholder="Nome, Steam ID, Pix ou id"
-          value={search}
+          value={searchInput}
         />
         <Select
           label="Status"
           name="payment-deposit-status"
-          onChange={(event) => {
-            setStatus(event.target.value as AdminPaymentDepositStatus | '')
-            setPage(1)
-          }}
+          onChange={(event) => setFilter('status', event.target.value)}
           value={status}
         >
           <option value="">Todos</option>
@@ -285,10 +338,7 @@ export function PaymentDepositsPanel() {
         <Select
           label="Método"
           name="payment-deposit-method"
-          onChange={(event) => {
-            setMethod(event.target.value)
-            setPage(1)
-          }}
+          onChange={(event) => setFilter('method', event.target.value)}
           value={method}
         >
           <option value="">Todos</option>
@@ -298,10 +348,7 @@ export function PaymentDepositsPanel() {
         <Select
           label="Gateway"
           name="payment-deposit-provider"
-          onChange={(event) => {
-            setProvider(event.target.value)
-            setPage(1)
-          }}
+          onChange={(event) => setFilter('provider', event.target.value)}
           value={provider}
         >
           <option value="">Todas</option>
@@ -316,13 +363,13 @@ export function PaymentDepositsPanel() {
           modalDescription="Busque pelo nick ou pelo código. Todos os cupons da pessoa aparecem juntos."
           modalTitle="Cupons"
           onChange={(code) => {
-            setCouponCode(code)
+            setFilter('coupon', code)
             setSelectedCoupon(
               code
-                ? (couponOptions.find((option) => option.value === code) ?? selectedCoupon)
+                ? (couponOptions.find((option) => option.value === code) ??
+                    selectedCoupon ?? { value: code, label: code })
                 : null,
             )
-            setPage(1)
           }}
           onSearchChange={setCouponSearch}
           options={couponOptions}
@@ -342,11 +389,7 @@ export function PaymentDepositsPanel() {
             appliedEnd={periodEnd}
             appliedStart={periodStart}
             emptyLabel="Todo o período"
-            onClear={() => {
-              setPeriodStart(null)
-              setPeriodEnd(null)
-              setPage(1)
-            }}
+            onClear={() => setFilters({ from: '', to: '' })}
             onClick={() => setPeriodOpen(true)}
             presetLabel={periodPresetLabel}
           />
@@ -354,10 +397,7 @@ export function PaymentDepositsPanel() {
         <Select
           label="Itens por página"
           name="payment-deposit-page-size"
-          onChange={(event) => {
-            setItemsPerPage(Number(event.target.value))
-            setPage(1)
-          }}
+          onChange={(event) => setFilter('limit', event.target.value)}
           value={String(itemsPerPage)}
         >
           {PAGE_SIZE_OPTIONS.map((size) => (
@@ -496,7 +536,11 @@ export function PaymentDepositsPanel() {
           {isFetching && !isLoading ? ' · atualizando…' : ''}
         </ThemeText>
         <Pagination
-          onPageChange={(next) => setPage(Math.min(Math.max(next, 1), totalPages))}
+          onPageChange={(next) =>
+            setFilter('page', String(Math.min(Math.max(next, 1), totalPages)), {
+              resetPage: false,
+            })
+          }
           page={currentPage}
           totalPages={totalPages}
         />
@@ -599,15 +643,12 @@ export function PaymentDepositsPanel() {
       appliedEnd={periodEnd}
       appliedStart={periodStart}
       onApply={(start, end) => {
-        setPeriodStart(start)
-        setPeriodEnd(end)
-        setPage(1)
+        setFilters({
+          from: start.toISOString(),
+          to: end.toISOString(),
+        })
       }}
-      onClear={() => {
-        setPeriodStart(null)
-        setPeriodEnd(null)
-        setPage(1)
-      }}
+      onClear={() => setFilters({ from: '', to: '' })}
       onOpenChange={setPeriodOpen}
       open={periodOpen}
     />

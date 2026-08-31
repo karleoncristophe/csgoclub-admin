@@ -56,7 +56,7 @@ const variants = {
   docSummaryCard:
     'rounded-xl border border-border bg-surface p-5 shadow-sm shadow-black/5',
   docIconWrap:
-    'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent ring-1 ring-accent/15 dark:bg-accent dark:text-accent-foreground dark:ring-accent/40',
+    'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent-soft-foreground ring-1 ring-accent/15 dark:bg-accent dark:text-accent-foreground dark:ring-accent/40',
   docInset:
     'rounded-2xl border border-border bg-surface-secondary p-5',
   docEnumBox:

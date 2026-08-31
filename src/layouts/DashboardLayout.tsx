@@ -129,7 +129,7 @@ function navLinkClass(active: boolean) {
   const base =
     'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors'
   if (active) {
-    return `${base} bg-accent-soft text-accent`
+    return `${base} bg-accent-soft text-accent-soft-foreground`
   }
   return `${base} text-muted hover:bg-default hover:text-foreground`
 }

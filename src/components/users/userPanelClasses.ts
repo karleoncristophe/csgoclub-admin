@@ -43,7 +43,7 @@ export const filterChipClass = {
   idle:
     'border-border bg-surface text-muted hover:bg-default hover:text-foreground',
   brandActive:
-    'border-accent/30 bg-accent-soft text-accent',
+    'border-accent/30 bg-accent-soft text-accent-soft-foreground',
   amberActive:
     'border-warning/30 bg-warning-soft text-warning',
 } as const

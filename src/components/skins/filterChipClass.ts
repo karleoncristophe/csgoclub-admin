@@ -3,7 +3,7 @@ const filterChipBase =
 
 export const filterChipClass = {
   active:
-    `${filterChipBase} border-accent/30 bg-accent-soft text-accent shadow-sm`,
+    `${filterChipBase} border-accent/30 bg-accent-soft text-accent-soft-foreground shadow-sm`,
   inactive:
     `${filterChipBase} border-border bg-surface text-muted hover:bg-default hover:text-foreground`,
 } as const

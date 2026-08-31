@@ -115,7 +115,7 @@ export function SearchableMultiSelect({
           {selectedOptions.map((option) => (
             <span
               key={option.value}
-              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-accent/25 bg-accent-soft py-1 pl-3 pr-1.5 text-sm text-accent"
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-accent/25 bg-accent-soft py-1 pl-3 pr-1.5 text-sm text-accent-soft-foreground"
             >
               <span className="truncate">{option.label}</span>
               <button

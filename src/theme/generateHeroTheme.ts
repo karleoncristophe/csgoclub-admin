@@ -15,6 +15,27 @@ export type HeroThemeInput = {
 }
 
 /**
+ * Mid-light greens (and similar accents) look “neon” with white text but fail WCAG.
+ * Prefer dark foreground whenever accent L is high enough that white contrast is weak.
+ */
+function pickAccentForeground(
+  mode: ThemeMode,
+  lightness: number,
+  chroma: number,
+  hue: number,
+  snow: string,
+): string {
+  const darkInk = formatOklch(
+    mode === 'dark' ? 0.18 : 0.22,
+    Math.min(chroma * 0.22, 0.04),
+    hue,
+  )
+  // OKLCH L≈0.55+ → white on accent usually < 4.5:1 for greens/cyans.
+  if (lightness >= 0.55) return darkInk
+  return snow
+}
+
+/**
  * Source tokens matching HeroUI Theme Builder export.
  * Hover/soft/separator levels stay as color-mix() in @heroui/styles.
  * @see https://heroui.com/docs/react/getting-started/theming
@@ -32,8 +53,13 @@ export function generateHeroThemeTokens(
   const snow = formatOklch(0.9911, 0, 0)
   const eclipse = formatOklch(0.2103, Math.min(0.02, Cb * 0.3057), H)
   const accent = formatOklch(La, Ca, H)
-  const accentForeground =
-    La >= 0.7 ? formatOklch(0.15, Ca * 0.1875, H) : snow
+  const accentForeground = pickAccentForeground(mode, La, Ca, H, snow)
+  // Text on accent-soft: darker (light) / brighter (dark) than raw accent.
+  const accentSoftForeground = formatOklch(
+    mode === 'dark' ? Math.min(0.92, Math.max(La, 0.78) + 0.08) : Math.max(0.34, La - 0.26),
+    mode === 'dark' ? Ca * 0.75 : Ca * 0.95,
+    H,
+  )
 
   const statusChroma = (chroma: number) =>
     input.vibrant ? chroma : chroma * 0.42
@@ -109,6 +135,7 @@ export function generateHeroThemeTokens(
   return {
     '--accent': accent,
     '--accent-foreground': accentForeground,
+    '--accent-soft-foreground': accentSoftForeground,
     '--focus': accent,
     '--field-border': 'transparent',
     '--field-border-width': '0px',

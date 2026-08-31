@@ -61,7 +61,7 @@ export function Switch({
         <span
           className={`text-sm font-medium ${
             checked
-              ? 'text-accent'
+              ? 'text-accent-soft-foreground'
               : 'text-muted'
           }`}
         >

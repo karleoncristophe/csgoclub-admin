@@ -133,7 +133,7 @@ export function Autocomplete({
                     onClick={() => handleSelect(option.value)}
                     className={`flex w-full flex-col gap-0.5 px-3 py-2.5 text-left text-sm transition ${
                       active
-                        ? 'bg-accent-soft text-accent'
+                        ? 'bg-accent-soft text-accent-soft-foreground'
                         : 'text-foreground hover:bg-default'
                     }`}
                   >

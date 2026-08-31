@@ -258,35 +258,37 @@ html {
 }
 
 .login-ops {
-  --ops-bg-base: #eef3ea;
-  --ops-bg-mid: #f7faf5;
-  --ops-bg-deep: #e4ecdf;
-  --ops-glow-a: rgb(91 154 60 / 0.22);
-  --ops-glow-b: rgb(91 154 60 / 0.16);
-  --ops-hex: rgb(61 110 40 / 0.1);
-  --ops-scan: rgb(91 154 60 / 0.1);
-  --ops-vignette-side: rgb(255 255 255 / 0.35);
-  --ops-vignette-bottom: rgb(238 243 234 / 0.88);
-  --ops-frame: rgb(91 154 60 / 0.28);
-  --ops-corner: #5b9a3c;
-  --ops-text: #142016;
-  --ops-muted: rgb(45 70 40 / 0.55);
-  --ops-badge-bg: rgb(91 154 60 / 0.12);
-  --ops-badge-border: rgb(91 154 60 / 0.4);
-  --ops-badge-text: #3f7a28;
-  --ops-pulse: #5b9a3c;
-  --ops-card-bg-a: rgb(255 255 255 / 0.94);
-  --ops-card-bg-b: rgb(245 249 242 / 0.98);
-  --ops-card-border: rgb(40 70 35 / 0.1);
-  --ops-card-shadow: 0 18px 40px rgb(40 70 35 / 0.12);
-  --ops-card-title: #142016;
-  --ops-card-value: rgb(45 70 40 / 0.62);
-  --ops-card-kicker: #4f8f34;
-  --ops-chip-bg: rgb(91 154 60 / 0.12);
-  --ops-chip-border: rgb(91 154 60 / 0.35);
-  --ops-chip-text: #3f7a28;
-  --ops-stat-bg: rgb(255 255 255 / 0.78);
-  --ops-stat-border: rgb(40 70 35 / 0.1);
+  --ops-bg-base: color-mix(in oklab, var(--accent) 8%, var(--background));
+  --ops-bg-mid: color-mix(in oklab, var(--accent) 4%, var(--surface));
+  --ops-bg-deep: color-mix(in oklab, var(--accent) 12%, var(--background));
+  --ops-glow-a: color-mix(in oklab, var(--accent) 28%, transparent);
+  --ops-glow-b: color-mix(in oklab, var(--accent) 18%, transparent);
+  --ops-hex: color-mix(in oklab, var(--accent) 14%, transparent);
+  --ops-scan: color-mix(in oklab, var(--accent) 12%, transparent);
+  --ops-vignette-side: color-mix(in oklab, var(--surface) 45%, transparent);
+  --ops-vignette-bottom: color-mix(in oklab, var(--background) 88%, transparent);
+  --ops-frame: color-mix(in oklab, var(--accent) 30%, transparent);
+  --ops-corner: var(--accent);
+  --ops-text: var(--foreground);
+  --ops-muted: color-mix(in oklab, var(--foreground) 55%, transparent);
+  --ops-badge-bg: color-mix(in oklab, var(--accent) 12%, transparent);
+  --ops-badge-border: color-mix(in oklab, var(--accent) 40%, transparent);
+  --ops-badge-text: var(--accent-soft-foreground);
+  --ops-pulse: var(--accent);
+  --ops-card-bg-a: color-mix(in oklab, var(--surface) 94%, white);
+  --ops-card-bg-b: color-mix(in oklab, var(--accent) 4%, var(--surface));
+  --ops-card-border: color-mix(in oklab, var(--accent) 12%, var(--border));
+  --ops-card-shadow: 0 18px 40px color-mix(in oklab, var(--foreground) 10%, transparent);
+  --ops-card-title: var(--foreground);
+  --ops-card-value: color-mix(in oklab, var(--foreground) 62%, transparent);
+  --ops-card-kicker: var(--accent-soft-foreground);
+  --ops-chip-bg: color-mix(in oklab, var(--accent) 12%, transparent);
+  --ops-chip-border: color-mix(in oklab, var(--accent) 35%, transparent);
+  --ops-chip-text: var(--accent-soft-foreground);
+  --ops-stat-bg: color-mix(in oklab, var(--surface) 86%, transparent);
+  --ops-stat-border: color-mix(in oklab, var(--accent) 10%, var(--border));
+  --ops-bar: color-mix(in oklab, var(--accent) 22%, transparent);
+  --ops-bar-active: var(--accent);
   --ops-scan-blend: multiply;
   isolation: isolate;
   background: var(--ops-bg-base);
@@ -294,35 +296,37 @@ html {
 }
 
 .dark .login-ops {
-  --ops-bg-base: #070b10;
-  --ops-bg-mid: #0b1218;
-  --ops-bg-deep: #0a160f;
-  --ops-glow-a: rgb(91 154 60 / 0.28);
-  --ops-glow-b: rgb(34 88 48 / 0.35);
-  --ops-hex: rgb(148 196 110 / 0.07);
-  --ops-scan: rgb(91 154 60 / 0.08);
+  --ops-bg-base: color-mix(in oklab, var(--accent) 8%, #070b10);
+  --ops-bg-mid: color-mix(in oklab, var(--accent) 6%, #0b1218);
+  --ops-bg-deep: color-mix(in oklab, var(--accent) 14%, #080e14);
+  --ops-glow-a: color-mix(in oklab, var(--accent) 32%, transparent);
+  --ops-glow-b: color-mix(in oklab, var(--accent) 22%, transparent);
+  --ops-hex: color-mix(in oklab, var(--accent) 10%, transparent);
+  --ops-scan: color-mix(in oklab, var(--accent) 10%, transparent);
   --ops-vignette-side: rgb(0 0 0 / 0.35);
   --ops-vignette-bottom: rgb(0 0 0 / 0.72);
-  --ops-frame: rgb(91 154 60 / 0.22);
-  --ops-corner: #8fd35a;
-  --ops-text: #e8f0e4;
-  --ops-muted: rgb(180 200 170 / 0.55);
-  --ops-badge-bg: rgb(91 154 60 / 0.12);
-  --ops-badge-border: rgb(91 154 60 / 0.45);
-  --ops-badge-text: #c8f0a4;
-  --ops-pulse: #8fd35a;
-  --ops-card-bg-a: rgb(18 28 22 / 0.95);
-  --ops-card-bg-b: rgb(8 14 12 / 0.98);
-  --ops-card-border: rgb(255 255 255 / 0.08);
-  --ops-card-shadow: 0 18px 40px rgb(0 0 0 / 0.35);
-  --ops-card-title: #f3f7ef;
-  --ops-card-value: rgb(180 200 170 / 0.7);
-  --ops-card-kicker: #8fd35a;
-  --ops-chip-bg: rgb(91 154 60 / 0.14);
-  --ops-chip-border: rgb(91 154 60 / 0.4);
-  --ops-chip-text: #c8f0a4;
-  --ops-stat-bg: rgb(8 14 12 / 0.72);
-  --ops-stat-border: rgb(255 255 255 / 0.07);
+  --ops-frame: color-mix(in oklab, var(--accent) 28%, transparent);
+  --ops-corner: var(--accent);
+  --ops-text: var(--foreground);
+  --ops-muted: color-mix(in oklab, var(--foreground) 55%, transparent);
+  --ops-badge-bg: color-mix(in oklab, var(--accent) 14%, transparent);
+  --ops-badge-border: color-mix(in oklab, var(--accent) 45%, transparent);
+  --ops-badge-text: var(--accent-soft-foreground);
+  --ops-pulse: var(--accent);
+  --ops-card-bg-a: color-mix(in oklab, var(--accent) 8%, rgb(14 18 24 / 0.96));
+  --ops-card-bg-b: color-mix(in oklab, var(--accent) 4%, rgb(8 12 18 / 0.98));
+  --ops-card-border: color-mix(in oklab, var(--accent) 18%, rgb(255 255 255 / 0.06));
+  --ops-card-shadow: 0 18px 40px rgb(0 0 0 / 0.4);
+  --ops-card-title: var(--foreground);
+  --ops-card-value: color-mix(in oklab, var(--foreground) 68%, transparent);
+  --ops-card-kicker: var(--accent-soft-foreground);
+  --ops-chip-bg: color-mix(in oklab, var(--accent) 16%, transparent);
+  --ops-chip-border: color-mix(in oklab, var(--accent) 40%, transparent);
+  --ops-chip-text: var(--accent-soft-foreground);
+  --ops-stat-bg: color-mix(in oklab, var(--accent) 6%, rgb(8 12 18 / 0.78));
+  --ops-stat-border: color-mix(in oklab, var(--accent) 14%, rgb(255 255 255 / 0.06));
+  --ops-bar: color-mix(in oklab, var(--accent) 25%, transparent);
+  --ops-bar-active: var(--accent);
   --ops-scan-blend: screen;
 }
 
@@ -533,11 +537,11 @@ html {
 .login-ops__card-bar span {
   height: 0.28rem;
   flex: 1;
-  background: rgb(91 154 60 / 0.2);
+  background: var(--ops-bar);
 }
 
 .login-ops__card-bar span:first-child {
-  background: #5b9a3c;
+  background: var(--ops-bar-active);
 }
 
 .login-ops__card-row {

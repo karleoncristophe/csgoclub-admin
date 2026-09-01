@@ -65,6 +65,17 @@ export type AdminPaymentDepositStatus =
   | 'failed'
   | 'cancelled'
 
+export type AdminPaymentDepositFx = {
+  peg?: string
+  fromCurrency?: string
+  toCurrency?: string
+  sourceAmount?: number
+  paidUsd?: number
+  convertedAmount?: number
+  rateBrl?: number
+  rateEur?: number
+}
+
 export type AdminPaymentDeposit = {
   id: string
   provider: string
@@ -73,6 +84,7 @@ export type AdminPaymentDeposit = {
   symbol?: string
   network?: string
   address?: string
+  memo?: string
   expectedUsdAmount?: number
   expectedBrlAmount?: number
   usdAmount?: number
@@ -86,7 +98,9 @@ export type AdminPaymentDeposit = {
     name?: string
     avatar?: string
   }
+  couponBonusUsdAmount?: number
   cashbackPercent?: number
+  cashbackUsdAmount?: number
   creditSource?: 'webhook' | 'admin'
   approveNote?: string
   approvedAt?: string
@@ -94,6 +108,9 @@ export type AdminPaymentDeposit = {
   paidAt?: string
   creditedAt?: string
   canApprove?: boolean
+  providerCustomerId?: string
+  providerDepositId?: string
+  fx?: AdminPaymentDepositFx
   user?: {
     id: string
     name?: string

@@ -32,6 +32,10 @@ import {
 } from '@/redux/store/api/payment/api.payment'
 import { useGetCouponsQuery } from '@/redux/store/api/coupons/api.coupons'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+import {
+  PaymentDepositDetails,
+  requestedAmountLabel,
+} from '@/pages/dashboard/PaymentDepositDetails'
 
 function formatWhen(iso?: string) {
   if (!iso) return '—'
@@ -83,11 +87,6 @@ function methodLabel(item: AdminPaymentDeposit) {
 function expectedAmount(item: AdminPaymentDeposit) {
   if (item.method === 'pix') return formatMoney(item.expectedBrlAmount ?? item.brlAmount, 'BRL')
   return formatMoney(item.expectedUsdAmount ?? item.usdAmount ?? item.cryptoAmount, 'USD')
-}
-
-function defaultApproveAmount(item: AdminPaymentDeposit) {
-  if (item.method === 'pix') return item.expectedBrlAmount ?? item.brlAmount ?? ''
-  return item.expectedUsdAmount ?? item.usdAmount ?? item.cryptoAmount ?? ''
 }
 
 function parseDateParam(value: string): Date | null {
@@ -143,6 +142,7 @@ export function PaymentDepositsPanel() {
   const [selectedCoupon, setSelectedCoupon] = useState<SearchableSelectOption | null>(null)
   const [periodOpen, setPeriodOpen] = useState(false)
   const [selected, setSelected] = useState<AdminPaymentDeposit | null>(null)
+  const [details, setDetails] = useState<AdminPaymentDeposit | null>(null)
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
   const [password, setPassword] = useState('')
@@ -225,7 +225,11 @@ export function PaymentDepositsPanel() {
 
   const openApprove = (item: AdminPaymentDeposit) => {
     setSelected(item)
-    setAmount(String(defaultApproveAmount(item) || ''))
+    setAmount(
+      item.method === 'pix'
+        ? ''
+        : String(item.expectedUsdAmount ?? item.usdAmount ?? item.cryptoAmount ?? ''),
+    )
     setNote(item.approveNote ?? '')
     setPassword('')
     setFormError(null)
@@ -237,19 +241,26 @@ export function PaymentDepositsPanel() {
     setFormError(null)
   }
 
-  const amountCurrency = selected?.method === 'pix' ? 'BRL' : 'USD'
   const isPix = selected?.method === 'pix'
 
   const handleApprove = async (force: boolean) => {
     if (!selected) return
     setFormError(null)
     const parsedAmount = Number(amount.replace(',', '.'))
+    const netAmount =
+      !isPix && Number.isFinite(parsedAmount) && parsedAmount >= 1
+        ? Math.round(parsedAmount * 100) / 100
+        : undefined
+    if (force && !isPix && netAmount == null) {
+      setFormError('Informe o valor que chegou na carteira, depois da taxa de rede.')
+      return
+    }
     try {
       await approve({
         id: selected.id,
         body: {
           force,
-          amount: Number.isFinite(parsedAmount) && parsedAmount >= 1 ? parsedAmount : undefined,
+          amount: netAmount,
           note: isPix ? undefined : note.trim() || undefined,
           password: isPix ? password : undefined,
         },
@@ -516,15 +527,26 @@ export function PaymentDepositsPanel() {
                     <StatusBadge status={item.status} />
                   </td>
                   <td className={listTable.td}>
-                    {item.canApprove ? (
-                      <Button onClick={() => openApprove(item)} size="sm" type="button" variant="secondary">
-                        Aprovar
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        onClick={() => setDetails(item)}
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                      >
+                        Detalhes
                       </Button>
-                    ) : (
-                      <ThemeText tone="secondary" className="text-xs">
-                        {item.creditSource === 'admin' ? 'Admin' : 'Webhook'}
-                      </ThemeText>
-                    )}
+                      {item.canApprove ? (
+                        <Button
+                          onClick={() => openApprove(item)}
+                          size="sm"
+                          type="button"
+                          variant="secondary"
+                        >
+                          Aprovar
+                        </Button>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -583,7 +605,12 @@ export function PaymentDepositsPanel() {
                   Consultar e creditar
                 </Button>
                 <Button
-                  disabled={approveState.isLoading || !selected || note.trim().length < 8}
+                  disabled={
+                    approveState.isLoading ||
+                    !selected ||
+                    note.trim().length < 8 ||
+                    !(Number(amount.replace(',', '.')) >= 1)
+                  }
                   isLoading={approveState.isLoading}
                   onClick={() => void handleApprove(true)}
                   type="button"
@@ -613,14 +640,29 @@ export function PaymentDepositsPanel() {
                 {selected.method === 'pix' ? 'Pix copia e cola' : 'Endereço'}: {selected.address}
               </ThemeText>
             ) : null}
-            <Input
-              description={`Valor pago em ${amountCurrency}. Usado se a gateway não devolver o valor.`}
-              label={`Valor (${amountCurrency})`}
-              name="approve-amount"
-              onChange={(event) => setAmount(event.target.value)}
-              type="number"
-              value={amount}
-            />
+            <div className="rounded-xl border border-separator bg-surface-secondary px-3 py-2.5">
+              <ThemeText as="p" tone="label" className="text-[10px] uppercase tracking-wide">
+                Pedido no site
+              </ThemeText>
+              <ThemeText as="p" tone="primary" className="mt-1 text-sm font-semibold tabular-nums">
+                {requestedAmountLabel(selected)}
+              </ThemeText>
+              <ThemeText as="p" tone="secondary" className="mt-1 text-xs">
+                {isPix
+                  ? 'Pix credita este valor. Sem taxa de rede.'
+                  : 'O jogador pediu isso no site. O crédito real é o que chegou na carteira depois da taxa (ex.: 5 USDT − 1,5 de taxa = 3,5).'}
+              </ThemeText>
+            </div>
+            {isPix ? null : (
+              <Input
+                description="O que caiu no endereço, já descontada a taxa de rede. Se a XGate confirmar, ela manda esse valor líquido. Sem API, ajuste aqui (5 − 1,5 = 3,5)."
+                label="Valor creditado (USD)"
+                name="approve-amount"
+                onChange={(event) => setAmount(event.target.value)}
+                type="number"
+                value={amount}
+              />
+            )}
             {isPix ? (
               <Input
                 autoComplete="current-password"
@@ -642,6 +684,38 @@ export function PaymentDepositsPanel() {
             )}
           </div>
         ) : null}
+      </Modal>
+
+      <Modal
+        description="Pedido no site, o que a gateway reportou, crédito na carteira e identificadores da transação."
+        footer={
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button onClick={() => setDetails(null)} type="button" variant="ghost">
+              Fechar
+            </Button>
+            {details?.canApprove ? (
+              <Button
+                onClick={() => {
+                  const item = details
+                  setDetails(null)
+                  if (item) openApprove(item)
+                }}
+                type="button"
+                variant="secondary"
+              >
+                Aprovar
+              </Button>
+            ) : null}
+          </div>
+        }
+        onOpenChange={(open) => {
+          if (!open) setDetails(null)
+        }}
+        open={Boolean(details)}
+        size="xl"
+        title="Detalhes do depósito"
+      >
+        {details ? <PaymentDepositDetails item={details} /> : null}
       </Modal>
     </Surface>
     <DateRangePickerModal

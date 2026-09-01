@@ -236,7 +236,7 @@ export function PaymentDepositDetails({ item }: { item: AdminPaymentDeposit }) {
           hint={
             pix
               ? 'Quanto o jogador gerou no site. Pix credita este valor.'
-              : 'Quanto o jogador pediu no site. Não é o crédito: a taxa de rede sai do valor enviado (ex.: 5 USDT − 1,5 = 3,5 na carteira).'
+              : 'Pedido no site. Quando a XGate confirma, este campo passa a ser o USD que caiu (ex.: digitou 1, caiu 3,5 → fica 3,5).'
           }
         />
         <DetailRow

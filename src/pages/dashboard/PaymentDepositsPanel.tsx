@@ -84,9 +84,11 @@ function methodLabel(item: AdminPaymentDeposit) {
   return item.network ? `${symbol} · ${item.network}` : symbol
 }
 
-function expectedAmount(item: AdminPaymentDeposit) {
-  if (item.method === 'pix') return formatMoney(item.expectedBrlAmount ?? item.brlAmount, 'BRL')
-  return formatMoney(item.expectedUsdAmount ?? item.usdAmount ?? item.cryptoAmount, 'USD')
+function listedAmount(item: AdminPaymentDeposit) {
+  if (item.method === 'pix') {
+    return formatMoney(item.brlAmount ?? item.expectedBrlAmount, 'BRL')
+  }
+  return formatMoney(item.usdAmount ?? item.cryptoAmount ?? item.expectedUsdAmount, 'USD')
 }
 
 function parseDateParam(value: string): Date | null {
@@ -519,7 +521,7 @@ export function PaymentDepositsPanel() {
                       <ThemeText tone="primary">—</ThemeText>
                     )}
                   </td>
-                  <td className={`${listTable.td} tabular-nums`}>{expectedAmount(item)}</td>
+                  <td className={`${listTable.td} tabular-nums`}>{listedAmount(item)}</td>
                   <td className={`${listTable.td} tabular-nums`}>
                     {formatMoney(item.walletAmount, item.walletCurrency || 'USD')}
                   </td>

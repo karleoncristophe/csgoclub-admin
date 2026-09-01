@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Check, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -12,6 +13,7 @@ import {
   type PaymentProviderSecrets,
   type UpsertPaymentProviderBody,
 } from '@/redux/store/api/payment/api.payment'
+import { absoluteApiUrl, isPublicHttpsApiUrl } from '@/utils/absoluteApiUrl'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
 const WOOVI_PRODUCTION_API = 'https://api.woovi.com'
@@ -65,6 +67,63 @@ function fieldDescription(item: PaymentProviderCredential, key: string): string 
     return 'AppID de teste só funciona no sandbox. AppID de produção só em api.woovi.com.'
   }
   return undefined
+}
+
+function webhookUrlFor(item: PaymentProviderCredential): string {
+  if (item.webhookUrl?.startsWith('http')) return item.webhookUrl
+  return absoluteApiUrl(item.webhookPath)
+}
+
+function WebhookUrlField({ item }: { item: PaymentProviderCredential }) {
+  const [copied, setCopied] = useState(false)
+  const url = webhookUrlFor(item)
+  const publicHttps = isPublicHttpsApiUrl(url)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      // ignore
+    }
+  }
+
+  return (
+    <div className="min-w-0 max-w-full sm:text-right">
+      <ThemeText as="p" tone="secondary" className="text-[10px] uppercase tracking-wide">
+        Webhook (colar na {item.provider === 'woovi' ? 'Woovi' : 'XGate'})
+      </ThemeText>
+      <div className="mt-1 flex items-center justify-end gap-1">
+        <ThemeText
+          as="p"
+          tone="primary"
+          className="min-w-0 truncate font-mono text-xs"
+          title={url}
+        >
+          {url}
+        </ThemeText>
+        <button
+          type="button"
+          onClick={() => void handleCopy()}
+          className="shrink-0 rounded-md p-1.5 text-muted transition hover:bg-default hover:text-foreground"
+          aria-label="Copiar URL do webhook"
+        >
+          {copied ? (
+            <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+          ) : (
+            <Copy className="h-3.5 w-3.5" />
+          )}
+        </button>
+      </div>
+      {!publicHttps ? (
+        <ThemeText as="p" tone="warning" className="mt-1 text-xs">
+          Esta URL não é a API pública de produção. A XGate/Woovi não consegue
+          entregar webhook em localhost ou HTTP.
+        </ThemeText>
+      ) : null}
+    </div>
+  )
 }
 
 function parseOptionalMoney(raw: string, label: string): number | null {
@@ -168,9 +227,7 @@ function ProviderCard({ item }: { item: PaymentProviderCredential }) {
             {item.catalog.description}
           </ThemeText>
         </div>
-        <ThemeText as="p" tone="secondary" className="text-xs">
-          Webhook: {item.webhookPath}
-        </ThemeText>
+        <WebhookUrlField item={item} />
       </div>
 
       {formError ? (
@@ -287,7 +344,9 @@ export function PaymentProvidersPanel() {
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
           Chaves ficam criptografadas (nunca em texto puro). Cripto via XGate e Pix via
-          Woovi. O cashback pode ter um teto por moeda da carteira (USD, BRL ou EUR).
+          Woovi. Cole no painel da gateway a URL absoluta do webhook desta API — a
+          mesma base usada pelo admin e pelo site. O cashback pode ter um teto por
+          moeda da carteira (USD, BRL ou EUR).
         </ThemeText>
       </div>
 

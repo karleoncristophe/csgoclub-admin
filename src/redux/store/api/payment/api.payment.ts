@@ -35,6 +35,7 @@ export type PaymentProviderCredential = {
   xgate?: PaymentProviderSecrets
   woovi?: PaymentProviderSecrets
   webhookPath: string
+  webhookUrl?: string
   updatedAt?: string
   updatedBy?: string
 }

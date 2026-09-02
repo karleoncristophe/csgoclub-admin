@@ -25,16 +25,34 @@ export interface SelectProps
   onChange?: (event: ChangeEvent<HTMLSelectElement>) => void
 }
 
+/** React Aria rejeita key vazia; mapeamos a opção em branco para um sentinel. */
+const EMPTY_SELECT_KEY = '__empty__'
+
+function toSelectKey(value: string | number | readonly string[]): string {
+  const next = String(value)
+  return next === '' ? EMPTY_SELECT_KEY : next
+}
+
+function fromSelectKey(key: string): string {
+  return key === EMPTY_SELECT_KEY ? '' : key
+}
+
 function optionItems(children: ReactNode): ReactNode[] {
   return Children.toArray(children).flatMap((child) => {
     if (!isValidElement<{ value?: string; disabled?: boolean; children?: ReactNode }>(child)) {
       return []
     }
     if (child.type === 'option') {
-      const value = child.props.value ?? String(child.props.children ?? '')
+      const value = toSelectKey(child.props.value ?? String(child.props.children ?? ''))
+      const label = child.props.children
       return (
-        <ListBoxItem key={value} id={value} isDisabled={child.props.disabled}>
-          {child.props.children}
+        <ListBoxItem
+          key={value}
+          id={value}
+          textValue={typeof label === 'string' ? label : value}
+          isDisabled={child.props.disabled}
+        >
+          {label}
         </ListBoxItem>
       )
     }
@@ -62,25 +80,27 @@ export function Select({
 }: SelectProps) {
   const uid = useId()
   const selectId = id ?? `${name ?? 'select'}-${uid}`
-  const selectedKey = value === undefined ? undefined : String(value)
-  const defaultSelectedKey = defaultValue === undefined ? undefined : String(defaultValue)
+  const selectedKey = value === undefined ? undefined : toSelectKey(value)
+  const defaultSelectedKey =
+    defaultValue === undefined ? undefined : toSelectKey(defaultValue)
 
   return (
     <HeroSelect
+      {...(rest as Record<string, unknown>)}
       name={name}
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       isDisabled={disabled}
       isRequired={required}
       onSelectionChange={(key) => {
-        const nextValue = String(key ?? '')
+        if (key == null) return
+        const nextValue = fromSelectKey(String(key))
         onChange?.({
-          target: { value: nextValue },
-          currentTarget: { value: nextValue },
+          target: { value: nextValue, name: name ?? '' },
+          currentTarget: { value: nextValue, name: name ?? '' },
         } as ChangeEvent<HTMLSelectElement>)
       }}
       className="w-full"
-      {...(rest as Record<string, unknown>)}
     >
       <div className="mb-1.5 flex items-center gap-1.5">
         <Label htmlFor={selectId}>{label}</Label>

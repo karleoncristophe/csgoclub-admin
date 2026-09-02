@@ -1,8 +1,11 @@
 import { useEffect, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
+
+const escapeClosers: Array<() => void> = []
 
 const sizeClass = {
   md: 'max-w-lg',
@@ -34,21 +37,28 @@ export function Modal({
 }: ModalProps) {
   useEffect(() => {
     if (!open) return
+    const close = () => onOpenChange(false)
+    escapeClosers.push(close)
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onOpenChange(false)
+      if (event.key !== 'Escape') return
+      if (escapeClosers[escapeClosers.length - 1] !== close) return
+      event.preventDefault()
+      close()
     }
     window.addEventListener('keydown', onKey)
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       window.removeEventListener('keydown', onKey)
+      const index = escapeClosers.lastIndexOf(close)
+      if (index >= 0) escapeClosers.splice(index, 1)
       document.body.style.overflow = previousOverflow
     }
   }, [open, onOpenChange])
 
   if (!open) return null
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <button
         type="button"
@@ -95,6 +105,7 @@ export function Modal({
           </Surface>
         ) : null}
       </Surface>
-    </div>
+    </div>,
+    document.body,
   )
 }

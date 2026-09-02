@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { IconButton } from '@/components/ui/IconButton'
 import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import {
   SearchableSelect,
   type SearchableSelectOption,
@@ -537,268 +538,258 @@ export default function CouponsPage() {
         ) : null}
       </Surface>
 
-      {createModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-950 p-5 shadow-2xl sm:p-6">
-            <div className="mb-5 flex items-start justify-between gap-3">
-              <div>
-                <ThemeText as="h2" tone="primary" className="text-xl font-semibold">
-                  Criar cupom
-                </ThemeText>
-                <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
-                  Moedas, percentual ou tickets. Valores em dinheiro são por carteira.
-                </ThemeText>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCreateModalOpen(false)}
-                className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200"
-                aria-label="Fechar modal"
-              >
-                <X className="h-5 w-5" />
-              </button>
+      <Modal
+        open={createModalOpen}
+        onOpenChange={(open) => {
+          if (!open) setCreateModalOpen(false)
+          else setCreateModalOpen(true)
+        }}
+        title="Criar cupom"
+        description="Moedas, percentual ou tickets. Valores em dinheiro são por carteira."
+        size="full"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setCreateModalOpen(false)}
+              disabled={createState.isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="create-coupon-form"
+              isLoading={createState.isLoading}
+              disabled={!formCode.trim() || !formOwnerId || !formValidTo}
+            >
+              Criar cupom
+            </Button>
+          </>
+        }
+      >
+        <form
+          id="create-coupon-form"
+          onSubmit={onCreate}
+          className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+        >
+          <Input
+            label="Código"
+            name="couponCode"
+            placeholder="KAKU10"
+            value={formCode}
+            onChange={(e) => setFormCode(e.target.value.toUpperCase())}
+          />
+
+          <SearchableSelect
+            label="Influencer dono"
+            placeholder="Selecionar influencer…"
+            searchPlaceholder="Filtrar por nome ou Steam ID…"
+            modalTitle="Escolher influencer"
+            modalDescription="Mostra os influencers do servidor (independente da visão Prod/Dev). Primeiros 20; filtre por nome ou Steam ID."
+            options={influencerOptions}
+            value={formOwnerId}
+            onChange={handleInfluencerChange}
+            selectedOption={selectedInfluencer}
+            serverSearch
+            onSearchChange={handleInfluencerSearch}
+            loading={influencersLoading}
+            totalCount={influencerList?.total ?? influencerOptions.length}
+            resultNoun="influencer"
+            emptyMessage="Nenhum influencer encontrado para essa busca."
+            hint="Lista sempre os influencers do servidor, mesmo em visão Produção."
+          />
+
+          <Input
+            label="Expira em"
+            name="couponValidTo"
+            type="datetime-local"
+            value={formValidTo}
+            onChange={(e) => setFormValidTo(e.target.value)}
+          />
+
+          <Input
+            label="Descrição"
+            name="couponDescription"
+            placeholder="Cupom oficial do influencer"
+            value={formDescription}
+            onChange={(e) => setFormDescription(e.target.value)}
+          />
+
+          <Input
+            label="Válido a partir de"
+            name="couponValidFrom"
+            type="datetime-local"
+            value={formValidFrom}
+            onChange={(e) => setFormValidFrom(e.target.value)}
+          />
+
+          <Select
+            label="Tipo de recompensa"
+            name="couponRewardType"
+            value={formRewardType}
+            onChange={(e) => {
+              const nextType = e.target.value as AdminCouponRewardType
+              setFormRewardType(nextType)
+              const preset = rewardPresetByType.get(nextType)
+              if (preset) {
+                setFormRewardValue(String(preset.defaultValue))
+              }
+            }}
+          >
+            {rewardTypeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+
+          {selectedRewardPreset?.valueKind === 'fixed' ? null : (
+            <Input
+              label={
+                selectedRewardPreset?.valueKind === 'percent'
+                  ? 'Percentual (%)'
+                  : selectedRewardPreset?.valueKind === 'count'
+                    ? 'Tickets / quantidade'
+                    : 'Valor da recompensa'
+              }
+              name="couponRewardValue"
+              type="number"
+              min={0}
+              step={String(selectedRewardPreset?.step ?? 1)}
+              value={formRewardValue}
+              onChange={(e) => setFormRewardValue(e.target.value)}
+              hint={
+                selectedRewardPreset
+                  ? `Faixa: ${selectedRewardPreset.minValue} - ${selectedRewardPreset.maxValue}`
+                  : undefined
+              }
+            />
+          )}
+
+          <div className="xl:col-span-3">
+            <ThemeText as="p" tone="label" className="mb-2 text-sm font-medium">
+              Moedas
+            </ThemeText>
+            <div className="flex flex-wrap gap-4">
+              {SKINS_CURRENCY_OPTIONS.map((option) => (
+                <Checkbox
+                  key={option.value}
+                  id={`coupon-currency-${option.value}`}
+                  name={`couponCurrency-${option.value}`}
+                  label={option.label}
+                  checked={formCurrencies.includes(option.value)}
+                  onChange={(event) => {
+                    const checked = event.target.checked
+                    setFormCurrencies((current) => {
+                      if (checked) {
+                        return current.includes(option.value)
+                          ? current
+                          : [...current, option.value]
+                      }
+                      const next = current.filter((code) => code !== option.value)
+                      return next.length > 0 ? next : current
+                    })
+                  }}
+                />
+              ))}
             </div>
+            <ThemeText as="p" tone="faint" className="mt-1 text-xs">
+              O cupom só vale nessas carteiras. Cada uma tem min, máx e valor
+              fixo próprios — R$ 50 não é US$ 50.
+            </ThemeText>
+          </div>
 
-            <form onSubmit={onCreate} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <Input
-                label="Código"
-                name="couponCode"
-                placeholder="KAKU10"
-                value={formCode}
-                onChange={(e) => setFormCode(e.target.value.toUpperCase())}
-              />
-
-              <SearchableSelect
-                label="Influencer dono"
-                placeholder="Selecionar influencer…"
-                searchPlaceholder="Filtrar por nome ou Steam ID…"
-                modalTitle="Escolher influencer"
-                modalDescription="Mostra os influencers do servidor (independente da visão Prod/Dev). Primeiros 20; filtre por nome ou Steam ID."
-                options={influencerOptions}
-                value={formOwnerId}
-                onChange={handleInfluencerChange}
-                selectedOption={selectedInfluencer}
-                serverSearch
-                onSearchChange={handleInfluencerSearch}
-                loading={influencersLoading}
-                totalCount={influencerList?.total ?? influencerOptions.length}
-                resultNoun="influencer"
-                emptyMessage="Nenhum influencer encontrado para essa busca."
-                hint="Lista sempre os influencers do servidor, mesmo em visão Produção."
-              />
-
-              <Input
-                label="Expira em"
-                name="couponValidTo"
-                type="datetime-local"
-                value={formValidTo}
-                onChange={(e) => setFormValidTo(e.target.value)}
-              />
-
-              <Input
-                label="Descrição"
-                name="couponDescription"
-                placeholder="Cupom oficial do influencer"
-                value={formDescription}
-                onChange={(e) => setFormDescription(e.target.value)}
-              />
-
-              <Input
-                label="Válido a partir de"
-                name="couponValidFrom"
-                type="datetime-local"
-                value={formValidFrom}
-                onChange={(e) => setFormValidFrom(e.target.value)}
-              />
-
-              <Select
-                label="Tipo de recompensa"
-                name="couponRewardType"
-                value={formRewardType}
-                onChange={(e) => {
-                  const nextType = e.target.value as AdminCouponRewardType
-                  setFormRewardType(nextType)
-                  const preset = rewardPresetByType.get(nextType)
-                  if (preset) {
-                    setFormRewardValue(String(preset.defaultValue))
-                  }
-                }}
-              >
-                {rewardTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-
-              {selectedRewardPreset?.valueKind === 'fixed' ? null : (
+          {formCurrencies.map((currency) => {
+            const option = SKINS_CURRENCY_OPTIONS.find((item) => item.value === currency)
+            const slice = formAmounts[currency]
+            return (
+              <Surface key={currency} variant="cardInset" className="space-y-3">
+                <ThemeText as="h3" tone="primary" className="text-sm font-semibold">
+                  {option?.label ?? currency}
+                </ThemeText>
+                {selectedRewardPreset?.valueKind === 'fixed' ? (
+                  <Input
+                    label="Valor fixo"
+                    name={`couponRewardValue-${currency}`}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="Obrigatório"
+                    value={slice.rewardValue}
+                    onChange={(e) =>
+                      patchFormAmount(currency, 'rewardValue', e.target.value)
+                    }
+                  />
+                ) : null}
                 <Input
-                  label={
-                    selectedRewardPreset?.valueKind === 'percent'
-                      ? 'Percentual (%)'
-                      : selectedRewardPreset?.valueKind === 'count'
-                        ? 'Tickets / quantidade'
-                        : 'Valor da recompensa'
-                  }
-                  name="couponRewardValue"
+                  label="Compra mínima"
+                  name={`couponMinimumAmount-${currency}`}
                   type="number"
                   min={0}
-                  step={String(selectedRewardPreset?.step ?? 1)}
-                  value={formRewardValue}
-                  onChange={(e) => setFormRewardValue(e.target.value)}
-                  hint={
-                    selectedRewardPreset
-                      ? `Faixa: ${selectedRewardPreset.minValue} - ${selectedRewardPreset.maxValue}`
-                      : undefined
+                  step="0.01"
+                  placeholder="Sem mínimo"
+                  value={slice.minimumAmount}
+                  onChange={(e) =>
+                    patchFormAmount(currency, 'minimumAmount', e.target.value)
                   }
                 />
-              )}
+                <Input
+                  label="Compra máxima"
+                  name={`couponMaximumAmount-${currency}`}
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="Sem máximo"
+                  value={slice.maximumAmount}
+                  onChange={(e) =>
+                    patchFormAmount(currency, 'maximumAmount', e.target.value)
+                  }
+                />
+                {selectedRewardPreset?.valueKind === 'percent' ? (
+                  <Input
+                    label="Teto de desconto"
+                    name={`couponMaximumDiscount-${currency}`}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="Sem teto"
+                    value={slice.maximumDiscount}
+                    onChange={(e) =>
+                      patchFormAmount(currency, 'maximumDiscount', e.target.value)
+                    }
+                  />
+                ) : null}
+              </Surface>
+            )
+          })}
 
-              <div className="xl:col-span-3">
-                <ThemeText as="p" tone="label" className="mb-2 text-sm font-medium">
-                  Moedas
-                </ThemeText>
-                <div className="flex flex-wrap gap-4">
-                  {SKINS_CURRENCY_OPTIONS.map((option) => (
-                    <Checkbox
-                      key={option.value}
-                      id={`coupon-currency-${option.value}`}
-                      name={`couponCurrency-${option.value}`}
-                      label={option.label}
-                      checked={formCurrencies.includes(option.value)}
-                      onChange={(event) => {
-                        const checked = event.target.checked
-                        setFormCurrencies((current) => {
-                          if (checked) {
-                            return current.includes(option.value)
-                              ? current
-                              : [...current, option.value]
-                          }
-                          const next = current.filter((code) => code !== option.value)
-                          return next.length > 0 ? next : current
-                        })
-                      }}
-                    />
-                  ))}
-                </div>
-                <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-                  O cupom só vale nessas carteiras. Cada uma tem min, máx e valor
-                  fixo próprios — R$ 50 não é US$ 50.
-                </ThemeText>
-              </div>
+          <Input
+            label="Máx. contas vinculadas"
+            name="couponMaxUses"
+            type="number"
+            min={1}
+            placeholder="Sem limite"
+            value={formMaxUses}
+            onChange={(e) => setFormMaxUses(e.target.value)}
+          />
 
-              {formCurrencies.map((currency) => {
-                const option = SKINS_CURRENCY_OPTIONS.find((item) => item.value === currency)
-                const slice = formAmounts[currency]
-                return (
-                  <div
-                    key={currency}
-                    className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
-                  >
-                    <ThemeText as="h3" tone="primary" className="text-sm font-semibold">
-                      {option?.label ?? currency}
-                    </ThemeText>
-                    {selectedRewardPreset?.valueKind === 'fixed' ? (
-                      <Input
-                        label="Valor fixo"
-                        name={`couponRewardValue-${currency}`}
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        placeholder="Obrigatório"
-                        value={slice.rewardValue}
-                        onChange={(e) =>
-                          patchFormAmount(currency, 'rewardValue', e.target.value)
-                        }
-                      />
-                    ) : null}
-                    <Input
-                      label="Compra mínima"
-                      name={`couponMinimumAmount-${currency}`}
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder="Sem mínimo"
-                      value={slice.minimumAmount}
-                      onChange={(e) =>
-                        patchFormAmount(currency, 'minimumAmount', e.target.value)
-                      }
-                    />
-                    <Input
-                      label="Compra máxima"
-                      name={`couponMaximumAmount-${currency}`}
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder="Sem máximo"
-                      value={slice.maximumAmount}
-                      onChange={(e) =>
-                        patchFormAmount(currency, 'maximumAmount', e.target.value)
-                      }
-                    />
-                    {selectedRewardPreset?.valueKind === 'percent' ? (
-                      <Input
-                        label="Teto de desconto"
-                        name={`couponMaximumDiscount-${currency}`}
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        placeholder="Sem teto"
-                        value={slice.maximumDiscount}
-                        onChange={(e) =>
-                          patchFormAmount(currency, 'maximumDiscount', e.target.value)
-                        }
-                      />
-                    ) : null}
-                  </div>
-                )
-              })}
+          <Input
+            label="Máx. usos por usuário"
+            name="couponMaxUsesPerUser"
+            type="number"
+            min={1}
+            value={formMaxUsesPerUser}
+            onChange={(e) => setFormMaxUsesPerUser(e.target.value)}
+          />
 
-              <Input
-                label="Máx. contas vinculadas"
-                name="couponMaxUses"
-                type="number"
-                min={1}
-                placeholder="Sem limite"
-                value={formMaxUses}
-                onChange={(e) => setFormMaxUses(e.target.value)}
-              />
-
-              <Input
-                label="Máx. usos por usuário"
-                name="couponMaxUsesPerUser"
-                type="number"
-                min={1}
-                value={formMaxUsesPerUser}
-                onChange={(e) => setFormMaxUsesPerUser(e.target.value)}
-              />
-
-              <div className="flex items-end justify-end gap-2 xl:col-span-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setCreateModalOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  isLoading={createState.isLoading}
-                  disabled={!formCode.trim() || !formOwnerId || !formValidTo}
-                >
-                  Criar cupom
-                </Button>
-              </div>
-            </form>
-
-            {createState.isError ? (
-              <p className={`mt-4 ${surfaceClass('errorBanner')}`}>
-                {getErrorMessage(createState.error)}
-              </p>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+          {createState.isError ? (
+            <p className={`xl:col-span-3 ${surfaceClass('errorBanner')}`}>
+              {getErrorMessage(createState.error)}
+            </p>
+          ) : null}
+        </form>
+      </Modal>
     </div>
   )
 }

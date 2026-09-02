@@ -125,7 +125,9 @@ export function CaseEditorGeneralSection({
               label="Vitrine no site"
               name="vitrineId"
               value={values.vitrineId ?? ''}
-              onChange={handleChange}
+              onChange={(e) => {
+                void setFieldValue('vitrineId', e.target.value)
+              }}
               onBlur={handleBlur}
               disabled={disabled}
             >

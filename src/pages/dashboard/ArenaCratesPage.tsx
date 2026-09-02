@@ -19,6 +19,7 @@ import {
   useGetArenaCratesQuery,
   type ArenaCrate,
 } from '@/redux/store/api/arena/api.arena'
+import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
 export default function ArenaCratesPage() {
@@ -56,7 +57,7 @@ export default function ArenaCratesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageTitle subtitle="Preço da jogada é global. As crates só definem as skins de cada raridade. O jogador inicia no jogo e paga o valor da carteira.">
+        <PageTitle subtitle="Preço da jogada é global. O valor da caixa é o VE das skins, sem margem — publi e elegível usam esse número.">
           Arena
         </PageTitle>
         <div className="flex flex-wrap items-center gap-2">
@@ -109,6 +110,7 @@ export default function ArenaCratesPage() {
                   <th className={listTable.th}>Crate</th>
                   <th className={listTable.th}>Raridade</th>
                   <th className={listTable.th}>Itens</th>
+                  <th className={listTable.th}>Valor da caixa</th>
                   <th className={listTable.th}>Status</th>
                   <th className={listTable.th} />
                 </tr>
@@ -141,6 +143,16 @@ export default function ArenaCratesPage() {
                       </span>
                     </td>
                     <td className={listTable.td}>{crate.items?.length ?? 0}</td>
+                    <td className={`${listTable.td} tabular-nums`}>
+                      <ThemeText as="p" tone="primary">
+                        {formatSkinsPrice(crate.valueBrl ?? 0, SkinsCurrency.BRL)}
+                      </ThemeText>
+                      <ThemeText as="p" tone="secondary" className="text-xs">
+                        {formatSkinsPrice(crate.valueUsd ?? 0, SkinsCurrency.USD)}
+                        {' · '}
+                        {formatSkinsPrice(crate.valueEur ?? 0, SkinsCurrency.EUR)}
+                      </ThemeText>
+                    </td>
                     <td className={listTable.td}>
                       <StatusPill active={crate.active} />
                     </td>

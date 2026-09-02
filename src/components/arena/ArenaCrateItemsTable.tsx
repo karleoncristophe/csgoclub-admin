@@ -1,8 +1,11 @@
+import { useMemo, type ReactNode } from 'react'
 import { Trash2 } from 'lucide-react'
 import { BankProgressBar } from '@/components/cases/BankProgressBar'
 import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
 import { SkinTripleCurrencyPrices } from '@/components/skins/SkinTripleCurrencyPrices'
+import { SortableTh, sortByNumericColumn, useTableSort } from '@/components/ui/SortableTh'
 import { Surface } from '@/components/ui/Surface'
+import { Input } from '@/components/ui/Input'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import type { ArenaCrateItem } from '@/redux/store/api/arena/api.arena'
@@ -16,8 +19,13 @@ import {
   type ArenaCrateEconomyLedger,
 } from '@/utils/arenaCrateEconomics'
 import { describeDropEligibility } from '@/utils/caseEconomics'
-import type { ReactNode } from 'react'
+import {
+  arenaProbabilityInputError,
+  arenaProbabilitySumError,
+} from '@/validators/arenaCrateEditorSchema'
 import { listTableAlt } from '@/components/ui/listTable'
+
+type ArenaItemSortKey = 'prize' | 'chance' | 'bank'
 
 type ArenaCrateItemsTableProps = {
   items: ArenaCrateItem[]
@@ -45,6 +53,8 @@ export function ArenaCrateItemsTable({
   onItemsChange,
 }: ArenaCrateItemsTableProps) {
   const sum = enabledProbabilitySum(items)
+  const probabilityError = itemsError ?? arenaProbabilitySumError(items)
+  const chanceInputError = arenaProbabilityInputError(items)
   const injection = arenaBankInjection(crateValue)
   const bankAvailable = arenaBankBalance(ledger, currency) + injection
   const enabledCount = items.filter(
@@ -56,6 +66,25 @@ export function ArenaCrateItemsTable({
     bankBalance: bankAvailable,
     currency,
   })
+
+  const { sort, toggle } = useTableSort<ArenaItemSortKey>()
+  const displayedItems = useMemo(
+    () =>
+      sortByNumericColumn(items, sort, (item, key) => {
+        const prize = arenaPrizeForCurrency(item, currency)
+        if (key === 'prize') return prize
+        if (key === 'chance') return Number(item.probability) || 0
+        if (item.enabled === false) return -1
+        const eligibility = evaluateArenaDropEligibility({
+          item,
+          openPrice: crateValue,
+          bankBalance: bankAvailable,
+          currency,
+        })
+        return eligibility.coveredByOpenPrice ? 0 : eligibility.requiredBankBalance
+      }),
+    [bankAvailable, crateValue, currency, items, sort],
+  )
 
   const updateItem = (skinName: string, patch: Partial<ArenaCrateItem>) => {
     onItemsChange(
@@ -76,7 +105,17 @@ export function ArenaCrateItemsTable({
             Valor da jogada é o preço global da Arena — sem margem. Skins até
             esse valor saem sempre; as mais caras só ficam elegíveis quando o
             banco acumula o prêmio delas. Elegíveis agora: {eligibleCount}/
-            {enabledCount}. Soma das chances: {sum.toFixed(4)}%.
+            {enabledCount}. Soma das chances:{' '}
+            <span
+              className={
+                probabilityError
+                  ? 'font-semibold text-red-600 dark:text-red-400'
+                  : undefined
+              }
+            >
+              {sum.toFixed(4)}%
+            </span>
+            {probabilityError ? ' — precisa fechar 100%.' : ''}
           </ThemeText>
         </div>
         {headerAction ? (
@@ -84,9 +123,9 @@ export function ArenaCrateItemsTable({
         ) : null}
       </div>
 
-      {itemsError ? (
+      {probabilityError ? (
         <Surface variant="errorBanner" className="mb-4">
-          {itemsError}
+          {probabilityError}
         </Surface>
       ) : null}
 
@@ -100,16 +139,37 @@ export function ArenaCrateItemsTable({
             <thead>
               <tr className={listTableAlt.theadRow}>
                 <th className="py-2 pr-4">Skin</th>
-                <th className="py-2 pr-4">Prêmio</th>
-                <th className="py-2 pr-4">Chance %</th>
-                <th className="py-2 pr-4">Banco exigido</th>
+                <SortableTh
+                  label="Prêmio"
+                  sortKey="prize"
+                  sort={sort}
+                  onSort={toggle}
+                  className="py-2 pr-4"
+                  labelClassName="text-xs font-medium"
+                />
+                <SortableTh
+                  label="Chance %"
+                  sortKey="chance"
+                  sort={sort}
+                  onSort={toggle}
+                  className="py-2 pr-4"
+                  labelClassName="text-xs font-medium"
+                />
+                <SortableTh
+                  label="Banco exigido"
+                  sortKey="bank"
+                  sort={sort}
+                  onSort={toggle}
+                  className="py-2 pr-4"
+                  labelClassName="text-xs font-medium"
+                />
                 <th className="py-2 pr-4">Elegível</th>
                 <th className="py-2 pr-4">Ativa</th>
                 <th className="py-2" />
               </tr>
             </thead>
             <tbody className={listTableAlt.tbody}>
-              {items.map((item) => {
+              {displayedItems.map((item) => {
                 const prize = arenaPrizeForCurrency(item, currency)
                 const eligibility = evaluateArenaDropEligibility({
                   item,
@@ -163,19 +223,25 @@ export function ArenaCrateItemsTable({
                         valueEur={item.valueEur}
                       />
                     </td>
-                    <td className="py-3 pr-4">
-                      <input
+                    <td className="py-3 pr-4 align-top">
+                      <Input
+                        label="Chance"
                         type="number"
                         min={0}
                         max={100}
                         step={0.0001}
+                        name={`chance-${item.skinName}`}
                         value={item.probability}
+                        disabled={item.enabled === false}
+                        error={
+                          item.enabled !== false ? chanceInputError : undefined
+                        }
                         onChange={(event) =>
                           updateItem(item.skinName, {
                             probability: Number(event.target.value) || 0,
                           })
                         }
-                        className="h-10 w-28 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        className="w-28"
                       />
                     </td>
                     <td className="py-3 pr-4 whitespace-nowrap">

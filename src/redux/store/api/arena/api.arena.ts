@@ -41,6 +41,9 @@ export type ArenaCrate = {
   rarity: ArenaRarity
   color?: string
   items: ArenaCrateItem[]
+  valueBrl?: number
+  valueUsd?: number
+  valueEur?: number
   economyLedger?: {
     bankBalanceBrl?: number
     bankBalanceUsd?: number

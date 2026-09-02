@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { Trash2 } from 'lucide-react'
 import { BankProgressBar } from '@/components/cases/BankProgressBar'
 import { caseFieldProps } from '@/components/cases/editor/caseFieldHelp'
 import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
 import { FieldLabelWithHelp } from '@/components/ui/FieldLabelWithHelp'
+import { SortableTh, sortByNumericColumn, useTableSort } from '@/components/ui/SortableTh'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { listTableAlt } from '@/components/ui/listTable'
@@ -38,6 +39,8 @@ type CaseEditorItemsTableProps = {
   headerAction?: ReactNode
 }
 
+type CaseItemSortKey = 'value' | 'drop' | 'bank' | 've'
+
 export function CaseEditorItemsTable({
   items,
   currency,
@@ -51,6 +54,24 @@ export function CaseEditorItemsTable({
 }: CaseEditorItemsTableProps) {
   const bankInjection = computeBankInjection(openPrice, targetMarginPercent)
   const bankAvailable = roundPrice((ledger.bankBalance ?? 0) + bankInjection)
+  const { sort, toggle } = useTableSort<CaseItemSortKey>()
+  const displayedItems = useMemo(
+    () =>
+      sortByNumericColumn(items, sort, (item, key) => {
+        const itemValue = resolveItemEconomicsValue(item, valueMode)
+        if (key === 'value') return itemValue
+        if (key === 'drop') return item.probability
+        if (key === 've') return roundPrice(itemValue * (item.probability / 100))
+        const eligibility = evaluateDropEligibility({
+          item,
+          openPrice,
+          bankBalance: bankAvailable,
+          valueMode,
+        })
+        return eligibility.coveredByOpenPrice ? 0 : eligibility.requiredBankBalance
+      }),
+    [bankAvailable, items, openPrice, sort, valueMode],
+  )
 
   const updateItem = (skinName: string, patch: Partial<CaseDropItem>) => {
     onItemsChange(updateCaseDropItem(items, skinName, patch))
@@ -98,34 +119,34 @@ export function CaseEditorItemsTable({
                 </th>
                 <th className="px-3 py-2">Item</th>
                 <th className="px-3 py-2">Raridade</th>
-                <th className="px-3 py-2">
-                  <FieldLabelWithHelp
-                    label="Valor"
-                    fieldHelp={caseFieldProps('itemValue').fieldHelp}
-                    className="text-xs uppercase tracking-wide text-zinc-500"
-                  />
-                </th>
-                <th className="px-3 py-2">
-                  <FieldLabelWithHelp
-                    label="Drop %"
-                    fieldHelp={caseFieldProps('dropPercent').fieldHelp}
-                    className="text-xs uppercase tracking-wide text-zinc-500"
-                  />
-                </th>
-                <th className="px-3 py-2">
-                  <FieldLabelWithHelp
-                    label="Banco exigido"
-                    fieldHelp={caseFieldProps('requiredBankBalance').fieldHelp}
-                    className="text-xs uppercase tracking-wide text-zinc-500"
-                  />
-                </th>
-                <th className="px-3 py-2">
-                  <FieldLabelWithHelp
-                    label="VE item"
-                    fieldHelp={caseFieldProps('itemVe').fieldHelp}
-                    className="text-xs uppercase tracking-wide text-zinc-500"
-                  />
-                </th>
+                <SortableTh
+                  label="Valor"
+                  sortKey="value"
+                  sort={sort}
+                  onSort={toggle}
+                  fieldHelp={caseFieldProps('itemValue').fieldHelp}
+                />
+                <SortableTh
+                  label="Drop %"
+                  sortKey="drop"
+                  sort={sort}
+                  onSort={toggle}
+                  fieldHelp={caseFieldProps('dropPercent').fieldHelp}
+                />
+                <SortableTh
+                  label="Banco exigido"
+                  sortKey="bank"
+                  sort={sort}
+                  onSort={toggle}
+                  fieldHelp={caseFieldProps('requiredBankBalance').fieldHelp}
+                />
+                <SortableTh
+                  label="VE item"
+                  sortKey="ve"
+                  sort={sort}
+                  onSort={toggle}
+                  fieldHelp={caseFieldProps('itemVe').fieldHelp}
+                />
                 <th className="px-3 py-2">
                   <FieldLabelWithHelp
                     label="Elegível"
@@ -137,7 +158,7 @@ export function CaseEditorItemsTable({
               </tr>
             </thead>
             <tbody className={listTableAlt.tbody}>
-              {items.map((item) => {
+              {displayedItems.map((item) => {
                 const itemValue = resolveItemEconomicsValue(item, valueMode)
                 const veItem = roundPrice(itemValue * (item.probability / 100))
                 const eligibility = evaluateDropEligibility({

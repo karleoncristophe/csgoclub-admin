@@ -37,11 +37,14 @@ import { getErrorMessage } from '@/utils/getErrorMessage'
 import {
   arenaBankBalance,
   arenaBankInjection,
+  computeArenaCrateValues,
   countArenaEligibleItems,
 } from '@/utils/arenaCrateEconomics'
 import {
   arenaCrateEditorInitialValues,
   arenaCrateEditorSchema,
+  arenaProbabilitySumError,
+  enabledArenaProbabilitySum,
   type ArenaCrateEditorFormValues,
 } from '@/validators/arenaCrateEditorSchema'
 
@@ -50,9 +53,23 @@ type ArenaCrateFormState = ArenaCrateEditorFormValues & {
   imageUrl?: string
 }
 
-function SummaryChip({ label, value }: { label: string; value: string }) {
+function SummaryChip({
+  label,
+  value,
+  error,
+}: {
+  label: string
+  value: string
+  error?: boolean
+}) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 dark:border-zinc-800 dark:bg-zinc-900">
+    <div
+      className={`rounded-lg border bg-white px-3 py-1.5 dark:bg-zinc-900 ${
+        error
+          ? 'border-red-400 dark:border-red-500'
+          : 'border-zinc-200 dark:border-zinc-800'
+      }`}
+    >
       <ThemeText
         as="span"
         tone="faint"
@@ -60,7 +77,13 @@ function SummaryChip({ label, value }: { label: string; value: string }) {
       >
         {label}
       </ThemeText>
-      <ThemeText as="span" tone="primary" className="block text-sm font-semibold">
+      <ThemeText
+        as="span"
+        tone="primary"
+        className={`block text-sm font-semibold ${
+          error ? 'text-red-600 dark:text-red-400' : ''
+        }`}
+      >
         {value}
       </ThemeText>
     </div>
@@ -108,12 +131,6 @@ function catalogSkinToArenaItem(skin: SkinsCatalogItem): ArenaCrateItem {
     valueUsd: skin.valueUsd,
     valueEur: skin.valueEur,
   }
-}
-
-function enabledProbabilitySum(items: ArenaCrateItem[]) {
-  return items
-    .filter((item) => item.enabled)
-    .reduce((sum, item) => sum + (Number(item.probability) || 0), 0)
 }
 
 export default function ArenaCrateEditorPage() {
@@ -215,17 +232,22 @@ export default function ArenaCrateEditorPage() {
     () => new Set(values.items.map((item) => item.skinName)),
     [values.items],
   )
-  const probabilitySum = enabledProbabilitySum(values.items)
-  const itemsError = typeof errors.items === 'string' ? errors.items : undefined
+  const probabilitySum = enabledArenaProbabilitySum(values.items)
+  const probabilityError = arenaProbabilitySumError(values.items)
+  const itemsError =
+    probabilityError ??
+    (typeof errors.items === 'string' ? errors.items : undefined)
+  const crateValues = useMemo(
+    () => computeArenaCrateValues(values.items),
+    [values.items],
+  )
   const playValueBrl = Number(playPricing?.valueBrl) || 0
-  const playValueUsd = Number(playPricing?.valueUsd) || 0
-  const playValueEur = Number(playPricing?.valueEur) || 0
   const eligibleCount = countArenaEligibleItems({
     items: values.items,
-    openPrice: playValueBrl,
+    openPrice: crateValues.valueBrl,
     bankBalance:
       arenaBankBalance(existingCrate?.economyLedger, SkinsCurrency.BRL) +
-      arenaBankInjection(playValueBrl),
+      arenaBankInjection(crateValues.valueBrl),
     currency: SkinsCurrency.BRL,
   })
 
@@ -261,6 +283,7 @@ export default function ArenaCrateEditorPage() {
         rarity: true,
         color: true,
         active: true,
+        items: true,
       })
       void formik.setErrors(nextErrors)
       errorBannerRef.current?.scrollIntoView({
@@ -318,22 +341,27 @@ export default function ArenaCrateEditorPage() {
           <SummaryChip
             label="Soma chances"
             value={`${probabilitySum.toFixed(2)}%`}
+            error={Boolean(probabilityError)}
           />
           <SummaryChip
             label="Elegíveis"
             value={String(eligibleCount)}
           />
           <SummaryChip
+            label="Caixa BRL"
+            value={formatSkinsPrice(crateValues.valueBrl, SkinsCurrency.BRL)}
+          />
+          <SummaryChip
+            label="Caixa USD"
+            value={formatSkinsPrice(crateValues.valueUsd, SkinsCurrency.USD)}
+          />
+          <SummaryChip
+            label="Caixa EUR"
+            value={formatSkinsPrice(crateValues.valueEur, SkinsCurrency.EUR)}
+          />
+          <SummaryChip
             label="Jogada BRL"
             value={formatSkinsPrice(playValueBrl, SkinsCurrency.BRL)}
-          />
-          <SummaryChip
-            label="Jogada USD"
-            value={formatSkinsPrice(playValueUsd, SkinsCurrency.USD)}
-          />
-          <SummaryChip
-            label="Jogada EUR"
-            value={formatSkinsPrice(playValueEur, SkinsCurrency.EUR)}
           />
         </div>
       </div>
@@ -359,8 +387,9 @@ export default function ArenaCrateEditorPage() {
           Informações gerais
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mb-6 text-sm">
-          Só uma crate ativa por raridade. O preço da jogada é global — ajuste
-          na listagem da Arena. Aqui ficam nome, raridade e as skins.
+          Só uma crate ativa por raridade. O preço da jogada é global. O valor
+          da caixa é o VE das skins, sem margem — fica estático ao salvar e
+          entra no elegível e na publi.
         </ThemeText>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -433,16 +462,16 @@ export default function ArenaCrateEditorPage() {
 
       <ArenaCrateBankPanel
         items={values.items}
-        valueBrl={playValueBrl}
-        valueUsd={playValueUsd}
-        valueEur={playValueEur}
+        valueBrl={crateValues.valueBrl}
+        valueUsd={crateValues.valueUsd}
+        valueEur={crateValues.valueEur}
         ledger={existingCrate?.economyLedger}
         currency={SkinsCurrency.BRL}
       />
 
       <ArenaCrateItemsTable
         items={values.items}
-        crateValue={playValueBrl}
+        crateValue={crateValues.valueBrl}
         currency={SkinsCurrency.BRL}
         ledger={existingCrate?.economyLedger}
         itemsError={itemsError}

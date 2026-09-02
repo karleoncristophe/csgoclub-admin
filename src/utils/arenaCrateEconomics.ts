@@ -41,9 +41,27 @@ export function arenaBankBalance(
   return roundPrice(safe.bankBalanceBrl ?? 0)
 }
 
-/** Arena has no margin: injection = fixed crate play price. */
+/** Arena has no margin: injection = crate skin EV. */
 export function arenaBankInjection(openPrice: number) {
   return computeBankInjection(openPrice, 0)
+}
+
+export function computeArenaCrateValues(items: ArenaCrateItem[]) {
+  const enabled = items.filter(
+    (item) => item.enabled !== false && Number(item.probability) > 0,
+  )
+  const ev = (pick: (item: ArenaCrateItem) => number) =>
+    roundPrice(
+      enabled.reduce(
+        (sum, item) => sum + pick(item) * (Number(item.probability) || 0) / 100,
+        0,
+      ),
+    )
+  return {
+    valueBrl: ev((item) => Number(item.valueBrl) || 0),
+    valueUsd: ev((item) => Number(item.valueUsd) || 0),
+    valueEur: ev((item) => Number(item.valueEur) || 0),
+  }
 }
 
 export function evaluateArenaDropEligibility(input: {

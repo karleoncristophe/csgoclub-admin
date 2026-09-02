@@ -70,8 +70,8 @@ export function ArenaCrateBankPanel({
         Banco da crate (sem margem)
       </ThemeText>
       <ThemeText as="p" tone="secondary" className="mb-4 text-xs">
-        Cada abertura injeta o preço global da jogada e o drop retira o prêmio
-        da skin. Não tem margem: o preço não fica nesta crate.
+        Cada abertura injeta o VE das skins (sem margem) e o drop retira o
+        prêmio. A jogada da Arena continua no preço global.
       </ThemeText>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <BankStat
@@ -79,7 +79,7 @@ export function ArenaCrateBankPanel({
           value={formatSkinsPrice(bank, currency)}
         />
         <BankStat
-          label="Injeção / jogada"
+          label="Injeção (VE)"
           value={formatSkinsPrice(injection, currency)}
         />
         <BankStat

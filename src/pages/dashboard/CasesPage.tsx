@@ -86,9 +86,9 @@ export default function CasesPage() {
         </Link>
       </div>
 
-      <Surface variant="card" className="!p-5">
+      <Surface variant="card">
         {isLoading ? (
-          <ThemeText tone="secondary" className="text-sm">
+          <ThemeText tone="secondary" className="p-5 text-sm">
             Carregando caixas...
           </ThemeText>
         ) : null}
@@ -104,7 +104,7 @@ export default function CasesPage() {
         ) : null}
 
         {!isLoading && data.length === 0 ? (
-          <ThemeText tone="secondary" className="text-sm">
+          <ThemeText tone="secondary" className="p-5 text-sm">
             Nenhuma caixa criada ainda.
           </ThemeText>
         ) : null}

@@ -157,8 +157,8 @@ export default function ArenaPlaysPage() {
         </div>
       ) : null}
 
-      <Surface variant="card" className="!p-5">
-        <div className="mb-5 flex flex-wrap items-end gap-3">
+      <Surface variant="card">
+        <div className="flex flex-wrap items-end gap-3 p-5 pb-0">
           <div className="min-w-[220px] flex-1">
             <Input
               label="Buscar"
@@ -174,7 +174,7 @@ export default function ArenaPlaysPage() {
           </ThemeText>
         </div>
 
-        <div className="mb-5 grid gap-2 lg:grid-cols-2">
+        <div className="mb-5 grid gap-2 px-5 pt-4 lg:grid-cols-2">
           <SegmentedTabs
             ariaLabel="Status da jogada"
             value={status || 'all'}
@@ -306,7 +306,7 @@ export default function ArenaPlaysPage() {
 
         {totalPages > 1 ? (
           <Pagination
-            className="mt-6"
+            className="p-5"
             page={page}
             totalPages={totalPages}
             onPageChange={(next) =>

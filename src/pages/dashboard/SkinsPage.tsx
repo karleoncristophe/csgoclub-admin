@@ -169,8 +169,8 @@ export default function SkinsPage() {
         Skins
       </PageTitle>
 
-      <Surface variant="card" className="!p-5 sm:!p-5">
-        <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <Surface variant="card">
+        <div className="grid gap-3 p-5 pb-4 md:grid-cols-2 xl:grid-cols-3">
           <Select
             label="Moeda"
             name="currency"
@@ -258,7 +258,7 @@ export default function SkinsPage() {
           />
         </div>
 
-        <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-4 grid gap-3 px-5 sm:grid-cols-2 lg:grid-cols-4">
           <Surface variant="statTile" className="!p-4">
             <ThemeText as="p" tone="label" className="text-xs uppercase">
               Página atual
@@ -300,7 +300,7 @@ export default function SkinsPage() {
           </Surface>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-6 px-5">
           <SectionTitle>Tipos no catálogo (após busca)</SectionTitle>
           <SegmentedTabs
             ariaLabel="Tipo da arma"
@@ -318,7 +318,7 @@ export default function SkinsPage() {
         </div>
 
         {rarityOptions.length > 0 ? (
-          <div className="mb-6">
+          <div className="mb-6 px-5">
             <SectionTitle>Raridades (após busca e tipo)</SectionTitle>
             <SegmentedTabs
               ariaLabel="Raridade"
@@ -415,7 +415,7 @@ export default function SkinsPage() {
         ) : null}
 
         <Pagination
-          className="mt-6"
+          className="p-5"
           page={currentPage}
           totalPages={totalPages}
           scrollTargetRef={productsAnchorRef}

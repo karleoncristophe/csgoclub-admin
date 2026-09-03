@@ -11,7 +11,6 @@ import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Pagination } from '@/components/ui/Pagination'
-import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import { listTable } from '@/components/ui/listTable'
@@ -326,16 +325,15 @@ export default function BattlesAdminPage() {
           </table>
         </div>
 
-      <Surface variant="card" className="space-y-4 !p-4">
-        <div className="flex items-center justify-between gap-3">
-          <ThemeText as="h2" className="text-lg font-semibold">
-            Battles recentes
-          </ThemeText>
-          <Button variant="secondary" onClick={() => refetch()} type="button">
-            Atualizar
-          </Button>
-        </div>
-        <div className={listTable.wrap}>
+      <div className="flex items-center justify-between gap-3">
+        <ThemeText as="h2" className="text-lg font-semibold">
+          Battles recentes
+        </ThemeText>
+        <Button variant="secondary" onClick={() => refetch()} type="button">
+          Atualizar
+        </Button>
+      </div>
+      <div className={listTable.wrap}>
           <table className={listTable.table}>
             <thead>
               <tr className={listTable.theadRow}>
@@ -462,7 +460,6 @@ export default function BattlesAdminPage() {
             Atualizando página...
           </ThemeText>
         ) : null}
-      </Surface>
 
       <Modal
         open={createModalOpen}

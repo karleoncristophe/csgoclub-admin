@@ -286,8 +286,8 @@ export function PaymentDepositsPanel() {
 
   return (
     <>
-    <Surface variant="card" className="!p-5">
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <Surface variant="card">
+      <div className="grid gap-3 p-5 pb-0 sm:grid-cols-2 lg:grid-cols-5">
         {stats.map((item) => (
           <Surface key={item.label} variant="statTile" className="!px-3 !py-2.5">
             <ThemeText as="p" tone="secondary" className="text-xs uppercase tracking-wide">
@@ -300,7 +300,7 @@ export function PaymentDepositsPanel() {
         ))}
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+      <div className="mb-4 grid gap-3 px-5 pt-4 sm:grid-cols-2">
         <div className="rounded-xl border border-accent/20 bg-accent-soft px-3 py-3">
           <ThemeText as="p" tone="secondary" className="text-xs uppercase tracking-wide">
             Pix (BRL)
@@ -327,7 +327,7 @@ export function PaymentDepositsPanel() {
         </div>
       </div>
 
-      <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mb-4 grid gap-3 px-5 md:grid-cols-2 xl:grid-cols-3">
         <Input
           label="Busca"
           name="payment-deposit-search"
@@ -396,7 +396,7 @@ export function PaymentDepositsPanel() {
         />
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3 px-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="w-full sm:max-w-[12rem]">
           <Select
             label="Itens por página"
@@ -426,7 +426,11 @@ export function PaymentDepositsPanel() {
         </div>
       </div>
 
-      {isError ? <Surface variant="errorBanner">{getErrorMessage(error)}</Surface> : null}
+      {isError ? (
+        <Surface variant="errorBanner" className="mx-5 mb-4">
+          {getErrorMessage(error)}
+        </Surface>
+      ) : null}
 
       <div className={listTable.wrap}>
         <table className={listTable.table}>
@@ -557,7 +561,7 @@ export function PaymentDepositsPanel() {
         </table>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-5">
         <ThemeText as="p" tone="secondary" className="text-xs">
           {total === 0
             ? 'Nenhum depósito nesta página'

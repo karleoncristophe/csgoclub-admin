@@ -193,8 +193,8 @@ export default function TradesPage() {
         </div>
       ) : null}
 
-      <Surface variant="card" className="!p-5">
-        <div className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <Surface variant="card">
+        <div className="grid gap-3 p-5 pb-0 md:grid-cols-2 xl:grid-cols-4">
           <div className="min-w-[220px] md:col-span-2">
             <Input
               label="Buscar"
@@ -236,7 +236,7 @@ export default function TradesPage() {
           </ThemeText>
         </div>
 
-        <div className="mb-3 grid gap-2 lg:grid-cols-2">
+        <div className="mb-3 grid gap-2 px-5 pt-4 lg:grid-cols-2">
           <SegmentedTabs
             ariaLabel="Status do trade"
             value={status || 'all'}
@@ -259,7 +259,7 @@ export default function TradesPage() {
             onChange={(next) => setFilter('source', next === 'all' ? '' : next)}
           />
         </div>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2 px-5">
           <span className="inline-flex items-center rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100">
             {isSandbox ? 'Só teste (Dev)' : 'Só reais (Produção)'}
           </span>
@@ -402,7 +402,7 @@ export default function TradesPage() {
         ) : null}
 
         {totalPages > 1 ? (
-          <div className="mt-5">
+          <div className="p-5">
             <Pagination
               page={safePage}
               totalPages={totalPages}

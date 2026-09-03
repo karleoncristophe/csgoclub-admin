@@ -215,8 +215,8 @@ export default function CaseOpensPage() {
         </div>
       ) : null}
 
-      <Surface variant="card" className="!p-5">
-        <div className="mb-5 flex flex-wrap items-end gap-3">
+      <Surface variant="card">
+        <div className="flex flex-wrap items-end gap-3 p-5 pb-0">
           <div className="min-w-[220px] flex-1">
             <Input
               label="Buscar"
@@ -234,7 +234,7 @@ export default function CaseOpensPage() {
 
         <SegmentedTabs
           ariaLabel="Destino da abertura"
-          className="mb-3"
+          className="mb-3 px-5 pt-4"
           value={disposition || 'all'}
           items={[
             { id: 'all', label: 'Todas' },
@@ -244,7 +244,7 @@ export default function CaseOpensPage() {
           ]}
           onChange={(next) => setFilter('disposition', next === 'all' ? '' : next)}
         />
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2 px-5">
           <span className="inline-flex items-center rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100">
             {isSandbox ? 'Só teste (Dev)' : 'Só reais (Produção)'}
           </span>
@@ -347,7 +347,7 @@ export default function CaseOpensPage() {
         ) : null}
 
         {totalPages > 1 ? (
-          <div className="mt-5">
+          <div className="p-5">
             <Pagination
               page={safePage}
               totalPages={totalPages}

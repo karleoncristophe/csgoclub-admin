@@ -83,9 +83,9 @@ export default function ArenaCratesPage() {
 
       <ArenaPlayPricingPanel />
 
-      <Surface variant="card" className="!p-5">
+      <Surface variant="card">
         {isLoading ? (
-          <ThemeText tone="secondary" className="text-sm">
+          <ThemeText tone="secondary" className="p-5 text-sm">
             Carregando crates...
           </ThemeText>
         ) : null}
@@ -101,7 +101,7 @@ export default function ArenaCratesPage() {
         ) : null}
 
         {!isLoading && data.length === 0 ? (
-          <ThemeText tone="secondary" className="text-sm">
+          <ThemeText tone="secondary" className="p-5 text-sm">
             Nenhuma crate da Arena criada ainda.
           </ThemeText>
         ) : null}

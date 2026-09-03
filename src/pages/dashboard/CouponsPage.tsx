@@ -376,8 +376,8 @@ export default function CouponsPage() {
         </Button>
       </div>
 
-      <Surface variant="card" className="!p-5">
-        <div className="mb-4 grid gap-3 md:grid-cols-[1fr_220px]">
+      <Surface variant="card">
+        <div className="grid gap-3 p-5 md:grid-cols-[1fr_220px]">
           <Input
             label="Buscar"
             name="couponSearch"
@@ -398,7 +398,7 @@ export default function CouponsPage() {
         </div>
 
         {isLoading ? (
-          <ThemeText as="p" tone="secondary" className="py-8 text-sm">
+          <ThemeText as="p" tone="secondary" className="px-5 py-8 text-sm">
             Carregando cupons...
           </ThemeText>
         ) : null}
@@ -520,19 +520,19 @@ export default function CouponsPage() {
         ) : null}
 
         {isFetching && !isLoading ? (
-          <ThemeText as="p" tone="faint" className="mt-3 text-xs">
+          <ThemeText as="p" tone="faint" className="px-5 pb-4 text-xs">
             Atualizando listagem...
           </ThemeText>
         ) : null}
 
         {updateState.isError ? (
-          <p className={`mt-4 ${surfaceClass('errorBanner')}`}>
+          <p className={`m-5 ${surfaceClass('errorBanner')}`}>
             {getErrorMessage(updateState.error)}
           </p>
         ) : null}
 
         {deleteState.isError ? (
-          <p className={`mt-4 ${surfaceClass('errorBanner')}`}>
+          <p className={`m-5 ${surfaceClass('errorBanner')}`}>
             {getErrorMessage(deleteState.error)}
           </p>
         ) : null}

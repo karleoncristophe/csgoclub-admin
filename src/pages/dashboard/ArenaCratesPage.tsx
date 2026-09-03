@@ -57,25 +57,27 @@ export default function ArenaCratesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="space-y-4">
         <PageTitle subtitle="Preço da jogada é global. O valor da caixa é o VE das skins, sem margem — publi e elegível usam esse número.">
           Arena
         </PageTitle>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center justify-between gap-3">
           <ArenaGameBuildPanel />
-          <Link
-            to="/dashboard/arena/plays"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 text-sm font-medium text-zinc-700 transition hover:border-brand-300 hover:text-brand-700 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-brand-500 dark:hover:text-brand-300"
-          >
-            Histórico de jogadas
-          </Link>
-          <Link
-            to="/dashboard/arena/new"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-medium text-white shadow-md shadow-brand-600/25 transition hover:bg-brand-700"
-          >
-            <Plus className="h-4 w-4" />
-            Nova crate
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Link
+              to="/dashboard/arena/plays"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 text-sm font-medium text-zinc-700 transition hover:border-brand-300 hover:text-brand-700 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-brand-500 dark:hover:text-brand-300"
+            >
+              Histórico de jogadas
+            </Link>
+            <Link
+              to="/dashboard/arena/new"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-medium text-white shadow-md shadow-brand-600/25 transition hover:bg-brand-700"
+            >
+              <Plus className="h-4 w-4" />
+              Nova crate
+            </Link>
+          </div>
         </div>
       </div>
 

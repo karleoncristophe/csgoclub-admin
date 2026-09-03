@@ -33,10 +33,7 @@ import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { ColorThemePicker } from '@/components/ui/ColorThemePicker'
-import {
-  PlatformDataEnvironmentBanner,
-  PlatformDataEnvironmentToggle,
-} from '@/components/ui/PlatformDataEnvironmentToggle'
+import { PlatformDataEnvironmentToggle } from '@/components/ui/PlatformDataEnvironmentToggle'
 
 type NavItem = { href: string; label: string; Icon: LucideIcon; masterOnly?: boolean }
 type NavSection = { title: string; items: readonly NavItem[] }
@@ -313,7 +310,6 @@ export default function DashboardLayout() {
             <ColorThemePicker />
             <ThemeToggle />
           </div>
-          <PlatformDataEnvironmentBanner />
           <main className="scrollbar-edge min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
             <Suspense
               fallback={

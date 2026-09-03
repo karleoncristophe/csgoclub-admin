@@ -2,6 +2,8 @@ import { createApi } from '@reduxjs/toolkit/query/react'
 import { BANNERS } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
 
+export type BannerCtaAction = 'link' | 'arena'
+
 export type BannerLocale = 'pt-BR' | 'en-US' | 'es-ES'
 
 export type BannerLocaleTextMap = Partial<Record<BannerLocale, string>>
@@ -26,6 +28,7 @@ export type SiteBanner = {
   imageUrl: string
   ctaLabel?: string
   ctaHref?: string
+  ctaAction?: BannerCtaAction
   sortOrder: number
   active: boolean
   createdAt?: string
@@ -43,6 +46,7 @@ export type CreateBannerPayload = {
   imageUrl: string
   ctaLabel?: string
   ctaHref?: string
+  ctaAction?: BannerCtaAction
   sortOrder?: number
   active?: boolean
 }
@@ -59,6 +63,7 @@ export type UpdateBannerPayload = {
   imageUrl?: string
   ctaLabel?: string
   ctaHref?: string
+  ctaAction?: BannerCtaAction
   sortOrder?: number
   active?: boolean
 }

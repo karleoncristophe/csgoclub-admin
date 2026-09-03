@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { IconButton } from '@/components/ui/IconButton'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { TextBadge } from '@/components/StatusPill'
@@ -24,6 +25,7 @@ import {
   useDeleteBannerMutation,
   useGetBannersQuery,
   useUpdateBannerMutation,
+  type BannerCtaAction,
   type BannerLocale,
   type BannerLocaleTextMap,
   type SiteBanner,
@@ -37,6 +39,7 @@ type BannerFormState = {
   titleI18n: LocaleTextMap
   subtitleI18n: LocaleTextMap
   ctaLabelI18n: LocaleTextMap
+  ctaAction: BannerCtaAction
   ctaHref: string
   sortOrder: string
   active: boolean
@@ -81,6 +84,7 @@ const emptyForm = (): BannerFormState => ({
   titleI18n: emptyLocaleMap(),
   subtitleI18n: emptyLocaleMap(),
   ctaLabelI18n: emptyLocaleMap(),
+  ctaAction: 'link',
   ctaHref: '',
   sortOrder: '0',
   active: true,
@@ -93,6 +97,7 @@ function formFromBanner(banner: SiteBanner): BannerFormState {
     titleI18n: preloadFieldI18n(banner, 'titleI18n', 'title'),
     subtitleI18n: preloadFieldI18n(banner, 'subtitleI18n', 'subtitle'),
     ctaLabelI18n: preloadFieldI18n(banner, 'ctaLabelI18n', 'ctaLabel'),
+    ctaAction: banner.ctaAction === 'arena' ? 'arena' : 'link',
     ctaHref: banner.ctaHref ?? '',
     sortOrder: String(banner.sortOrder ?? 0),
     active: banner.active,
@@ -205,7 +210,11 @@ export default function BannersPage() {
 
       await createBanner({
         ...buildTextPayload(createForm),
-        ctaHref: createForm.ctaHref.trim() || undefined,
+        ctaAction: createForm.ctaAction,
+        ctaHref:
+          createForm.ctaAction === 'link'
+            ? createForm.ctaHref.trim() || undefined
+            : undefined,
         sortOrder: Number(createForm.sortOrder) || 0,
         active: createForm.active,
         imageUrl,
@@ -231,7 +240,9 @@ export default function BannersPage() {
       await updateBanner({
         id,
         ...buildTextPayload(editForm),
-        ctaHref: editForm.ctaHref.trim() || undefined,
+        ctaAction: editForm.ctaAction,
+        ctaHref:
+          editForm.ctaAction === 'link' ? editForm.ctaHref.trim() || undefined : '',
         sortOrder: Number(editForm.sortOrder) || 0,
         active: editForm.active,
         imageUrl,
@@ -320,15 +331,36 @@ export default function BannersPage() {
           disabled,
           'ctaLabelI18n',
           'Texto do botão',
-          'Ex.: Ir para o evento',
+          'Ex.: Jogar Arena',
         )}
-        <Input
-          label="Link do botão (opcional)"
-          placeholder="Ex.: /battles ou https://…"
-          value={form.ctaHref}
+        <Select
+          label="Ação do botão"
+          value={form.ctaAction}
           disabled={disabled}
-          onChange={(e) => setForm({ ...form, ctaHref: e.target.value })}
-        />
+          onChange={(e) =>
+            setForm({
+              ...form,
+              ctaAction: e.target.value === 'arena' ? 'arena' : 'link',
+            })
+          }
+          description={
+            form.ctaAction === 'arena'
+              ? 'O site abre um modal com regras e valores da Arena e, em seguida, o jogo.'
+              : 'O botão leva ao link informado (interno ou externo).'
+          }
+        >
+          <option value="link">Link interno ou externo</option>
+          <option value="arena">Jogo da Arena</option>
+        </Select>
+        {form.ctaAction === 'link' ? (
+          <Input
+            label="Link do botão (opcional)"
+            placeholder="Ex.: /battles ou https://…"
+            value={form.ctaHref}
+            disabled={disabled}
+            onChange={(e) => setForm({ ...form, ctaHref: e.target.value })}
+          />
+        ) : null}
         <Input
           label="Ordem no carrossel"
           type="number"
@@ -459,7 +491,14 @@ export default function BannersPage() {
                         </div>
                       </td>
                       <td className={listTable.tdStrong}>
-                        {banner.title?.trim() || 'Sem título'}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span>{banner.title?.trim() || 'Sem título'}</span>
+                          {banner.ctaAction === 'arena' ? (
+                            <TextBadge>Arena</TextBadge>
+                          ) : banner.ctaHref ? (
+                            <TextBadge>Link</TextBadge>
+                          ) : null}
+                        </div>
                       </td>
                       <td className={listTable.td}>
                         <ThemeText as="span" tone="secondary" className="tabular-nums">
@@ -511,7 +550,7 @@ export default function BannersPage() {
           else setCreateModalOpen(true)
         }}
         title="Novo banner"
-        description="Envie a arte, recorte em 21:9 e defina título/CTA opcionais nos 3 idiomas. A ordem menor aparece primeiro."
+        description="Envie a arte, recorte em 21:9 e defina título/CTA nos 3 idiomas. No botão, escolha um link ou o jogo da Arena (abre o modal no site)."
         size="full"
         footer={
           <>

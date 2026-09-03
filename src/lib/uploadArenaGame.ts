@@ -50,6 +50,7 @@ async function postChunk(input: {
   total: number
   originalName: string
   totalBytes: number
+  offset: number
   blob: Blob
 }) {
   const body = new FormData()
@@ -58,6 +59,7 @@ async function postChunk(input: {
   body.set('total', String(input.total))
   body.set('originalName', input.originalName)
   body.set('totalBytes', String(input.totalBytes))
+  body.set('offset', String(input.offset))
   body.set('file', input.blob, `part-${input.index}.bin`)
 
   const response = await fetch(`${getApiBaseUrl()}/admin/arena/game/chunk`, {
@@ -135,6 +137,7 @@ export async function uploadArenaGameZip(
         total,
         originalName: file.name,
         totalBytes: file.size,
+        offset: start,
         blob,
       })
       completed += 1

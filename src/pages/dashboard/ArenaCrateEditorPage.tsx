@@ -283,7 +283,11 @@ export default function ArenaCrateEditorPage() {
         rarity: true,
         color: true,
         active: true,
-        items: true,
+        items: values.items.map(() => ({
+          skinName: true,
+          probability: true,
+          enabled: true,
+        })),
       })
       void formik.setErrors(nextErrors)
       errorBannerRef.current?.scrollIntoView({

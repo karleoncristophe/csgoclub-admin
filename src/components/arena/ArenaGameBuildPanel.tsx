@@ -126,7 +126,7 @@ export function ArenaGameBuildPanel() {
           }
         }}
         title="Jogo da Arena"
-        description="Aim Trainer que o jogador abre no site. Exporte o WebGL na Unity, compacte a pasta e envie o zip — o novo envio substitui o atual."
+        description="Aim Trainer que o jogador abre no site. Exporte o WebGL na Unity, compacte a pasta e envie o zip. O admin manda em pedaços pequenos para o proxy de produção não cortar o arquivo."
         size="md"
       >
         <input

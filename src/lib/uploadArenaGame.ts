@@ -33,7 +33,15 @@ export function uploadArenaGameZip(
         : payload?.message
       reject(new Error(message || 'Falha ao enviar o jogo.'))
     }
-    xhr.onerror = () => reject(new Error('Falha de rede ao enviar o jogo.'))
+    xhr.timeout = 0
+    xhr.ontimeout = () =>
+      reject(new Error('Tempo esgotado ao enviar o jogo. Tente de novo.'))
+    xhr.onerror = () =>
+      reject(
+        new Error(
+          'Falha de rede ao enviar o jogo. Em produção o proxy precisa aceitar ~2 GB e um timeout longo.',
+        ),
+      )
     const body = new FormData()
     body.append('file', file)
     xhr.send(body)

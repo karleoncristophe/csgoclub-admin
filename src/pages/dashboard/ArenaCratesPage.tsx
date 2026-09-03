@@ -5,6 +5,7 @@ import {
   ARENA_RARITY_COLOR,
   ARENA_RARITY_LABEL,
 } from '@/components/arena/arenaRarity'
+import { ArenaGameBuildPanel } from '@/components/arena/ArenaGameBuildPanel'
 import { ArenaPlayPricingPanel } from '@/components/arena/ArenaPlayPricingPanel'
 import { CaseListNameCell } from '@/components/cases/CaseListImage'
 import { IconButton } from '@/components/ui/IconButton'
@@ -61,6 +62,7 @@ export default function ArenaCratesPage() {
           Arena
         </PageTitle>
         <div className="flex flex-wrap items-center gap-2">
+          <ArenaGameBuildPanel />
           <Link
             to="/dashboard/arena/plays"
             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 text-sm font-medium text-zinc-700 transition hover:border-brand-300 hover:text-brand-700 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-brand-500 dark:hover:text-brand-300"

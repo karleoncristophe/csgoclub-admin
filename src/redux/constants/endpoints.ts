@@ -109,6 +109,7 @@ export const ARENA = {
   PRICING_HISTORY: '/admin/arena/pricing/history',
   MATCHES: '/admin/arena/matches',
   MATCH_BY_ID: (id: string) => `/admin/arena/matches/${id}`,
+  GAME: '/admin/arena/game',
 } as const
 
 export const CAMBIO = {

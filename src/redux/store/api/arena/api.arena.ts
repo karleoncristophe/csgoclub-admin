@@ -322,6 +322,24 @@ export type ArenaCrateOpensResponse = {
   }
 }
 
+export type ArenaGameUnityFiles = {
+  indexFile: string
+  loaderFile: string
+  dataFile: string
+  frameworkFile: string
+  wasmFile: string
+}
+
+export type ArenaGameStatus = {
+  ready: boolean
+  playUrl?: string
+  uploadedAt?: string
+  originalName?: string
+  zipBytes?: number
+  extractedBytes?: number
+  files?: ArenaGameUnityFiles
+}
+
 export type GetArenaCrateOpensParams = WithPlatformDataEnvironment<{
   page?: number
   limit?: number
@@ -342,6 +360,7 @@ export const arenaApi = createApi({
     'ArenaMatch',
     'ArenaCrateOpens',
     'ArenaCrateOpen',
+    'ArenaGame',
   ],
   refetchOnMountOrArgChange: true,
   endpoints: (builder) => ({
@@ -453,6 +472,14 @@ export const arenaApi = createApi({
       },
       providesTags: ['ArenaCrateOpens'],
     }),
+    getArenaGame: builder.query<ArenaGameStatus, void>({
+      query: () => ({ url: ARENA.GAME, method: 'GET' }),
+      providesTags: ['ArenaGame'],
+    }),
+    deleteArenaGame: builder.mutation<{ ok: true }, void>({
+      query: () => ({ url: ARENA.GAME, method: 'DELETE' }),
+      invalidatesTags: ['ArenaGame'],
+    }),
     getArenaCrateOpenById: builder.query<ArenaCrateOpenDetail, string>({
       query: (openId) => ({
         url: ARENA.CRATE_OPEN_BY_ID(openId),
@@ -478,4 +505,6 @@ export const {
   useGetArenaMatchByIdQuery,
   useGetArenaCrateOpensQuery,
   useGetArenaCrateOpenByIdQuery,
+  useGetArenaGameQuery,
+  useDeleteArenaGameMutation,
 } = arenaApi

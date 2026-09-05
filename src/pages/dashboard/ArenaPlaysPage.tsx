@@ -130,31 +130,53 @@ export default function ArenaPlaysPage() {
       </div>
 
       {summary ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            label="Jogadas"
-            value={String(summary.total)}
-            hint="Total de plays neste filtro"
-          />
-          <StatCard
-            label="Finalizadas"
-            value={String(summary.finished)}
-            hint="Partidas concluídas no jogo"
-            variant="brand"
-          />
-          <StatCard
-            label="Sem prêmio"
-            value={String(summary.lost)}
-            hint="Perdeu ou desconectou"
-            variant="rose"
-          />
-          <StatCard
-            label="Com crate"
-            value={String(summary.withPrizes)}
-            hint="Plays que entregaram pelo menos uma crate"
-            variant="amber"
-          />
-        </div>
+        <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <StatCard
+              label="Valor das jogadas"
+              value={formatArenaPlayMoney(summary.playValueBrl ?? 0, 'BRL')}
+              hint="Soma do preço pago para jogar (tickets = R$ 0)"
+              variant="brand"
+            />
+            <StatCard
+              label="Valor dos prêmios"
+              value={formatArenaPlayMoney(summary.prizeValueBrl ?? 0, 'BRL')}
+              hint="Soma do que saiu das crates ao abrir"
+              variant="amber"
+            />
+            <StatCard
+              label="Resultado"
+              value={formatArenaPlayMoney(summary.houseValueBrl ?? 0, 'BRL')}
+              hint="Jogadas − prêmios"
+              variant={(summary.houseValueBrl ?? 0) >= 0 ? 'default' : 'rose'}
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label="Jogadas"
+              value={String(summary.total)}
+              hint="Total de plays neste filtro"
+            />
+            <StatCard
+              label="Finalizadas"
+              value={String(summary.finished)}
+              hint="Partidas concluídas no jogo"
+              variant="brand"
+            />
+            <StatCard
+              label="Sem prêmio"
+              value={String(summary.lost)}
+              hint="Perdeu ou desconectou"
+              variant="rose"
+            />
+            <StatCard
+              label="Com crate"
+              value={String(summary.withPrizes)}
+              hint="Plays que entregaram pelo menos uma crate"
+              variant="amber"
+            />
+          </div>
+        </>
       ) : null}
 
       <Surface variant="card">
@@ -269,9 +291,9 @@ export default function ArenaPlaysPage() {
                             borderColor: `${arenaRaritySwatch(prize.rarity)}88`,
                           }}
                         >
-                          {prize.image ? (
+                          {prize.wonItemImage || prize.image ? (
                             <img
-                              src={prize.image}
+                              src={prize.wonItemImage || prize.image}
                               alt=""
                               className="max-h-9 max-w-full object-contain"
                             />
@@ -280,17 +302,21 @@ export default function ArenaPlaysPage() {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <span className="block truncate font-medium text-foreground">{prize.crateName ?? prize.name}</span>
+                          <span className="block truncate font-medium text-foreground">
+                            {prize.wonSkinName ?? prize.crateName ?? prize.name}
+                          </span>
                           <span className="block truncate text-xs" style={{ color: arenaRaritySwatch(prize.rarity) }}>
-                            {arenaRarityLabel(prize.rarity)}
+                            {prize.wonSkinName
+                              ? `${prize.crateName ?? prize.name} · aberta`
+                              : arenaRarityLabel(prize.rarity)}
                             {play.awarded && play.awarded.length > 1
                               ? ` · +${play.awarded.length - 1}`
                               : ''}
                           </span>
                           <span className="block truncate text-xs text-muted">
                             {formatArenaPlayMoney(
-                              prize.valueBrl ?? prize.value,
-                              prize.valueBrl != null ? 'BRL' : prize.currency,
+                              prize.wonValueBrl ?? prize.valueBrl ?? prize.value,
+                              'BRL',
                             )}
                           </span>
                         </div>

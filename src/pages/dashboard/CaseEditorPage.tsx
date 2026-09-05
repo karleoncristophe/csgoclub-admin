@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFormik } from 'formik'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { ArrowLeft, Plus, Sparkles } from 'lucide-react'
+import { BackLink } from '@/components/ui/BackLink'
+import { useGoBack } from '@/hooks/useGoBack'
 import { CaseEconomicsPanel } from '@/components/cases/CaseEconomicsPanel'
 import { CaseAiAssistantDrawer } from '@/components/cases/ai/CaseAiAssistantDrawer'
 import { applyAiDraftToCaseForm } from '@/components/cases/ai/caseAiAssistant.utils'
@@ -86,7 +88,7 @@ function SummaryChip({ label, value }: { label: string; value: string }) {
 
 export default function CaseEditorPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const goBack = useGoBack('/dashboard/cases')
   const isEdit = Boolean(id)
 
   const { data: existingCase, isLoading: isLoadingCase } = useGetCaseByIdQuery(
@@ -175,7 +177,7 @@ export default function CaseEditorPage() {
         } else {
           await createCase(payload).unwrap()
         }
-        navigate('/dashboard/cases')
+        goBack()
       } catch {
         // mutation error shown via saveError
       } finally {
@@ -469,13 +471,13 @@ export default function CaseEditorPage() {
       <div className="sticky top-0 z-30 -mx-4 -mt-6 bg-slate-50/85 px-4 py-4 backdrop-blur dark:bg-zinc-950/85 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <Link
-              to="/dashboard/cases"
+            <BackLink
+              fallback="/dashboard/cases"
               className="inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-brand-700 dark:text-zinc-400 dark:hover:text-brand-400"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Voltar para caixas
-            </Link>
+            </BackLink>
             <ThemeText
               as="h1"
               tone="primary"
@@ -498,7 +500,7 @@ export default function CaseEditorPage() {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => navigate('/dashboard/cases')}
+              onClick={goBack}
             >
               Cancelar
             </Button>

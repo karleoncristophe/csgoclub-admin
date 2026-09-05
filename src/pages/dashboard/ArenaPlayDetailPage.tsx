@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Package } from 'lucide-react'
+import { BackLink } from '@/components/ui/BackLink'
 import {
   ArenaMatchStatusBadge,
   arenaPaymentLabel,
@@ -84,13 +85,13 @@ export default function ArenaPlayDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link
-        to="/dashboard/arena/plays"
+      <BackLink
+        fallback="/dashboard/arena/plays"
         className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 transition hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar às jogadas
-      </Link>
+      </BackLink>
 
       <PageTitle
         subtitle={
@@ -190,9 +191,9 @@ export default function ArenaPlayDetailPage() {
                       className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-zinc-100 dark:bg-zinc-950"
                       style={{ borderColor: `${arenaRaritySwatch(prize.rarity)}88` }}
                     >
-                      {prize.image ? (
+                      {prize.wonItemImage || prize.image ? (
                         <img
-                          src={prize.image}
+                          src={prize.wonItemImage || prize.image}
                           alt=""
                           className="max-h-16 max-w-full object-contain"
                         />
@@ -201,12 +202,19 @@ export default function ArenaPlayDetailPage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
+                      {prize.wonSkinName ? (
+                        <ThemeText as="p" tone="primary" className="text-sm font-semibold">
+                          {prize.wonSkinName}
+                        </ThemeText>
+                      ) : null}
                       {prize.crateId ? (
                         <Link
                           to={`/dashboard/arena/${prize.crateId}`}
                           className="text-sm font-semibold text-zinc-900 hover:text-brand-700 dark:text-zinc-100 dark:hover:text-brand-300"
                         >
-                          {prize.crateName ?? prize.name}
+                          {prize.wonSkinName
+                            ? `Crate: ${prize.crateName ?? prize.name}`
+                            : prize.crateName ?? prize.name}
                         </Link>
                       ) : (
                         <ThemeText as="p" tone="primary" className="text-sm font-semibold">
@@ -219,14 +227,14 @@ export default function ArenaPlayDetailPage() {
                         style={{ color: arenaRaritySwatch(prize.rarity) }}
                       >
                         {arenaRarityLabel(prize.rarity)}
-                        {prize.unopened ? ' · fechada' : ''}
+                        {prize.wonSkinName ? ' · aberta' : prize.unopened ? ' · fechada' : ''}
                       </ThemeText>
                       <div className="mt-2">
                         <SkinTripleCurrencyPrices
                           compact
-                          valueBrl={prize.valueBrl}
-                          valueUsd={prize.valueUsd}
-                          valueEur={prize.valueEur}
+                          valueBrl={prize.wonValueBrl ?? prize.valueBrl}
+                          valueUsd={prize.wonValueUsd ?? prize.valueUsd}
+                          valueEur={prize.wonValueEur ?? prize.valueEur}
                         />
                       </div>
                     </div>

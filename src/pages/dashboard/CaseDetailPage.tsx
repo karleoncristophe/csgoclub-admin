@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { BackLink } from '@/components/ui/BackLink'
 import {
   ArrowLeft,
   Box,
@@ -194,10 +195,10 @@ export default function CaseDetailPage() {
   if (isError || !data) {
     return (
       <div className="space-y-4">
-        <Link to="/dashboard/cases" className={`inline-flex items-center gap-2 ${linkBrand}`}>
+        <BackLink fallback="/dashboard/cases" className={`inline-flex items-center gap-2 ${linkBrand}`}>
           <ArrowLeft className="h-4 w-4" />
           Voltar para caixas
-        </Link>
+        </BackLink>
         <Surface variant="errorBanner">
           {isError ? getErrorMessage(error) : 'Caixa não encontrada.'}
         </Surface>
@@ -214,10 +215,10 @@ export default function CaseDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link to="/dashboard/cases" className={`inline-flex items-center gap-2 ${linkBrand}`}>
+      <BackLink fallback="/dashboard/cases" className={`inline-flex items-center gap-2 ${linkBrand}`}>
         <ArrowLeft className="h-4 w-4" />
         Voltar para caixas
-      </Link>
+      </BackLink>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageTitle

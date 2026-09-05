@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Bot, Crown, Swords, User } from 'lucide-react'
+import { BackLink } from '@/components/ui/BackLink'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { TextBadge } from '@/components/StatusPill'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
@@ -74,13 +75,13 @@ export default function BattleDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link
-        to="/dashboard/battles"
+      <BackLink
+        fallback="/dashboard/battles"
         className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 transition hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar às battles
-      </Link>
+      </BackLink>
 
       <PageTitle
         subtitle={

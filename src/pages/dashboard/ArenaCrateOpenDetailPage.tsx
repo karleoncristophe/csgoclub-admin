@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Box } from 'lucide-react'
+import { BackLink } from '@/components/ui/BackLink'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { TextBadge } from '@/components/StatusPill'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
@@ -77,13 +78,13 @@ export default function ArenaCrateOpenDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link
-        to="/dashboard/arena/crate-opens"
+      <BackLink
+        fallback="/dashboard/arena/crate-opens"
         className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 transition hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar às aberturas Arena
-      </Link>
+      </BackLink>
 
       <PageTitle subtitle="Skin sorteada ao abrir a crate, com auditoria do banco e tabela de drops.">
         Detalhe da abertura Arena
@@ -153,7 +154,7 @@ export default function ArenaCrateOpenDetailPage() {
                   ) : null}
                 </div>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <ValueTile
                     label="Preço da jogada"
                     value={formatMoney(data.pricePaid, data.currency)}
@@ -162,15 +163,7 @@ export default function ArenaCrateOpenDetailPage() {
                   <ValueTile
                     label="Valor creditado"
                     value={formatMoney(data.itemValue, data.currency)}
-                    hint={data.currency}
-                  />
-                  <ValueTile
-                    label="Convertido"
-                    value={
-                      data.convertedAmount != null
-                        ? formatMoney(data.convertedAmount, data.currency)
-                        : '—'
-                    }
+                    hint="Skin que saiu, creditada na carteira"
                   />
                 </div>
               </div>

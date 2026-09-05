@@ -1,7 +1,8 @@
 import { useState, type CSSProperties } from 'react'
 import { useAdminPreferences } from '@/theme/AdminPreferencesContext'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Expand } from 'lucide-react'
+import { BackLink } from '@/components/ui/BackLink'
 import {
   formatSkinsPrice,
   normalizeSkinsCurrency,
@@ -38,14 +39,11 @@ const backLinkClass =
   'inline-flex items-center gap-2 text-sm text-brand-600 transition hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300'
 
 export default function SkinDetailPage() {
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { skinsCurrency } = useAdminPreferences()
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false)
   const skinName = searchParams.get('name')?.trim() ?? ''
   const currency = normalizeSkinsCurrency(searchParams.get('currency') ?? skinsCurrency)
-
-  const handleGoBack = () => navigate(-1)
 
   const { data, isLoading, isError, error } = useGetSkinsCatalogItemQuery(
     { name: skinName, currency },
@@ -55,10 +53,10 @@ export default function SkinDetailPage() {
   if (!skinName) {
     return (
       <div className="space-y-4">
-        <button type="button" onClick={handleGoBack} className={backLinkClass}>
+        <BackLink fallback="/dashboard/skins" className={backLinkClass}>
           <ArrowLeft className="h-4 w-4" />
           Voltar
-        </button>
+        </BackLink>
         <ThemeText as="p" tone="secondary">
           Nome da skin não informado.
         </ThemeText>
@@ -71,10 +69,10 @@ export default function SkinDetailPage() {
 
   return (
     <div className="space-y-6">
-      <button type="button" onClick={handleGoBack} className={backLinkClass}>
+      <BackLink fallback="/dashboard/skins" className={backLinkClass}>
         <ArrowLeft className="h-4 w-4" />
         Voltar
-      </button>
+      </BackLink>
 
       <PageTitle subtitle="Detalhes completos do item no catálogo SkinsBack.">
         Detalhe da skin

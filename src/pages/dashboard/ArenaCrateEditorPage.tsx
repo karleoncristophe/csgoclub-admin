@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState } from 'react'
 import { useFormik } from 'formik'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { ArrowLeft, Plus } from 'lucide-react'
+import { BackLink } from '@/components/ui/BackLink'
+import { useGoBack } from '@/hooks/useGoBack'
 import { ArenaCrateItemsTable } from '@/components/arena/ArenaCrateItemsTable'
 import { ArenaCrateBankPanel } from '@/components/arena/ArenaCrateBankPanel'
 import {
@@ -135,7 +137,7 @@ function catalogSkinToArenaItem(skin: SkinsCatalogItem): ArenaCrateItem {
 
 export default function ArenaCrateEditorPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const goBack = useGoBack('/dashboard/arena')
   const isEdit = Boolean(id)
 
   const { data: existingCrate, isLoading: isLoadingCrate } =
@@ -215,7 +217,7 @@ export default function ArenaCrateEditorPage() {
         } else {
           await createCrate(payload).unwrap()
         }
-        navigate('/dashboard/arena')
+        goBack()
       } catch {
         // mutation error shown via saveError
       } finally {
@@ -312,13 +314,13 @@ export default function ArenaCrateEditorPage() {
       <div className="sticky top-0 z-30 -mx-4 -mt-6 bg-slate-50/85 px-4 py-4 backdrop-blur dark:bg-zinc-950/85 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <Link
-              to="/dashboard/arena"
+            <BackLink
+              fallback="/dashboard/arena"
               className="inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-brand-700 dark:text-zinc-400 dark:hover:text-brand-400"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Voltar para Arena
-            </Link>
+            </BackLink>
             <ThemeText
               as="h1"
               tone="primary"
@@ -331,7 +333,7 @@ export default function ArenaCrateEditorPage() {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => navigate('/dashboard/arena')}
+              onClick={goBack}
             >
               Cancelar
             </Button>

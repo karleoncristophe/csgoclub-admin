@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { BackLink } from '@/components/ui/BackLink'
 import {
   ArrowLeft,
   ArrowLeftRight,
@@ -143,13 +144,13 @@ export default function UserDetailPage() {
   if (!id) {
     return (
       <div className="space-y-4">
-        <Link
-          to="/dashboard/users"
+        <BackLink
+          fallback="/dashboard/users"
           className="inline-flex items-center gap-2 text-sm text-brand-600 hover:underline dark:text-brand-400"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar à listagem
-        </Link>
+        </BackLink>
         <ThemeText as="p" tone="secondary">
           ID do usuário não informado.
         </ThemeText>
@@ -163,13 +164,13 @@ export default function UserDetailPage() {
 
   return (
     <div className="space-y-4">
-      <Link
-        to="/dashboard/users"
+      <BackLink
+        fallback="/dashboard/users"
         className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 transition hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar à listagem
-      </Link>
+      </BackLink>
 
       {isLoading ? (
         <div className="flex items-center gap-2 py-10 text-sm text-muted">

@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Box, CheckCircle2, XCircle } from 'lucide-react'
+import { BackLink } from '@/components/ui/BackLink'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { TextBadge } from '@/components/StatusPill'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
@@ -86,13 +87,13 @@ export default function UserCaseOpenDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link
-        to={backHref}
+      <BackLink
+        fallback={backHref}
         className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 transition hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
       >
         <ArrowLeft className="h-4 w-4" />
         {backLabel}
-      </Link>
+      </BackLink>
 
       <PageTitle subtitle="Resultado completo da abertura, com valores, raridade e conteúdo da caixa.">
         Detalhe da abertura

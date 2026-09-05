@@ -152,6 +152,14 @@ export type ArenaMatchAwarded = {
   valueBrl?: number
   valueEur?: number
   inventoryItemId?: string
+  wonSkinName?: string
+  wonItemImage?: string
+  wonItemRarityName?: string
+  wonItemRarityColor?: string
+  wonValue?: number
+  wonValueUsd?: number
+  wonValueBrl?: number
+  wonValueEur?: number
 }
 
 export type ArenaMatchBox = {
@@ -205,6 +213,9 @@ export type ArenaMatchSummary = {
   finished: number
   lost: number
   withPrizes: number
+  playValueBrl?: number
+  prizeValueBrl?: number
+  houseValueBrl?: number
 }
 
 export type ArenaMatchesResponse = {
@@ -316,6 +327,7 @@ export type ArenaCrateOpensResponse = {
     totalOpens: number
     totalPaid: number
     totalWonValue: number
+    houseValue?: number
     convertedCount: number
     testOpensCount: number
     topWonItem?: ArenaCrateOpenTopWonItem | null
@@ -340,6 +352,9 @@ export type ArenaGameStatus = {
   files?: ArenaGameUnityFiles
 }
 
+export type ArenaCrateOpenSort = 'newest' | 'oldest' | 'prize_desc' | 'prize_asc'
+export type ArenaCrateOpenMethod = 'direct' | 'reroll' | 'fallback'
+
 export type GetArenaCrateOpensParams = WithPlatformDataEnvironment<{
   page?: number
   limit?: number
@@ -347,6 +362,14 @@ export type GetArenaCrateOpensParams = WithPlatformDataEnvironment<{
   matchId?: string
   userId?: string
   search?: string
+  currency?: string
+  rarity?: ArenaRarity
+  method?: ArenaCrateOpenMethod
+  from?: string
+  to?: string
+  minValue?: number
+  maxValue?: number
+  sort?: ArenaCrateOpenSort
 }>
 
 export const arenaApi = createApi({
@@ -467,6 +490,14 @@ export const arenaApi = createApi({
             ...(clean?.matchId ? { matchId: clean.matchId } : {}),
             ...(clean?.userId ? { userId: clean.userId } : {}),
             ...(clean?.search ? { search: clean.search } : {}),
+            ...(clean?.currency ? { currency: clean.currency } : {}),
+            ...(clean?.rarity ? { rarity: clean.rarity } : {}),
+            ...(clean?.method ? { method: clean.method } : {}),
+            ...(clean?.from ? { from: clean.from } : {}),
+            ...(clean?.to ? { to: clean.to } : {}),
+            ...(clean?.minValue != null ? { minValue: clean.minValue } : {}),
+            ...(clean?.maxValue != null ? { maxValue: clean.maxValue } : {}),
+            ...(clean?.sort ? { sort: clean.sort } : {}),
           },
         }
       },

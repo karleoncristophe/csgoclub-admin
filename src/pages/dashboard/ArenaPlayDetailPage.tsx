@@ -50,15 +50,11 @@ function ValueTile({
   )
 }
 
-function ProgressRow({
+function DestroyedRow({
   rarity,
-  before,
-  after,
   destroyed,
 }: {
   rarity: ArenaRarity
-  before: number
-  after: number
   destroyed: number
 }) {
   return (
@@ -71,7 +67,7 @@ function ProgressRow({
         {ARENA_RARITY_LABEL[rarity]}
       </ThemeText>
       <ThemeText as="p" tone="secondary" className="flex-1 text-xs">
-        Destruiu {destroyed} · progresso {before} → {after}
+        {destroyed} destruída(s)
       </ThemeText>
     </div>
   )
@@ -100,7 +96,7 @@ export default function ArenaPlayDetailPage() {
         subtitle={
           data
             ? `${arenaPaymentLabel(data.paymentMethod)} · ${formatArenaPlayDateTime(data.createdAt ?? data.startedAt)}`
-            : 'Pagamento, caixas destruídas, progresso e crates premiadas.'
+            : 'Pagamento, caixas destruídas e crates premiadas.'
         }
       >
         Jogada {matchId ? matchId.slice(-8) : ''}
@@ -270,14 +266,12 @@ export default function ArenaPlayDetailPage() {
           ) : null}
 
           <Surface variant="settingsPanel" className="!p-5 space-y-4">
-            <SectionTitle>Progresso por raridade</SectionTitle>
+            <SectionTitle>Destruídas por raridade</SectionTitle>
             <div className="space-y-2">
               {ARENA_RARITIES.map((rarity) => (
-                <ProgressRow
+                <DestroyedRow
                   key={rarity}
                   rarity={rarity}
-                  before={data.progressBefore?.[rarity] ?? 0}
-                  after={data.progressAfter?.[rarity] ?? 0}
                   destroyed={data.destroyedCounts?.[rarity] ?? 0}
                 />
               ))}

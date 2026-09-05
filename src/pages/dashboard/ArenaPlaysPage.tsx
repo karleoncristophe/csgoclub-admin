@@ -287,6 +287,12 @@ export default function ArenaPlaysPage() {
                               ? ` · +${play.awarded.length - 1}`
                               : ''}
                           </span>
+                          <span className="block truncate text-xs text-muted">
+                            {formatArenaPlayMoney(
+                              prize.valueBrl ?? prize.value,
+                              prize.valueBrl != null ? 'BRL' : prize.currency,
+                            )}
+                          </span>
                         </div>
                       </div>
                     ) : (

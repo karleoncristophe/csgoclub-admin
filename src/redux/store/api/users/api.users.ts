@@ -22,7 +22,6 @@ export type AppUser = {
   userType?: 'standard' | 'influencer'
   isTestAffiliate?: boolean
   lastLoginAt?: string
-  tradeUrl?: string
   tradePartner?: string
   createdAt?: string
   updatedAt?: string

@@ -20,6 +20,7 @@ import {
   TicketPercent,
   Target,
   Wallet,
+  TrendingUp,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -77,6 +78,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
       { href: '/dashboard/arena', label: 'Arena', Icon: Crosshair },
       { href: '/dashboard/arena/plays', label: 'Jogadas', Icon: Target },
       { href: '/dashboard/arena/crate-opens', label: 'Aberturas Arena', Icon: Sparkles },
+      { href: '/dashboard/upgrades', label: 'Upgrade', Icon: TrendingUp },
     ],
   },
   {

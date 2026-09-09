@@ -112,6 +112,10 @@ export const ARENA = {
   GAME: '/admin/arena/game',
 } as const
 
+export const UPGRADES_ADMIN = {
+  ROOT: '/admin/upgrades',
+} as const
+
 export const CAMBIO = {
   SETTINGS: '/admin/cambio/settings',
 } as const

@@ -15,6 +15,7 @@ import { couponsApi } from '@/redux/store/api/coupons/api.coupons'
 import { metricsApi } from '@/redux/store/api/metrics/api.metrics'
 import { skinsApi } from '@/redux/store/api/skins/api.skins'
 import { usersApi } from '@/redux/store/api/users/api.users'
+import { upgradesAdminApi } from '@/redux/store/api/upgrades/api.upgrades'
 import { weaponCategoriesApi } from '@/redux/store/api/weapon-categories/api.weapon-categories'
 import meReducer from '@/redux/store/slices/meSlice'
 import platformDataEnvironmentReducer from '@/redux/store/slices/platformDataEnvironmentSlice'
@@ -40,6 +41,7 @@ export const store = configureStore({
     [paymentApi.reducerPath]: paymentApi.reducer,
     [metricsApi.reducerPath]: metricsApi.reducer,
     [usersApi.reducerPath]: usersApi.reducer,
+    [upgradesAdminApi.reducerPath]: upgradesAdminApi.reducer,
     [weaponCategoriesApi.reducerPath]: weaponCategoriesApi.reducer,
     [aiAssistantApi.reducerPath]: aiAssistantApi.reducer,
   },
@@ -60,6 +62,7 @@ export const store = configureStore({
       paymentApi.middleware,
       metricsApi.middleware,
       usersApi.middleware,
+      upgradesAdminApi.middleware,
       weaponCategoriesApi.middleware,
       aiAssistantApi.middleware,
     ),

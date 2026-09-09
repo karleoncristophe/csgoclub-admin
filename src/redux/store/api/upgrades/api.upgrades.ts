@@ -46,6 +46,11 @@ export type AdminUpgradeItem = {
   paymentFromBonusBalanceCents: number
   target: UpgradeTarget & { valueCents: number }
   chancePercent: number
+  fairTicket: number
+  fairValuePercent: number
+  ticketPool: number
+  winTicketStart: number
+  winTicketEnd: number
   payoutCents: number
   grossProfitCents: number
   marginPercent: number
@@ -130,6 +135,8 @@ export type AdminUpgradeAnalyticsResponse = {
     to: string
     result: UpgradeResult | null
     search: string | null
+    targetClassId: string | null
+    targetName: string | null
   }
   summary: AdminUpgradeSummary
   seriesGranularity: 'day' | 'month'
@@ -147,6 +154,8 @@ export type GetAdminUpgradeAnalyticsParams = WithPlatformDataEnvironment<{
   to?: string
   sort?: UpgradeSort
   search?: string
+  targetClassId?: string
+  targetName?: string
 }>
 
 export const upgradesAdminApi = createApi({

@@ -229,6 +229,110 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
       'Inversa da fórmula: alvo ideal = (aposta × 71) ÷ chance desejada.\n\nSe o jogador tem 50 de stake e quer ~10% de chance, o alvo ideal fica perto de 355. O site usa isso para filtrar skins do catálogo na faixa certa.',
     tags: ['upgrade', 'alvo ideal', 'catálogo', 'chance'],
   },
+  {
+    id: 'upgrade-5',
+    category: 'upgrade',
+    question: 'Como o painel calcula o resultado financeiro do Upgrade?',
+    answer:
+      'O painel considera somente upgrades concluídos. Primeiro calcula o resultado de cada jogada; depois soma os valores do período e só então calcula os percentuais agregados. Isso evita médias de margem distorcidas.\n\nValor apostado = valor das skins consumidas + saldo utilizado. Valor entregue = valor da skin alvo somente quando o jogador vence. Resultado bruto da plataforma = valor apostado − valor entregue.\n\nNa derrota, o valor entregue é zero e o resultado bruto equivale ao valor apostado. Na vitória, o alvo é contabilizado integralmente como valor entregue, mesmo que ainda permaneça no inventário do site.',
+    fields: [
+      {
+        name: 'totalStaked',
+        label: 'Valor total apostado',
+        description:
+          'Soma de sourceTotal de todas as jogadas: skins consumidas + saldo real + saldo bônus efetivamente utilizados.',
+      },
+      {
+        name: 'totalPayout',
+        label: 'Valor entregue aos vencedores',
+        description:
+          'Soma do valor das skins alvo nas vitórias. Jogadas perdidas contribuem com zero para essa soma.',
+      },
+      {
+        name: 'grossProfit',
+        label: 'Resultado bruto da plataforma',
+        description:
+          'totalStaked − totalPayout. Positivo indica resultado favorável à plataforma; negativo indica que o valor entregue superou o valor apostado.',
+      },
+      {
+        name: 'marginPercent',
+        label: 'Margem bruta do período',
+        description:
+          '(grossProfit ÷ totalStaked) × 100. O percentual é calculado sobre os totais do período, não pela média das margens individuais.',
+      },
+      {
+        name: 'rtpPercent',
+        label: 'Percentual devolvido aos jogadores (RTP real)',
+        description:
+          '(totalPayout ÷ totalStaked) × 100. Mostra quanto do valor apostado retornou em skins alvo.',
+      },
+    ],
+    bullets: [
+      'Vitória: payout = valor do alvo; resultado = aposta − alvo.',
+      'Derrota: payout = zero; resultado = valor integral da aposta.',
+      'É resultado bruto nominal do jogo: não desconta gateway, saque, compra, venda ou outros custos operacionais.',
+    ],
+    tags: ['upgrade', 'métricas', 'lucro', 'margem', 'RTP', 'resultado bruto'],
+  },
+  {
+    id: 'upgrade-6',
+    category: 'upgrade',
+    question: 'Qual é a diferença entre vitórias obtidas, chance média e vitórias esperadas?',
+    answer:
+      'Vitórias obtidas é a contagem do que realmente aconteceu nos sorteios. Percentual de tentativas vencidas = vitórias obtidas ÷ total de tentativas × 100. Chance média é a média das probabilidades registradas nas tentativas; ela não é uma nota mínima para validar uma vitória. Uma tentativa com 43,77% pode vencer ou perder normalmente.\n\nExemplo: se houve 2 tentativas e 1 venceu, o painel mostra 1 vitória e 50% das tentativas vencidas. Se as chances dessas duas tentativas eram 40% e 47,54%, a chance média foi 43,77%. Os 50% descrevem o resultado que aconteceu; os 43,77% descrevem a probabilidade média antes dos sorteios.\n\nNo detalhe da skin, percentual sorteado é a posição aleatória obtida entre 0% e 100%. A faixa vencedora começa em 0% e termina na chance daquela tentativa. Por exemplo, com chance de 43,77%, um sorteio de 22% vence e um sorteio de 70% perde.\n\nA projeção usa a chance registrada em cada upgrade, sem alterar o sorteio. Para cada jogada: entrega projetada = valor do alvo × (chance% ÷ 100). Resultado projetado = valor apostado − entrega projetada. No período, vitórias esperadas = soma de chance% ÷ 100. É uma referência estatística de longo prazo, não uma garantia para um recorte pequeno.',
+    fields: [
+      {
+        name: 'fairValuePercent',
+        label: 'Percentual sorteado na tentativa',
+        description:
+          'Número aleatório entre 0% e 100% usado para resolver a tentativa. Vence quando fica entre 0% e chancePercent.',
+      },
+      {
+        name: 'expectedPayout',
+        label: 'Valor projetado de entrega',
+        description:
+          'Soma de targetValue × chancePercent ÷ 100 para todas as jogadas do filtro.',
+      },
+      {
+        name: 'expectedProfit',
+        label: 'Resultado bruto projetado',
+        description:
+          'totalStaked − expectedPayout. É a referência estatística para o período selecionado.',
+      },
+      {
+        name: 'expectedWins',
+        label: 'Vitórias esperadas no longo prazo',
+        description:
+          'Soma de chancePercent ÷ 100. Pode ser decimal porque representa expectativa estatística.',
+      },
+      {
+        name: 'luckDeltaPercent',
+        label: 'Diferença entre o percentual vencido e a chance média',
+        description:
+          'Percentual de tentativas vencidas − chance média dos sorteios. Positivo significa mais vitórias que a referência estatística; negativo significa menos.',
+      },
+    ],
+    bullets: [
+      'A chance não precisa ser de 50% ou mais para uma tentativa vencer.',
+      'A projeção serve para comparação de longo prazo, não para prever a próxima jogada.',
+      'A auditoria por faixa agrupa jogadas de 1–10%, 10–25%, 25–50%, 50–75% e 75–95%.',
+      'Amostras pequenas podem ficar bem acima ou abaixo da projeção sem indicar erro no sorteio.',
+    ],
+    tags: ['upgrade', 'projeção', 'probabilidade', 'vitórias esperadas', 'auditoria'],
+  },
+  {
+    id: 'upgrade-7',
+    category: 'upgrade',
+    question: 'Como o painel trata BRL, USD, EUR e as visões Produção/Dev?',
+    answer:
+      'Cada relatório seleciona uma única moeda nativa. BRL, USD e EUR nunca são somados nem convertidos dentro das métricas do Upgrade. Ao trocar a moeda, todo o recorte é recalculado somente com jogadas registradas naquela carteira.\n\nA visão Produção inclui jogadores padrão. A visão Dev inclui contas influencer/teste. O período, a busca e o filtro de resultado são aplicados antes das somas, portanto cards, gráfico, desempenho por skin e histórico sempre representam o mesmo recorte.',
+    bullets: [
+      'Não compare totais de moedas diferentes como se fossem o mesmo valor.',
+      'Trocar Produção/Dev isola os usuários antes de calcular as métricas.',
+      'Somente jogadas liquidadas, com chance calculada maior que zero, entram no relatório.',
+    ],
+    tags: ['upgrade', 'BRL', 'USD', 'EUR', 'produção', 'dev', 'filtros'],
+  },
 
   // ── Arena ────────────────────────────────────────────────
   {

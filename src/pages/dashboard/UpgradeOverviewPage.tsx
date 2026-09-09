@@ -16,6 +16,7 @@ import {
   useChartVariant,
 } from '@/components/charts/AnalyticsCharts'
 import { UpgradePageNavigation } from '@/components/upgrades/UpgradePageNavigation'
+import { UpgradePageHeader } from '@/components/upgrades/UpgradePageHeader'
 import {
   DateRangePickerModal,
   DateRangePickerTrigger,
@@ -25,7 +26,7 @@ import { Button } from '@/components/ui/Button'
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
-import { PageTitle, SectionTitle } from '@/components/ui/Title'
+import { SectionTitle } from '@/components/ui/Title'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import { useUrlFilters } from '@/hooks/useUrlFilters'
 import {
@@ -183,15 +184,14 @@ export default function UpgradeOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle
+      <UpgradePageHeader
+        title="Upgrade"
         subtitle={
           isSandbox
             ? 'Visão financeira dos upgrades realizados por contas de teste e influencers.'
             : 'Resumo financeiro dos upgrades concluídos pelos jogadores em produção.'
         }
-      >
-        Upgrade
-      </PageTitle>
+      />
       <UpgradePageNavigation />
 
       <Surface variant="cardInset">
@@ -317,16 +317,15 @@ export default function UpgradeOverviewPage() {
                 </ThemeText>
               </div>
               <InsightRow
-                label="Resultado real comparado à projeção"
+                label="Diferença entre o resultado obtido e o esperado"
                 value={formatCentsMoney(summary.profitVsExpectedCents, currency)}
-                detail={`O resultado bruto projetado era ${formatCentsMoney(summary.expectedProfitCents, currency)}.`}
+                detail={`Pelas probabilidades dos sorteios, o resultado bruto esperado era ${formatCentsMoney(summary.expectedProfitCents, currency)}. Positivo favorece a plataforma; negativo significa que ela entregou mais valor que o esperado.`}
                 positive={summary.profitVsExpectedCents >= 0}
               />
               <InsightRow
-                label="Sucessos dos jogadores comparados à projeção"
-                value={`${formatCount(summary.wins)} reais / ${formatCount(summary.expectedWins)} projetados`}
-                detail={`A taxa real ficou ${formatPercent(Math.abs(summary.luckDeltaPercent))} ${summary.luckDeltaPercent > 0 ? 'acima' : 'abaixo'} da taxa projetada.`}
-                positive={summary.luckDeltaPercent <= 0}
+                label="Vitórias obtidas no período"
+                value={`${formatCount(summary.wins)} em ${formatCount(summary.totalPlays)} tentativas`}
+                detail={`${formatPercent(summary.winRatePercent)} das tentativas venceram. A chance média registrada nos sorteios foi ${formatPercent(summary.averageChancePercent)}, equivalente a ${formatCount(summary.expectedWins)} vitórias esperadas apenas no longo prazo.`}
               />
               <InsightRow
                 label="Origem do valor apostado"

@@ -101,6 +101,9 @@ const UpgradeOverviewPage = lazy(
 const UpgradeResultsPage = lazy(
   () => import('@/pages/dashboard/UpgradeResultsPage'),
 )
+const UpgradeTargetDetailPage = lazy(
+  () => import('@/pages/dashboard/UpgradeTargetDetailPage'),
+)
 const BattleDetailPage = lazy(
   () => import('@/pages/dashboard/battles/BattleDetailPage'),
 )
@@ -115,7 +118,6 @@ function AuthPageFallback() {
     </div>
   )
 }
-
 function PublicRoutes() {
   return (
     <Routes>
@@ -168,6 +170,7 @@ function ProtectedRoutes() {
         <Route path="arena/crate-opens/:openId" element={<ArenaCrateOpenDetailPage />} />
         <Route path="upgrades" element={<UpgradeOverviewPage />} />
         <Route path="upgrades/results" element={<UpgradeResultsPage />} />
+        <Route path="upgrades/results/target" element={<UpgradeTargetDetailPage />} />
         <Route path="arena/:id" element={<ArenaCrateEditorPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="theme" element={<ThemeBuilderPage />} />

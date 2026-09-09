@@ -90,7 +90,7 @@ export default function DocumentationPage() {
           month: 'long',
           year: 'numeric',
         })}{' '}
-        · Versão 1.2
+        · Versão 1.3
       </ThemeText>
     </div>
   )

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { RefreshCw, Search, Target } from 'lucide-react'
+import { ChevronRight, RefreshCw, Search, Target } from 'lucide-react'
 import { SteamIdLink } from '@/components/users/SteamIdLink'
 import { UserAvatarLink } from '@/components/users/UserAvatarLink'
 import { UpgradePageNavigation } from '@/components/upgrades/UpgradePageNavigation'
+import { UpgradePageHeader } from '@/components/upgrades/UpgradePageHeader'
 import {
   DateRangePickerModal,
   DateRangePickerTrigger,
@@ -16,7 +17,7 @@ import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { Select } from '@/components/ui/Select'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
-import { PageTitle, SectionTitle } from '@/components/ui/Title'
+import { SectionTitle } from '@/components/ui/Title'
 import { listTable } from '@/components/ui/listTable'
 import useDebounce from '@/hooks/useDebounce'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
@@ -95,6 +96,22 @@ function platformResultTone(value: number) {
     : 'text-rose-600 dark:text-rose-400'
 }
 
+function targetDetailUrl(
+  target: { name: string; classId?: string },
+  currency: UpgradeCurrency,
+  from: string,
+  to: string,
+) {
+  const params = new URLSearchParams({
+    targetName: target.name,
+    currency,
+    from,
+    to,
+  })
+  if (target.classId) params.set('classId', target.classId)
+  return `/dashboard/upgrades/results/target?${params.toString()}`
+}
+
 export default function UpgradeResultsPage() {
   const dataEnvironment = usePlatformDataEnvironment()
   const isSandbox = dataEnvironment === 'SANDBOX'
@@ -165,15 +182,14 @@ export default function UpgradeResultsPage() {
 
   return (
     <div className="space-y-6">
-      <PageTitle
+      <UpgradePageHeader
+        title="Detalhamento do Upgrade"
         subtitle={
           isSandbox
             ? 'Investigação das jogadas realizadas por contas de teste e influencers.'
             : 'Consulte skins, jogadas individuais e aderência das probabilidades em produção.'
         }
-      >
-        Detalhamento do Upgrade
-      </PageTitle>
+      />
       <UpgradePageNavigation />
 
       <Surface variant="cardInset" className="space-y-5">
@@ -295,12 +311,13 @@ export default function UpgradeResultsPage() {
             </ThemeText>
           </div>
           <div className={listTable.wrap}>
-            <table className={`${listTable.table} min-w-[1100px]`}>
+            <table className={`${listTable.table} min-w-[1250px]`}>
               <thead>
                 <tr className={listTable.theadRow}>
                   <th className={listTable.th}>Skin escolhida como alvo</th>
                   <th className={listTable.th}>Upgrades tentados</th>
-                  <th className={listTable.th}>Sucesso real / projetado</th>
+                  <th className={listTable.th}>Resultado dos sorteios</th>
+                  <th className={listTable.th}>Chance média por tentativa</th>
                   <th className={listTable.th}>Valor total apostado</th>
                   <th className={listTable.th}>Valor entregue</th>
                   <th className={listTable.th}>Resultado da plataforma</th>
@@ -314,7 +331,11 @@ export default function UpgradeResultsPage() {
                     className={listTable.tr}
                   >
                     <td className={listTable.tdStrong}>
-                      <div className="flex min-w-[280px] items-center gap-3">
+                      <Link
+                        to={targetDetailUrl(row.target, currency, filters.from, filters.to)}
+                        className="group flex min-w-[280px] items-center gap-3 rounded-lg outline-none transition hover:text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-500/50 dark:hover:text-brand-400"
+                        aria-label={`Ver todas as tentativas de ${row.target.name}`}
+                      >
                         <span
                           className="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-secondary"
                           style={{
@@ -333,17 +354,32 @@ export default function UpgradeResultsPage() {
                           <ThemeText as="p" tone="faint" className="mt-0.5 text-xs">
                             {row.target.rarityName ?? 'Raridade não informada'}
                           </ThemeText>
+                          <span className="mt-1 block text-xs font-medium text-brand-600 dark:text-brand-400">
+                            Ver todas as tentativas
+                          </span>
                         </div>
-                      </div>
+                        <ChevronRight
+                          className="ml-auto h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-brand-600 dark:group-hover:text-brand-400"
+                          aria-hidden
+                        />
+                      </Link>
                     </td>
                     <td className={listTable.tdMuted}>
                       {row.attempts.toLocaleString('pt-BR')}
                     </td>
                     <td className={listTable.tdMuted}>
                       <p className="font-medium text-foreground">
-                        {formatPercent(row.winRatePercent)} / {formatPercent(row.expectedWinRatePercent)}
+                        {row.wins.toLocaleString('pt-BR')} {row.wins === 1 ? 'vitória' : 'vitórias'}
                       </p>
-                      <p className="mt-0.5 text-xs">{row.wins} upgrades bem-sucedidos</p>
+                      <p className="mt-0.5 text-xs">
+                        {formatPercent(row.winRatePercent)} das tentativas venceram
+                      </p>
+                    </td>
+                    <td className={listTable.tdMuted}>
+                      <p className="font-medium text-foreground">
+                        {formatPercent(row.averageChancePercent)}
+                      </p>
+                      <p className="mt-0.5 text-xs">Probabilidade média dos sorteios</p>
                     </td>
                     <td className={listTable.tdMuted}>{formatCentsMoney(row.stakedCents, currency)}</td>
                     <td className={listTable.tdMuted}>{formatCentsMoney(row.payoutCents, currency)}</td>
@@ -357,7 +393,7 @@ export default function UpgradeResultsPage() {
                 ))}
                 {!data.targets.length ? (
                   <tr>
-                    <td colSpan={7} className={listTable.empty}>Nenhuma skin encontrada no período.</td>
+                    <td colSpan={8} className={listTable.empty}>Nenhuma skin encontrada no período.</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -491,9 +527,9 @@ export default function UpgradeResultsPage() {
       {data && view === 'chance' ? (
         <Surface variant="card">
           <div className="mb-4">
-            <SectionTitle>Auditoria das probabilidades de sucesso</SectionTitle>
+            <SectionTitle>Conferência dos sorteios por faixa de chance</SectionTitle>
             <ThemeText as="p" tone="secondary" className="mt-1 max-w-3xl text-sm">
-              Compara a taxa de sucesso observada com a taxa projetada pela soma das probabilidades de cada jogada.
+              Uma tentativa pode vencer com qualquer chance válida. Aqui você compara quantas venceram com a chance média registrada nos sorteios.
             </ThemeText>
           </div>
           <div className={listTable.wrap}>
@@ -502,10 +538,10 @@ export default function UpgradeResultsPage() {
                 <tr className={listTable.theadRow}>
                   <th className={listTable.th}>Faixa de probabilidade</th>
                   <th className={listTable.th}>Upgrades analisados</th>
-                  <th className={listTable.th}>Sucessos observados</th>
-                  <th className={listTable.th}>Taxa real</th>
-                  <th className={listTable.th}>Taxa projetada</th>
-                  <th className={listTable.th}>Diferença</th>
+                  <th className={listTable.th}>Vitórias obtidas</th>
+                  <th className={listTable.th}>Tentativas que venceram</th>
+                  <th className={listTable.th}>Chance média dos sorteios</th>
+                  <th className={listTable.th}>Diferença entre os percentuais</th>
                   <th className={listTable.th}>Valor apostado</th>
                   <th className={listTable.th}>Valor entregue</th>
                   <th className={listTable.th}>Resultado da plataforma</th>

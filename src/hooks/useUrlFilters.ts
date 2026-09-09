@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import {
-  getStoredFilterSearch,
   serializeKnownSearchParams,
   writeStoredFilterSearch,
 } from '@/utils/listFilterStorage'
@@ -24,8 +23,6 @@ export function useUrlFilters<T extends FilterMap>(defaults: T) {
   const [searchParams, setSearchParams] = useSearchParams()
   const defaultsRef = useRef(defaults)
   defaultsRef.current = defaults
-  const skipEmptyPersist = useRef(true)
-  const restoredPath = useRef<string | null>(null)
 
   const filters = useMemo(() => {
     const next = { ...defaults }
@@ -38,38 +35,11 @@ export function useUrlFilters<T extends FilterMap>(defaults: T) {
     return next
   }, [searchParams, defaults])
 
-  useLayoutEffect(() => {
-    skipEmptyPersist.current = true
-    if (restoredPath.current === pathname) return
-    restoredPath.current = pathname
-    const keys = Object.keys(defaultsRef.current)
-    const hasParams = keys.some((key) => searchParams.has(key))
-    if (hasParams) return
-    const stored = getStoredFilterSearch(pathname)
-    if (!stored) return
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        const storedParams = new URLSearchParams(stored)
-        for (const key of keys) {
-          const value = storedParams.get(key)
-          if (value != null) next.set(key, value)
-        }
-        return next
-      },
-      { replace: true },
-    )
-  }, [pathname, searchParams, setSearchParams])
-
   useEffect(() => {
     const query = serializeKnownSearchParams(
       searchParams,
       Object.keys(defaultsRef.current),
     )
-    if (skipEmptyPersist.current) {
-      skipEmptyPersist.current = false
-      if (!query) return
-    }
     writeStoredFilterSearch(pathname, query)
   }, [pathname, searchParams])
 

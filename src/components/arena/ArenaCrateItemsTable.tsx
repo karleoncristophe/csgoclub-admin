@@ -3,6 +3,10 @@ import { Trash2 } from 'lucide-react'
 import { BankProgressBar } from '@/components/cases/BankProgressBar'
 import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
 import { SkinTripleCurrencyPrices } from '@/components/skins/SkinTripleCurrencyPrices'
+import {
+  ProbabilityRemainderHint,
+  ProbabilityRemainderSuggest,
+} from '@/components/ui/ProbabilityRemainderSuggest'
 import { SortableTh, sortByNumericColumn, useTableSort } from '@/components/ui/SortableTh'
 import { Surface } from '@/components/ui/Surface'
 import { Input } from '@/components/ui/Input'
@@ -20,9 +24,16 @@ import {
 } from '@/utils/arenaCrateEconomics'
 import { describeDropEligibility } from '@/utils/caseEconomics'
 import {
+  ARENA_CRATE_PROBABILITY_TARGET,
   arenaProbabilityInputError,
   arenaProbabilitySumError,
 } from '@/validators/arenaCrateEditorSchema'
+import {
+  enabledProbabilitySum,
+  formatProbabilityPercent,
+  roundProbability,
+  suggestProbabilityRemainder,
+} from '@/utils/probabilityRemainder'
 import { listTableAlt } from '@/components/ui/listTable'
 
 type ArenaItemSortKey = 'prize' | 'chance' | 'bank'
@@ -37,12 +48,6 @@ type ArenaCrateItemsTableProps = {
   onItemsChange: (items: ArenaCrateItem[]) => void
 }
 
-function enabledProbabilitySum(items: ArenaCrateItem[]) {
-  return items
-    .filter((item) => item.enabled)
-    .reduce((sum, item) => sum + (Number(item.probability) || 0), 0)
-}
-
 export function ArenaCrateItemsTable({
   items,
   crateValue,
@@ -55,6 +60,10 @@ export function ArenaCrateItemsTable({
   const sum = enabledProbabilitySum(items)
   const probabilityError = itemsError ?? arenaProbabilitySumError(items)
   const chanceInputError = arenaProbabilityInputError(items)
+  const remainderSuggestion = useMemo(
+    () => suggestProbabilityRemainder(items, ARENA_CRATE_PROBABILITY_TARGET),
+    [items],
+  )
   const injection = arenaBankInjection(crateValue)
   const bankAvailable = arenaBankBalance(ledger, currency) + injection
   const enabledCount = items.filter(
@@ -94,6 +103,13 @@ export function ArenaCrateItemsTable({
     )
   }
 
+  const applyRemainderSuggestion = () => {
+    if (!remainderSuggestion) return
+    updateItem(remainderSuggestion.skinName, {
+      probability: remainderSuggestion.nextProbability,
+    })
+  }
+
   return (
     <Surface variant="settingsPanel" className="!p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -108,12 +124,12 @@ export function ArenaCrateItemsTable({
             {enabledCount}. Soma das chances:{' '}
             <span
               className={
-                probabilityError
+                probabilityError || remainderSuggestion
                   ? 'font-semibold text-red-600 dark:text-red-400'
                   : undefined
               }
             >
-              {sum.toFixed(4)}%
+              {formatProbabilityPercent(sum)}%
             </span>
             {probabilityError ? ' — precisa fechar 100%.' : ''}
           </ThemeText>
@@ -123,11 +139,11 @@ export function ArenaCrateItemsTable({
         ) : null}
       </div>
 
-      {probabilityError ? (
-        <Surface variant="errorBanner" className="mb-4">
-          {probabilityError}
-        </Surface>
-      ) : null}
+      <ProbabilityRemainderSuggest
+        suggestion={remainderSuggestion}
+        error={probabilityError}
+        onApply={applyRemainderSuggestion}
+      />
 
       {items.length === 0 ? (
         <ThemeText tone="secondary" className="text-sm">
@@ -238,11 +254,20 @@ export function ArenaCrateItemsTable({
                         }
                         onChange={(event) =>
                           updateItem(item.skinName, {
-                            probability: Number(event.target.value) || 0,
+                            probability: roundProbability(
+                              Number(event.target.value) || 0,
+                            ),
                           })
                         }
                         className="w-28"
                       />
+                      {item.enabled !== false ? (
+                        <ProbabilityRemainderHint
+                          suggestion={remainderSuggestion}
+                          skinName={item.skinName}
+                          onApply={applyRemainderSuggestion}
+                        />
+                      ) : null}
                     </td>
                     <td className="py-3 pr-4 whitespace-nowrap">
                       {item.enabled === false ? (

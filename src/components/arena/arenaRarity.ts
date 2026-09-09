@@ -46,3 +46,27 @@ export const ARENA_RARITY_OPTIONS = (
   value,
   label: ARENA_RARITY_LABEL[value],
 }))
+
+export function arenaRarityDisplayValues(rarity: ArenaRarity) {
+  return {
+    displayValueBrl: ARENA_RARITY_DEFAULT_VALUE_BRL[rarity],
+    displayValueUsd: ARENA_RARITY_DEFAULT_VALUE_USD[rarity],
+    displayValueEur: ARENA_RARITY_DEFAULT_VALUE_EUR[rarity],
+  }
+}
+
+export function resolveArenaCrateDisplayValues(crate: {
+  rarity: ArenaRarity
+  displayValueBrl?: number
+  displayValueUsd?: number
+  displayValueEur?: number
+}) {
+  const defaults = arenaRarityDisplayValues(crate.rarity)
+  const pick = (stored: number | undefined, fallback: number) =>
+    stored != null && stored >= 0 ? stored : fallback
+  return {
+    displayValueBrl: pick(crate.displayValueBrl, defaults.displayValueBrl),
+    displayValueUsd: pick(crate.displayValueUsd, defaults.displayValueUsd),
+    displayValueEur: pick(crate.displayValueEur, defaults.displayValueEur),
+  }
+}

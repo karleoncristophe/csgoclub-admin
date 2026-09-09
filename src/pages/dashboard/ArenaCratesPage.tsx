@@ -4,6 +4,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   ARENA_RARITY_COLOR,
   ARENA_RARITY_LABEL,
+  resolveArenaCrateDisplayValues,
 } from '@/components/arena/arenaRarity'
 import { ArenaGameBuildPanel } from '@/components/arena/ArenaGameBuildPanel'
 import { ArenaPlayPricingPanel } from '@/components/arena/ArenaPlayPricingPanel'
@@ -58,7 +59,7 @@ export default function ArenaCratesPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <PageTitle subtitle="Preço da jogada é global. O valor da caixa é o VE das skins, sem margem — publi e elegível usam esse número.">
+        <PageTitle subtitle="Preço da jogada é global. A vitrine é o número do site e do jogo. O VE das skins, sem margem, entra no banco e no elegível.">
           Arena
         </PageTitle>
         <div className="flex items-center justify-between gap-3">
@@ -114,74 +115,93 @@ export default function ArenaCratesPage() {
                   <th className={listTable.th}>Crate</th>
                   <th className={listTable.th}>Raridade</th>
                   <th className={listTable.th}>Itens</th>
-                  <th className={listTable.th}>Valor da caixa</th>
+                  <th className={listTable.th}>Vitrine</th>
                   <th className={listTable.th}>Status</th>
                   <th className={listTable.th} />
                 </tr>
               </thead>
               <tbody className={listTable.tbody}>
-                {data.map((crate) => (
-                  <tr key={crate._id} className={listTable.tr}>
-                    <td className={listTable.td}>
-                      <Link
-                        to={`/dashboard/arena/${crate._id}`}
-                        className="block rounded-xl transition hover:opacity-80"
-                      >
-                        <CaseListNameCell
-                          name={crate.name}
-                          slug={crate.slug}
-                          imageUrl={crate.imageUrl}
-                        />
-                      </Link>
-                    </td>
-                    <td className={listTable.td}>
-                      <span className="inline-flex items-center gap-2">
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{
-                            backgroundColor:
-                              crate.color || ARENA_RARITY_COLOR[crate.rarity],
-                          }}
-                        />
-                        {ARENA_RARITY_LABEL[crate.rarity] ?? crate.rarity}
-                      </span>
-                    </td>
-                    <td className={listTable.td}>{crate.items?.length ?? 0}</td>
-                    <td className={`${listTable.td} tabular-nums`}>
-                      <ThemeText as="p" tone="primary">
-                        {formatSkinsPrice(crate.valueBrl ?? 0, SkinsCurrency.BRL)}
-                      </ThemeText>
-                      <ThemeText as="p" tone="secondary" className="text-xs">
-                        {formatSkinsPrice(crate.valueUsd ?? 0, SkinsCurrency.USD)}
-                        {' · '}
-                        {formatSkinsPrice(crate.valueEur ?? 0, SkinsCurrency.EUR)}
-                      </ThemeText>
-                    </td>
-                    <td className={listTable.td}>
-                      <StatusPill active={crate.active} />
-                    </td>
-                    <td className={listTable.td}>
-                      <div className="flex items-center justify-end gap-1">
-                        <IconButton
-                          label="Editar crate"
-                          onClick={() =>
-                            navigate(`/dashboard/arena/${crate._id}`)
-                          }
+                {data.map((crate) => {
+                  const display = resolveArenaCrateDisplayValues(crate)
+                  return (
+                    <tr key={crate._id} className={listTable.tr}>
+                      <td className={listTable.td}>
+                        <Link
+                          to={`/dashboard/arena/${crate._id}`}
+                          className="block rounded-xl transition hover:opacity-80"
                         >
-                          <Pencil className="h-4 w-4" aria-hidden />
-                        </IconButton>
-                        <IconButton
-                          label="Excluir crate"
-                          variant="danger"
-                          disabled={deletingId === crate._id}
-                          onClick={() => void handleDelete(crate)}
-                        >
-                          <Trash2 className="h-4 w-4" aria-hidden />
-                        </IconButton>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <CaseListNameCell
+                            name={crate.name}
+                            slug={crate.slug}
+                            imageUrl={crate.imageUrl}
+                          />
+                        </Link>
+                      </td>
+                      <td className={listTable.td}>
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{
+                              backgroundColor:
+                                crate.color || ARENA_RARITY_COLOR[crate.rarity],
+                            }}
+                          />
+                          {ARENA_RARITY_LABEL[crate.rarity] ?? crate.rarity}
+                        </span>
+                      </td>
+                      <td className={listTable.td}>{crate.items?.length ?? 0}</td>
+                      <td className={`${listTable.td} tabular-nums`}>
+                        <ThemeText as="p" tone="primary">
+                          {formatSkinsPrice(
+                            display.displayValueBrl,
+                            SkinsCurrency.BRL,
+                          )}
+                        </ThemeText>
+                        <ThemeText as="p" tone="secondary" className="text-xs">
+                          {formatSkinsPrice(
+                            display.displayValueUsd,
+                            SkinsCurrency.USD,
+                          )}
+                          {' · '}
+                          {formatSkinsPrice(
+                            display.displayValueEur,
+                            SkinsCurrency.EUR,
+                          )}
+                        </ThemeText>
+                        <ThemeText as="p" tone="faint" className="text-xs">
+                          VE{' '}
+                          {formatSkinsPrice(
+                            crate.valueBrl ?? 0,
+                            SkinsCurrency.BRL,
+                          )}
+                        </ThemeText>
+                      </td>
+                      <td className={listTable.td}>
+                        <StatusPill active={crate.active} />
+                      </td>
+                      <td className={listTable.td}>
+                        <div className="flex items-center justify-end gap-1">
+                          <IconButton
+                            label="Editar crate"
+                            onClick={() =>
+                              navigate(`/dashboard/arena/${crate._id}`)
+                            }
+                          >
+                            <Pencil className="h-4 w-4" aria-hidden />
+                          </IconButton>
+                          <IconButton
+                            label="Excluir crate"
+                            variant="danger"
+                            disabled={deletingId === crate._id}
+                            onClick={() => void handleDelete(crate)}
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden />
+                          </IconButton>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

@@ -540,6 +540,7 @@ export default function CaseEditorPage() {
         targetMarginPercent={values.targetMarginPercent}
         ledger={economyLedger}
         itemsError={itemsError}
+        probabilityTargetPercent={values.probabilityTargetPercent}
         onItemsChange={handleItemsChange}
         headerAction={
           <>

@@ -44,6 +44,9 @@ export type ArenaCrate = {
   valueBrl?: number
   valueUsd?: number
   valueEur?: number
+  displayValueBrl?: number
+  displayValueUsd?: number
+  displayValueEur?: number
   economyLedger?: {
     bankBalanceBrl?: number
     bankBalanceUsd?: number
@@ -62,6 +65,9 @@ export type CreateArenaCratePayload = {
   rarity: ArenaRarity
   color?: string
   items?: ArenaCrateItem[]
+  displayValueBrl?: number
+  displayValueUsd?: number
+  displayValueEur?: number
   active?: boolean
 }
 

@@ -1,17 +1,20 @@
 import * as Yup from 'yup'
+import { arenaRarityDisplayValues } from '@/components/arena/arenaRarity'
 import type {
   ArenaCrateItem,
   ArenaRarity,
 } from '@/redux/store/api/arena/api.arena'
 import { ARENA_RARITIES } from '@/redux/store/api/arena/api.arena'
+import {
+  DEFAULT_PROBABILITY_TARGET,
+  enabledProbabilitySum,
+} from '@/utils/probabilityRemainder'
 
-export const ARENA_CRATE_PROBABILITY_TARGET = 100
+export const ARENA_CRATE_PROBABILITY_TARGET = DEFAULT_PROBABILITY_TARGET
 export const ARENA_CRATE_PROBABILITY_TOLERANCE = 0.05
 
 export function enabledArenaProbabilitySum(items: ArenaCrateItem[] | undefined) {
-  return (items ?? [])
-    .filter((item) => item.enabled !== false)
-    .reduce((total, item) => total + (Number(item.probability) || 0), 0)
+  return enabledProbabilitySum(items ?? [])
 }
 
 export function arenaProbabilitySumError(
@@ -61,6 +64,15 @@ export const arenaCrateEditorSchema = Yup.object({
     .oneOf([...ARENA_RARITIES])
     .required('Selecione a raridade'),
   color: Yup.string().trim(),
+  displayValueBrl: Yup.number()
+    .min(0, 'Valor vitrine BRL deve ser zero ou maior')
+    .required('Informe o valor vitrine em BRL'),
+  displayValueUsd: Yup.number()
+    .min(0, 'Valor vitrine USD deve ser zero ou maior')
+    .required('Informe o valor vitrine em USD'),
+  displayValueEur: Yup.number()
+    .min(0, 'Valor vitrine EUR deve ser zero ou maior')
+    .required('Informe o valor vitrine em EUR'),
   active: Yup.boolean().required(),
   items: Yup.array()
     .of(arenaCrateItemSchema)
@@ -85,15 +97,23 @@ export type ArenaCrateEditorFormValues = {
   description: string
   rarity: ArenaRarity
   color: string
+  displayValueBrl: number
+  displayValueUsd: number
+  displayValueEur: number
   active: boolean
   items: ArenaCrateItem[]
 }
+
+const defaultDisplay = arenaRarityDisplayValues('epic')
 
 export const arenaCrateEditorInitialValues: ArenaCrateEditorFormValues = {
   name: '',
   description: '',
   rarity: 'epic',
   color: '#d32ce6',
+  displayValueBrl: defaultDisplay.displayValueBrl,
+  displayValueUsd: defaultDisplay.displayValueUsd,
+  displayValueEur: defaultDisplay.displayValueEur,
   active: false,
   items: [],
 }

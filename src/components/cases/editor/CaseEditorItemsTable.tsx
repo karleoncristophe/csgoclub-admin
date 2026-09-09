@@ -4,6 +4,10 @@ import { BankProgressBar } from '@/components/cases/BankProgressBar'
 import { caseFieldProps } from '@/components/cases/editor/caseFieldHelp'
 import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
 import { FieldLabelWithHelp } from '@/components/ui/FieldLabelWithHelp'
+import {
+  ProbabilityRemainderHint,
+  ProbabilityRemainderSuggest,
+} from '@/components/ui/ProbabilityRemainderSuggest'
 import { SortableTh, sortByNumericColumn, useTableSort } from '@/components/ui/SortableTh'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
@@ -21,6 +25,11 @@ import {
   type CaseValueMode,
 } from '@/utils/caseEconomics'
 import {
+  DEFAULT_PROBABILITY_TARGET,
+  roundProbability,
+  suggestProbabilityRemainder,
+} from '@/utils/probabilityRemainder'
+import {
   formatNumberFieldValue,
   selectNumberInputOnFocus,
   updateCaseDropItem,
@@ -37,6 +46,7 @@ type CaseEditorItemsTableProps = {
   onItemsChange: (items: CaseDropItem[]) => void
   /** Botões exibidos no cabeçalho do card (adicionar skins, presets) */
   headerAction?: ReactNode
+  probabilityTargetPercent?: number
 }
 
 type CaseItemSortKey = 'value' | 'drop' | 'bank' | 've'
@@ -51,10 +61,15 @@ export function CaseEditorItemsTable({
   itemsError,
   onItemsChange,
   headerAction,
+  probabilityTargetPercent = DEFAULT_PROBABILITY_TARGET,
 }: CaseEditorItemsTableProps) {
   const bankInjection = computeBankInjection(openPrice, targetMarginPercent)
   const bankAvailable = roundPrice((ledger.bankBalance ?? 0) + bankInjection)
   const { sort, toggle } = useTableSort<CaseItemSortKey>()
+  const remainderSuggestion = useMemo(
+    () => suggestProbabilityRemainder(items, probabilityTargetPercent),
+    [items, probabilityTargetPercent],
+  )
   const displayedItems = useMemo(
     () =>
       sortByNumericColumn(items, sort, (item, key) => {
@@ -77,10 +92,19 @@ export function CaseEditorItemsTable({
     onItemsChange(updateCaseDropItem(items, skinName, patch))
   }
 
+  const applyRemainderSuggestion = () => {
+    if (!remainderSuggestion) return
+    updateItem(remainderSuggestion.skinName, {
+      probability: remainderSuggestion.nextProbability,
+    })
+  }
+
   const handleProbabilityChange = (skinName: string, rawValue: string) => {
     const probability = Number(rawValue.replace(',', '.'))
     updateItem(skinName, {
-      probability: Number.isFinite(probability) ? Math.max(0, probability) : 0,
+      probability: Number.isFinite(probability)
+        ? Math.max(0, roundProbability(probability))
+        : 0,
     })
   }
 
@@ -100,6 +124,12 @@ export function CaseEditorItemsTable({
           <div className="flex shrink-0 flex-wrap gap-2">{headerAction}</div>
         ) : null}
       </div>
+
+      <ProbabilityRemainderSuggest
+        suggestion={remainderSuggestion}
+        error={itemsError}
+        onApply={applyRemainderSuggestion}
+      />
 
       {items.length === 0 ? (
         <ThemeText tone="secondary" className="text-sm">
@@ -240,6 +270,13 @@ export function CaseEditorItemsTable({
                         disabled={item.enabled === false}
                         className="w-24 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900"
                       />
+                      {item.enabled !== false ? (
+                        <ProbabilityRemainderHint
+                          suggestion={remainderSuggestion}
+                          skinName={item.skinName}
+                          onApply={applyRemainderSuggestion}
+                        />
+                      ) : null}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap">
                       {eligibility.coveredByOpenPrice ? (
@@ -315,12 +352,6 @@ export function CaseEditorItemsTable({
           </table>
         </div>
       )}
-
-      {itemsError ? (
-        <ThemeText as="p" tone="secondary" className="mt-3 text-sm text-red-600 dark:text-red-400">
-          {itemsError}
-        </ThemeText>
-      ) : null}
     </Surface>
   )
 }

@@ -1,3 +1,5 @@
+import { enabledProbabilitySum } from '@/utils/probabilityRemainder'
+
 export type CaseValueMode = 'base' | 'with_tax'
 
 export const DEFAULT_ITEM_PROBABILITY_TOLERANCE = 0.0001
@@ -175,9 +177,7 @@ export function computeOpensToUnlockItem(input: {
 export function computeProbabilitySum(
   items: Array<Pick<CaseEconomicsItem, 'probability' | 'enabled'>>,
 ): number {
-  return items
-    .filter((item) => item.enabled !== false)
-    .reduce((sum, item) => sum + item.probability, 0)
+  return enabledProbabilitySum(items)
 }
 
 export function roundEconomics(value: number, decimals = 4): number {

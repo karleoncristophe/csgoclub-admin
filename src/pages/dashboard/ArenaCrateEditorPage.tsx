@@ -9,7 +9,10 @@ import { ArenaCrateBankPanel } from '@/components/arena/ArenaCrateBankPanel'
 import {
   ARENA_RARITY_COLOR,
   ARENA_RARITY_OPTIONS,
+  arenaRarityDisplayValues,
+  resolveArenaCrateDisplayValues,
 } from '@/components/arena/arenaRarity'
+import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import {
   CaseImageUploader,
   isPendingCaseImage,
@@ -99,11 +102,15 @@ function fieldError(touched: boolean | undefined, error: unknown) {
 
 function mapCrateToForm(crate: ArenaCrate): ArenaCrateFormState {
   const rarity = crate.rarity
+  const display = resolveArenaCrateDisplayValues(crate)
   return {
     name: crate.name ?? '',
     description: crate.description ?? '',
     rarity,
     color: crate.color || ARENA_RARITY_COLOR[rarity],
+    displayValueBrl: display.displayValueBrl,
+    displayValueUsd: display.displayValueUsd,
+    displayValueEur: display.displayValueEur,
     active: crate.active,
     items: (crate.items ?? []).map((item) => ({
       skinName: item.skinName,
@@ -194,6 +201,9 @@ export default function ArenaCrateEditorPage() {
           imageUrl,
           rarity: values.rarity,
           color: values.color.trim() || ARENA_RARITY_COLOR[values.rarity],
+          displayValueBrl: Number(values.displayValueBrl) || 0,
+          displayValueUsd: Number(values.displayValueUsd) || 0,
+          displayValueEur: Number(values.displayValueEur) || 0,
           active: values.active,
           items: values.items.map((item) => ({
             skinName: item.skinName,
@@ -253,6 +263,13 @@ export default function ArenaCrateEditorPage() {
     currency: SkinsCurrency.BRL,
   })
 
+  const applyRarityDisplayValues = (rarity: ArenaRarity) => {
+    const next = arenaRarityDisplayValues(rarity)
+    void setFieldValue('displayValueBrl', next.displayValueBrl)
+    void setFieldValue('displayValueUsd', next.displayValueUsd)
+    void setFieldValue('displayValueEur', next.displayValueEur)
+  }
+
   const handleRarityChange = (next: ArenaRarity) => {
     const previous = values.rarity
     void setFieldValue('rarity', next)
@@ -261,6 +278,14 @@ export default function ArenaCrateEditorPage() {
       values.color === ARENA_RARITY_COLOR[previous]
     ) {
       void setFieldValue('color', ARENA_RARITY_COLOR[next])
+    }
+    const previousDisplay = arenaRarityDisplayValues(previous)
+    if (
+      values.displayValueBrl === previousDisplay.displayValueBrl &&
+      values.displayValueUsd === previousDisplay.displayValueUsd &&
+      values.displayValueEur === previousDisplay.displayValueEur
+    ) {
+      applyRarityDisplayValues(next)
     }
   }
 
@@ -284,6 +309,9 @@ export default function ArenaCrateEditorPage() {
         description: true,
         rarity: true,
         color: true,
+        displayValueBrl: true,
+        displayValueUsd: true,
+        displayValueEur: true,
         active: true,
         items: values.items.map(() => ({
           skinName: true,
@@ -354,6 +382,18 @@ export default function ArenaCrateEditorPage() {
             value={String(eligibleCount)}
           />
           <SummaryChip
+            label="Vitrine BRL"
+            value={formatSkinsPrice(values.displayValueBrl, SkinsCurrency.BRL)}
+          />
+          <SummaryChip
+            label="Vitrine USD"
+            value={formatSkinsPrice(values.displayValueUsd, SkinsCurrency.USD)}
+          />
+          <SummaryChip
+            label="Vitrine EUR"
+            value={formatSkinsPrice(values.displayValueEur, SkinsCurrency.EUR)}
+          />
+          <SummaryChip
             label="Caixa BRL"
             value={formatSkinsPrice(crateValues.valueBrl, SkinsCurrency.BRL)}
           />
@@ -393,9 +433,9 @@ export default function ArenaCrateEditorPage() {
           Informações gerais
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mb-6 text-sm">
-          Só uma crate ativa por raridade. O preço da jogada é global. O valor
-          da caixa é o VE das skins, sem margem — fica estático ao salvar e
-          entra no elegível e na publi.
+          Só uma crate ativa por raridade. O preço da jogada é global. A
+          vitrine é o número do site e do jogo. O VE das skins, sem margem,
+          fica estático ao salvar e entra no banco e no elegível.
         </ThemeText>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -431,6 +471,47 @@ export default function ArenaCrateEditorPage() {
             onBlur={handleBlur}
             placeholder="#d32ce6"
           />
+        </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <CurrencyInput
+            label="Vitrine BRL"
+            name="displayValueBrl"
+            currency={SkinsCurrency.BRL}
+            value={values.displayValueBrl}
+            onChange={(amount) => void setFieldValue('displayValueBrl', amount)}
+            onBlur={() => void formik.setFieldTouched('displayValueBrl', true)}
+            error={fieldError(touched.displayValueBrl, errors.displayValueBrl)}
+            description="Aparece no site e no jogo. Não altera VE, banco nem crédito."
+          />
+          <CurrencyInput
+            label="Vitrine USD"
+            name="displayValueUsd"
+            currency={SkinsCurrency.USD}
+            value={values.displayValueUsd}
+            onChange={(amount) => void setFieldValue('displayValueUsd', amount)}
+            onBlur={() => void formik.setFieldTouched('displayValueUsd', true)}
+            error={fieldError(touched.displayValueUsd, errors.displayValueUsd)}
+          />
+          <CurrencyInput
+            label="Vitrine EUR"
+            name="displayValueEur"
+            currency={SkinsCurrency.EUR}
+            value={values.displayValueEur}
+            onChange={(amount) => void setFieldValue('displayValueEur', amount)}
+            onBlur={() => void formik.setFieldTouched('displayValueEur', true)}
+            error={fieldError(touched.displayValueEur, errors.displayValueEur)}
+          />
+          <div className="flex items-end">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => applyRarityDisplayValues(values.rarity)}
+            >
+              Usar valor da raridade
+            </Button>
+          </div>
+        </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <Switch
             label="Status"
             name="active"

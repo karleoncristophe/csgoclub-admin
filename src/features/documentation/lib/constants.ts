@@ -82,7 +82,7 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     answer:
       'É a média de quanto a caixa devolve em skins se milhares de pessoas abrirem.\n\nNão é o que uma pessoa ganha na próxima abertura — é a média de longo prazo.\n\nExemplo: skin de $10 com 1% de chance contribui $0,10 ao VE. Some todos os itens ativos e você tem o VE total.',
     bullets: [
-      'VE_item = preço × (chance / 100).',
+      'VE_item = preço ao vivo do catálogo × (chance / 100).',
       'VE alto → caixa “pesada” → preço de abertura maior.',
       'Itens desligados ou com 0% não entram na conta.',
     ],
@@ -354,11 +354,12 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'arena',
     question: 'Como a crate da Arena sorteia e paga?',
     answer:
-      'A abertura da crate usa elegibilidade parecida com a das caixas, mas sem margem: cada open injeta o preço cheio no banco daquela moeda (BRL/USD/EUR separados).\n\nO pool de tickets é 10.000.000 (mais fino que o das caixas). O prêmio credita só na moeda congelada da partida — sem fallback de FX cruzado.',
+      'A abertura da crate usa elegibilidade parecida com a das caixas, mas sem margem: cada open injeta o preço cheio no banco daquela moeda (BRL/USD/EUR separados).\n\nO pool de tickets é 10.000.000 (mais fino que o das caixas). O prêmio credita só na moeda congelada da partida — sem fallback de FX cruzado.\n\nDiferente das caixas comuns, os valores da crate são gravados e não acompanham o catálogo.',
     bullets: [
       'Injeção = openPrice (inteiro), não preço ÷ (1+margem).',
       'Bancos por moeda: bankBalanceBrl / Usd / Eur.',
       'Só uma crate ativa por raridade no admin.',
+      'Valor da crate é fixo; caixa comum é ao vivo.',
     ],
     tags: ['arena', 'crate', 'banco', 'elegível', 'sorteio'],
   },
@@ -528,11 +529,11 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'skins-catalogo',
     question: 'De onde vêm os preços das skins?',
     answer:
-      'Do catálogo SkinsBack. Cada skin tem preço base; a taxa da categoria de arma gera o preço com taxa.\n\npriceWithTax = base × (1 + taxPercent/100). Esse valor alimenta VE (modo com taxa), upgrade (alvo) e exibição no catálogo.',
+      'Do catálogo SkinsBack. Cada skin tem preço base; a taxa da categoria de arma gera o preço com taxa.\n\npriceWithTax = base × (1 + taxPercent/100). Nas caixas comuns esse valor é ao vivo: se o mercado mudar, VE e preço da caixa acompanham. Valor fixo/congelado é só nas crates da Arena e no inventário depois do drop.',
     bullets: [
       'Preço base = bruto da API.',
       '“All” é fallback quando o tipo de arma não casa.',
-      'Snapshot na caixa: se o mercado mudar, recarregue itens no editor.',
+      'Caixa comum = preço flexível do catálogo. Crate da Arena = valor congelado.',
     ],
     tags: ['preço', 'skinsback', 'taxa', 'catálogo'],
   },

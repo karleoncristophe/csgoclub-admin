@@ -111,7 +111,7 @@ export const ECONOMY_PANEL_FIELDS: DocumentationEnumGroup = {
     {
       code: 'VE',
       label: 'Valor esperado',
-      hint: 'Quanto a caixa devolve em média por abertura, no papel.',
+      hint: 'Quanto a caixa devolve em média por abertura, com o preço ao vivo do catálogo.',
     },
     {
       code: 'Preço sugerido',

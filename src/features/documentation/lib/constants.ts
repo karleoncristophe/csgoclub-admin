@@ -371,7 +371,7 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
       'Crates: nome, raridade, cor, itens e chances (soma 100%). Preço da jogada é global por moeda na listagem.\n\nPlays: histórico de partidas (entrada, resultado, crates ganhas). O Aim Trainer (Unity) troca um launch token por JWT para jogar.',
     bullets: [
       'Crate ativa precisa de itens habilitados somando 100%.',
-      'Valores de prêmio por raridade são constantes do backend (ex.: Common BRL 1, Insane BRL 500).',
+      'Itens e chances da crate vêm do admin. A vitrine tem um valor padrão por raridade (ex.: Common BRL 1).',
       'Use a visão Dev para plays de influencer.',
     ],
     tags: ['arena', 'admin', 'crate', 'preço', 'plays'],

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFormik } from 'formik'
 import { useParams } from 'react-router-dom'
 import { ArrowLeft, Plus } from 'lucide-react'
@@ -168,9 +168,10 @@ export default function ArenaCrateEditorPage() {
     [existingCrate],
   )
 
+  const loadedCrateIdRef = useRef<string | null>(null)
   const formik = useFormik<ArenaCrateFormState>({
     initialValues,
-    enableReinitialize: true,
+    enableReinitialize: false,
     validationSchema: arenaCrateEditorSchema,
     validateOnBlur: true,
     validateOnChange: false,
@@ -235,6 +236,14 @@ export default function ArenaCrateEditorPage() {
       }
     },
   })
+
+  useEffect(() => {
+    if (!existingCrate) return
+    const crateId = String(existingCrate._id)
+    if (loadedCrateIdRef.current === crateId) return
+    loadedCrateIdRef.current = crateId
+    void formik.resetForm({ values: mapCrateToForm(existingCrate) })
+  }, [existingCrate, formik])
 
   const { values, setFieldValue, handleChange, handleBlur, touched, errors } =
     formik

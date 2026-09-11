@@ -22,10 +22,10 @@ type UserEditPanelProps = {
   onUpdated?: () => void
 }
 
-function formatUsd(value: number) {
+function formatBrl(value: number) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'BRL',
     minimumFractionDigits: 2,
   }).format(value)
 }
@@ -37,12 +37,17 @@ export function UserEditPanel({ user, onUpdated }: UserEditPanelProps) {
   const [skinWithdrawEnabled, setSkinWithdrawEnabled] = useState(
     Boolean(user.influencerSkinWithdrawEnabled),
   )
-  const [limitTopUp, setLimitTopUp] = useState('')
+  const [withdrawLimitInput, setWithdrawLimitInput] = useState(
+    String(Math.max(0, Number(user.influencerSkinWithdrawLimitBrl ?? 0))),
+  )
   const [updateUser, updateState] = useUpdateUserMutation()
 
   const isInfluencer =
     user.userType === 'influencer' || Boolean(user.isTestAffiliate)
-  const remainingLimit = Math.max(0, Number(user.influencerSkinWithdrawLimitUsd ?? 0))
+  const remainingLimit = Math.max(
+    0,
+    Number(user.influencerSkinWithdrawLimitBrl ?? 0),
+  )
 
   useEffect(() => {
     setUserType(
@@ -53,6 +58,10 @@ export function UserEditPanel({ user, onUpdated }: UserEditPanelProps) {
   useEffect(() => {
     setSkinWithdrawEnabled(Boolean(user.influencerSkinWithdrawEnabled))
   }, [user.influencerSkinWithdrawEnabled])
+
+  useEffect(() => {
+    setWithdrawLimitInput(String(remainingLimit))
+  }, [remainingLimit])
 
   const isTypeDirty =
     userType !==
@@ -82,19 +91,24 @@ export function UserEditPanel({ user, onUpdated }: UserEditPanelProps) {
     }
   }
 
-  const handleAddLimit = async () => {
-    const amount = Number(limitTopUp.replace(',', '.'))
-    if (!Number.isFinite(amount) || amount <= 0) return
+  const parsedWithdrawLimit = Number(withdrawLimitInput.replace(',', '.'))
+  const nextWithdrawLimit = Number.isFinite(parsedWithdrawLimit)
+    ? Math.max(0, Math.round(parsedWithdrawLimit * 100) / 100)
+    : null
+  const isLimitDirty =
+    nextWithdrawLimit !== null && nextWithdrawLimit !== remainingLimit
+
+  const handleSaveLimit = async () => {
+    if (nextWithdrawLimit === null) return
 
     try {
       await updateUser({
         id: user._id,
-        addInfluencerSkinWithdrawLimitUsd: amount,
+        influencerSkinWithdrawLimitBrl: nextWithdrawLimit,
         ...(skinWithdrawEnabled !== Boolean(user.influencerSkinWithdrawEnabled)
           ? { influencerSkinWithdrawEnabled: skinWithdrawEnabled }
           : {}),
       }).unwrap()
-      setLimitTopUp('')
       onUpdated?.()
     } catch {
       // mutation state
@@ -139,7 +153,11 @@ export function UserEditPanel({ user, onUpdated }: UserEditPanelProps) {
           <ThemeText as="p" tone="primary" className="text-sm font-medium">
             Modo influencer ativo
           </ThemeText>
-          <ThemeText as="p" tone="secondary" className="mt-1 text-xs leading-relaxed">
+          <ThemeText
+            as="p"
+            tone="secondary"
+            className="mt-1 text-xs leading-relaxed"
+          >
             Débitos de caixa, battle, arena e upgrade saem do bônus da carteira
             ativa. Sem impacto no saldo real nem em saques em dinheiro.
           </ThemeText>
@@ -156,12 +174,15 @@ export function UserEditPanel({ user, onUpdated }: UserEditPanelProps) {
           </div>
           <ThemeText as="p" tone="faint" className="mb-3 text-xs">
             Por padrão bloqueado. Ao habilitar, o influencer consome o limite em
-            USD a cada envio. Quando zerar, recarregue abaixo.
+            em reais a cada envio. O valor pode ser corrigido a qualquer
+            momento.
           </ThemeText>
 
           <div
             className={`mb-3 ${
-              remainingLimit > 0 ? userStatCardClass.brand : userStatCardClass.amber
+              remainingLimit > 0
+                ? userStatCardClass.brand
+                : userStatCardClass.amber
             }`}
           >
             <ThemeText
@@ -178,13 +199,13 @@ export function UserEditPanel({ user, onUpdated }: UserEditPanelProps) {
                   : 'text-amber-700 dark:text-amber-300'
               }`}
             >
-              {formatUsd(remainingLimit)}
+              {formatBrl(remainingLimit)}
             </p>
             <ThemeText as="p" tone="faint" className="mt-1 text-[11px]">
               {skinWithdrawEnabled
                 ? remainingLimit > 0
                   ? 'Disponível para envio via Trade Link'
-                  : 'Zerado — recarregue o limite para liberar novos saques'
+                  : 'Zerado — defina um limite para liberar novos saques'
                 : 'Saque desligado — o limite só vale com o switch ativo'}
             </ThemeText>
           </div>
@@ -214,22 +235,22 @@ export function UserEditPanel({ user, onUpdated }: UserEditPanelProps) {
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1">
               <Input
-                label="Recarregar limite (USD)"
-                name="skinWithdrawLimitTopUp"
+                label="Limite para saque (BRL)"
+                name="influencerSkinWithdrawLimitBrl"
                 type="number"
-                min="0.01"
+                min="0"
                 step="0.01"
-                placeholder="500.00"
-                value={limitTopUp}
-                onChange={(event) => setLimitTopUp(event.target.value)}
+                placeholder="500,00"
+                value={withdrawLimitInput}
+                onChange={(event) => setWithdrawLimitInput(event.target.value)}
               />
             </div>
             <Button
               type="button"
-              disabled={updateState.isLoading || !limitTopUp}
-              onClick={handleAddLimit}
+              disabled={updateState.isLoading || !isLimitDirty}
+              onClick={handleSaveLimit}
             >
-              Adicionar limite
+              Salvar valor
             </Button>
           </div>
         </div>

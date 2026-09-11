@@ -34,7 +34,7 @@ export type UserAdminDetail = AppUser & {
   balance: number
   bonusBalance: number
   influencerSkinWithdrawEnabled?: boolean
-  influencerSkinWithdrawLimitUsd?: number
+  influencerSkinWithdrawLimitBrl?: number
   totalSpendable: number
   withdrawableBalance: number
   walletCurrency: SkinsCurrency
@@ -378,7 +378,7 @@ export const usersApi = createApi({
         addBonusBalance?: number
         addBonusCurrency?: SkinsCurrency
         influencerSkinWithdrawEnabled?: boolean
-        addInfluencerSkinWithdrawLimitUsd?: number
+        influencerSkinWithdrawLimitBrl?: number
       }
     >({
       query: ({ id, ...body }) => ({
@@ -388,7 +388,10 @@ export const usersApi = createApi({
       }),
       invalidatesTags: (_result, _error, { id }) => [{ type: 'Users', id }],
     }),
-    getUserSiteInventory: builder.query<SiteInventoryResponse, GetSiteInventoryParams>({
+    getUserSiteInventory: builder.query<
+      SiteInventoryResponse,
+      GetSiteInventoryParams
+    >({
       query: ({ userId, ...params }) => ({
         url: USERS.SITE_INVENTORY(userId),
         method: 'GET',
@@ -403,7 +406,10 @@ export const usersApi = createApi({
         { type: 'Users', id: `${userId}-site-inventory` },
       ],
     }),
-    getUserCaseOpens: builder.query<AdminCaseOpenListResponse, GetUserCaseOpensParams>({
+    getUserCaseOpens: builder.query<
+      AdminCaseOpenListResponse,
+      GetUserCaseOpensParams
+    >({
       query: (args) => {
         const { userId, ...params } = omitDataEnvironmentQueryArg(args)
         return {
@@ -472,32 +478,40 @@ export const usersApi = createApi({
           if (args.userId !== userId || args.status === 'converted') continue
 
           const patch = dispatch(
-            usersApi.util.updateQueryData('getUserSiteInventory', args, (draft) => {
-              const movedValue = draft.summary.activeTotalValue
-              const movedCount = draft.summary.activeCount
+            usersApi.util.updateQueryData(
+              'getUserSiteInventory',
+              args,
+              (draft) => {
+                const movedValue = draft.summary.activeTotalValue
+                const movedCount = draft.summary.activeCount
 
-              draft.summary.activeCount = 0
-              draft.summary.activeTotalValue = 0
-              draft.summary.convertedCount += movedCount
-              draft.summary.convertedTotalValue += movedValue
+                draft.summary.activeCount = 0
+                draft.summary.activeTotalValue = 0
+                draft.summary.convertedCount += movedCount
+                draft.summary.convertedTotalValue += movedValue
 
-              if (args.status === 'active') {
-                draft.data = []
-                draft.total = 0
-                draft.totalItems = 0
-                draft.totalPages = 1
-                draft.summary.filteredTotalValue = 0
-                return
-              }
+                if (args.status === 'active') {
+                  draft.data = []
+                  draft.total = 0
+                  draft.totalItems = 0
+                  draft.totalPages = 1
+                  draft.summary.filteredTotalValue = 0
+                  return
+                }
 
-              draft.data = (draft.data as SiteInventoryGroupedItem[]).filter(
-                (item) => item.status !== 'active',
-              )
-              draft.total = draft.data.length
-              draft.totalItems = draft.summary.convertedCount
-              draft.totalPages = Math.max(1, Math.ceil(draft.total / (args.limit ?? 20)))
-              draft.summary.filteredTotalValue = draft.summary.convertedTotalValue
-            }),
+                draft.data = (draft.data as SiteInventoryGroupedItem[]).filter(
+                  (item) => item.status !== 'active',
+                )
+                draft.total = draft.data.length
+                draft.totalItems = draft.summary.convertedCount
+                draft.totalPages = Math.max(
+                  1,
+                  Math.ceil(draft.total / (args.limit ?? 20)),
+                )
+                draft.summary.filteredTotalValue =
+                  draft.summary.convertedTotalValue
+              },
+            ),
           )
           patchResults.push(patch)
         }
@@ -514,7 +528,9 @@ export const usersApi = createApi({
         url: USERS.KYC(id),
         method: 'GET',
       }),
-      providesTags: (_result, _error, id) => [{ type: 'Users', id: `${id}-kyc` }],
+      providesTags: (_result, _error, id) => [
+        { type: 'Users', id: `${id}-kyc` },
+      ],
     }),
   }),
 })

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, Plus, Search } from 'lucide-react'
+import { Check, Plus, RotateCcw, Search, SlidersHorizontal } from 'lucide-react'
 import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
 import { filterChipClass } from '@/components/skins/filterChipClass'
 import { EditorSectionShell } from '@/components/cases/editor/EditorSectionShell'
@@ -16,15 +16,16 @@ import {
   type SkinsCatalogItem,
 } from '@/redux/store/api/skins/api.skins'
 import { useGetWeaponCategoriesQuery } from '@/redux/store/api/weapon-categories/api.weapon-categories'
+import {
+  CatalogSkinVariantFilters,
+  CatalogSkinWearFilters,
+} from '@/components/skins/CatalogSkinFlagFilters'
+import {
+  parseOptionalPrice,
+  type SkinWearCode,
+} from '@/constants/skinCatalogFlags'
 
 const SKIN_SEARCH_PAGE_SIZE = 20
-
-function parseOptionalPrice(value: string): number | undefined {
-  if (!value) return undefined
-  const amount = Number(value.replace(',', '.'))
-  if (!Number.isFinite(amount) || amount < 0) return undefined
-  return amount
-}
 
 type CaseEditorSkinSearchSectionProps = {
   currency: SkinsCurrency
@@ -48,6 +49,9 @@ export function CaseEditorSkinSearchSection({
   const [skinRarity, setSkinRarity] = useState('')
   const [minPriceInput, setMinPriceInput] = useState('')
   const [maxPriceInput, setMaxPriceInput] = useState('')
+  const [skinWears, setSkinWears] = useState<SkinWearCode[]>([])
+  const [skinStattrak, setSkinStattrak] = useState(false)
+  const [skinSouvenir, setSkinSouvenir] = useState(false)
   const [catalogSort, setCatalogSort] = useState<CatalogSort>('price_desc')
   const [skinSearchPage, setSkinSearchPage] = useState(1)
   const skinSearchAnchorRef = useRef<HTMLDivElement>(null)
@@ -70,6 +74,9 @@ export function CaseEditorSkinSearchSection({
     currency,
     minPrice,
     maxPrice,
+    skinWears,
+    skinStattrak,
+    skinSouvenir,
     catalogSort,
   ])
 
@@ -79,6 +86,9 @@ export function CaseEditorSkinSearchSection({
       currency,
       weaponType: skinWeaponType || undefined,
       rarity: skinRarity || undefined,
+      wear: skinWears.length ? skinWears : undefined,
+      stattrak: skinStattrak || undefined,
+      souvenir: skinSouvenir || undefined,
       sort: catalogSort,
       ...(typeof minPrice === 'number' ? { minPrice } : {}),
       ...(typeof maxPrice === 'number' ? { maxPrice } : {}),
@@ -95,17 +105,38 @@ export function CaseEditorSkinSearchSection({
     catalogSort,
     minPrice,
     maxPrice,
+    skinWears,
+    skinStattrak,
+    skinSouvenir,
   ])
 
   const searchResults = searchState.data?.items ?? []
   const skinSearchTotal = searchState.data?.total ?? 0
   const skinSearchLimit = searchState.data?.limit ?? SKIN_SEARCH_PAGE_SIZE
-  const skinSearchTotalPages = Math.max(1, Math.ceil(skinSearchTotal / skinSearchLimit))
+  const skinSearchTotalPages = Math.max(
+    1,
+    Math.ceil(skinSearchTotal / skinSearchLimit),
+  )
   const skinSearchCurrentPage = Math.min(skinSearchPage, skinSearchTotalPages)
   const skinSearchPageStart =
-    skinSearchTotal === 0 ? 0 : (skinSearchCurrentPage - 1) * skinSearchLimit + 1
-  const skinSearchPageEnd = Math.min(skinSearchCurrentPage * skinSearchLimit, skinSearchTotal)
+    skinSearchTotal === 0
+      ? 0
+      : (skinSearchCurrentPage - 1) * skinSearchLimit + 1
+  const skinSearchPageEnd = Math.min(
+    skinSearchCurrentPage * skinSearchLimit,
+    skinSearchTotal,
+  )
   const skinRarityOptions = searchState.data?.rarityOptions ?? []
+  const resetFilters = () => {
+    setSkinWeaponType('')
+    setSkinRarity('')
+    setMinPriceInput('')
+    setMaxPriceInput('')
+    setSkinWears([])
+    setSkinStattrak(false)
+    setSkinSouvenir(false)
+    setCatalogSort('price_desc')
+  }
   const skinTypeCounters = useMemo(() => {
     const counts = searchState.data?.typeCounts ?? {}
     return Object.entries(counts)
@@ -123,7 +154,11 @@ export function CaseEditorSkinSearchSection({
     <EditorSectionShell embedded={embedded}>
       {embedded ? null : (
         <>
-          <ThemeText as="h2" tone="primary" className="mb-1 text-base font-semibold">
+          <ThemeText
+            as="h2"
+            tone="primary"
+            className="mb-1 text-base font-semibold"
+          >
             Buscar skins
           </ThemeText>
           <ThemeText as="p" tone="secondary" className="mb-6 text-sm">
@@ -132,89 +167,121 @@ export function CaseEditorSkinSearchSection({
         </>
       )}
 
-      <div className="mb-4 grid gap-3 md:grid-cols-2">
-        <div className="relative md:col-span-2">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <input
-            type="search"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Ex.: AK-47, Dragon Lore, Fade..."
-            className="w-full rounded-xl border border-zinc-200 bg-white py-3 pl-10 pr-4 text-sm outline-none ring-brand-500/0 transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20 dark:border-zinc-700 dark:bg-zinc-900"
-            autoComplete="off"
+      <div className="mb-5 rounded-2xl border border-border bg-surface-secondary p-4 shadow-sm shadow-black/5">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-accent-soft text-accent-soft-foreground">
+            <SlidersHorizontal className="size-4" aria-hidden />
+          </span>
+          <div>
+            <ThemeText as="h3" tone="primary" className="text-sm font-semibold">
+              Filtros do catálogo
+            </ThemeText>
+            <ThemeText as="p" tone="secondary" className="text-xs">
+              Refine os resultados antes de escolher as skins.
+            </ThemeText>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Select
+            label="Tipo"
+            name="skinWeaponType"
+            value={skinWeaponType}
+            onChange={(e) => setSkinWeaponType(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {weaponCategories.map((category) => (
+              <option key={category._id} value={category.name}>
+                {category.name}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="Raridade"
+            name="skinRarity"
+            value={skinRarity}
+            onChange={(e) => setSkinRarity(e.target.value)}
+          >
+            <option value="">Todas</option>
+            {skinRarityOptions.map((option) => (
+              <option key={option.name} value={option.name}>
+                {option.name} ({option.count})
+              </option>
+            ))}
+          </Select>
+          <CatalogSkinVariantFilters
+            stattrak={skinStattrak}
+            onStattrakChange={setSkinStattrak}
+            souvenir={skinSouvenir}
+            onSouvenirChange={setSkinSouvenir}
           />
         </div>
-        <Select
-          label="Tipo da arma"
-          name="skinWeaponType"
-          value={skinWeaponType}
-          onChange={(e) => setSkinWeaponType(e.target.value)}
-        >
-          <option value="">Todos</option>
-          {weaponCategories.map((category) => (
-            <option key={category._id} value={category.name}>
-              {category.name}
-            </option>
-          ))}
-        </Select>
-        <Select
-          label="Raridade"
-          name="skinRarity"
-          value={skinRarity}
-          onChange={(e) => setSkinRarity(e.target.value)}
-        >
-          <option value="">Todas</option>
-          {skinRarityOptions.map((option) => (
-            <option key={option.name} value={option.name}>
-              {option.name} ({option.count})
-            </option>
-          ))}
-        </Select>
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            Preço mín. ({currency})
-          </label>
-          <input
-            type="number"
-            min={0}
-            step={0.01}
-            value={minPriceInput}
-            onChange={(e) => setMinPriceInput(e.target.value)}
-            placeholder="Opcional"
-            className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20 dark:border-zinc-700 dark:bg-zinc-900"
+        <div className="mt-3 grid gap-3 border-t border-separator pt-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Preço mínimo ({currency})
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={0.01}
+              value={minPriceInput}
+              onChange={(e) => setMinPriceInput(e.target.value)}
+              placeholder="Opcional"
+              className="h-10 w-full rounded-xl border border-field-border bg-field px-3 text-sm text-foreground outline-none shadow-field transition placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/20"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Preço máximo ({currency})
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={0.01}
+              value={maxPriceInput}
+              onChange={(e) => setMaxPriceInput(e.target.value)}
+              placeholder="Opcional"
+              className="h-10 w-full rounded-xl border border-field-border bg-field px-3 text-sm text-foreground outline-none shadow-field transition placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/20"
+            />
+          </div>
+          <Select
+            label="Ordenar"
+            name="skinCatalogSort"
+            value={catalogSort}
+            onChange={(e) => setCatalogSort(e.target.value as CatalogSort)}
+          >
+            <option value="price_desc">Mais cara primeiro</option>
+            <option value="price_asc">Mais barata primeiro</option>
+            <option value="name_asc">A–Z</option>
+            <option value="name_desc">Z–A</option>
+          </Select>
+          <div className="flex flex-col">
+            <span className="mb-1.5 text-sm font-medium text-foreground">
+              Ações
+            </span>
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-field-border bg-field px-3 text-sm font-medium text-muted shadow-field transition hover:border-field-border-hover hover:bg-field-hover hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/40"
+            >
+              <RotateCcw className="size-4" aria-hidden />
+              Limpar filtros
+            </button>
+          </div>
+        </div>
+        <div className="mt-3 border-t border-separator pt-3">
+          <CatalogSkinWearFilters
+            wears={skinWears}
+            onWearsChange={setSkinWears}
+            compact
           />
         </div>
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            Preço máx. ({currency})
-          </label>
-          <input
-            type="number"
-            min={0}
-            step={0.01}
-            value={maxPriceInput}
-            onChange={(e) => setMaxPriceInput(e.target.value)}
-            placeholder="Opcional"
-            className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20 dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </div>
-        <Select
-          label="Ordenar"
-          name="skinCatalogSort"
-          value={catalogSort}
-          onChange={(e) => setCatalogSort(e.target.value as CatalogSort)}
-        >
-          <option value="price_desc">Mais cara primeiro</option>
-          <option value="price_asc">Mais barata primeiro</option>
-          <option value="name_asc">A–Z</option>
-          <option value="name_desc">Z–A</option>
-        </Select>
       </div>
 
       {skinTypeCounters.length > 0 ? (
         <div className="mb-6">
           <SectionTitle>Tipos no catálogo</SectionTitle>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
             {skinTypeCounters.slice(0, 8).map(([type, count]) => {
               const active = skinWeaponType === type
               return (
@@ -222,7 +289,7 @@ export function CaseEditorSkinSearchSection({
                   key={type}
                   type="button"
                   onClick={() => setSkinWeaponType(active ? '' : type)}
-                  className={active ? filterChipClass.active : filterChipClass.inactive}
+                  className={`${active ? filterChipClass.active : filterChipClass.inactive} flex min-h-16 flex-col !px-3 !py-2`}
                 >
                   <ThemeText
                     as="p"
@@ -231,7 +298,11 @@ export function CaseEditorSkinSearchSection({
                   >
                     {type}
                   </ThemeText>
-                  <ThemeText as="p" tone="secondary" className="text-xs">
+                  <ThemeText
+                    as="p"
+                    tone="secondary"
+                    className="mt-auto pt-1 text-xs"
+                  >
                     {count} skin{count === 1 ? '' : 's'}
                   </ThemeText>
                 </button>
@@ -244,7 +315,7 @@ export function CaseEditorSkinSearchSection({
       {skinRarityOptions.length > 0 ? (
         <div className="mb-6">
           <SectionTitle>Raridades</SectionTitle>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
             {skinRarityOptions.slice(0, 8).map((option) => {
               const active = skinRarity === option.name
               return (
@@ -252,17 +323,21 @@ export function CaseEditorSkinSearchSection({
                   key={option.name}
                   type="button"
                   onClick={() => setSkinRarity(active ? '' : option.name)}
-                  className={active ? filterChipClass.active : filterChipClass.inactive}
+                  className={`${active ? filterChipClass.active : filterChipClass.inactive} flex min-h-28 flex-col !px-3 !py-3`}
                 >
                   <SkinRarityBar rarity={option} className="mb-2" />
                   <ThemeText
                     as="p"
                     tone="primary"
-                    className={`text-sm font-semibold ${active ? 'dark:text-brand-100' : ''}`}
+                    className={`line-clamp-2 flex min-h-10 items-start text-sm font-semibold leading-5 ${active ? 'dark:text-brand-100' : ''}`}
                   >
                     {option.name}
                   </ThemeText>
-                  <ThemeText as="p" tone="secondary" className="text-xs">
+                  <ThemeText
+                    as="p"
+                    tone="secondary"
+                    className="mt-auto pt-1 text-xs"
+                  >
                     {option.count} skin{option.count === 1 ? '' : 's'}
                   </ThemeText>
                 </button>
@@ -271,6 +346,32 @@ export function CaseEditorSkinSearchSection({
           </div>
         </div>
       ) : null}
+
+      <div className="sticky top-0 z-10 -mx-1 mb-4 rounded-2xl border border-border bg-overlay/95 p-3 shadow-lg shadow-black/10 backdrop-blur">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
+              aria-hidden
+            />
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Buscar por arma, skin ou acabamento..."
+              className="h-11 w-full rounded-xl border border-field-border bg-field pl-10 pr-4 text-sm text-foreground outline-none shadow-field transition placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/20"
+              autoComplete="off"
+            />
+          </div>
+          <ThemeText
+            tone="secondary"
+            className="shrink-0 text-xs tabular-nums sm:text-right"
+          >
+            {skinSearchTotal} skin{skinSearchTotal === 1 ? '' : 's'} encontrada
+            {skinSearchTotal === 1 ? '' : 's'}
+          </ThemeText>
+        </div>
+      </div>
 
       {searchState.isFetching && searchResults.length === 0 ? (
         <ThemeText tone="secondary" className="mb-4 text-sm">
@@ -286,7 +387,7 @@ export function CaseEditorSkinSearchSection({
 
       {searchResults.length > 0 ? (
         <>
-          <ThemeText tone="label" className="mb-3 text-xs">
+          <ThemeText tone="label" className="mb-3 block text-xs">
             {skinSearchPageStart}–{skinSearchPageEnd} de {skinSearchTotal} skins
           </ThemeText>
           <div
@@ -301,17 +402,24 @@ export function CaseEditorSkinSearchSection({
                   type="button"
                   aria-pressed={selected}
                   onClick={() => onToggleSkin(skin)}
-                  className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${
+                  className={`flex min-h-24 items-center gap-3 rounded-xl border p-3 text-left shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/40 ${
                     selected
                       ? 'border-brand-500 bg-brand-50 ring-1 ring-inset ring-brand-400/40 dark:border-brand-400/50 dark:bg-brand-500/15 dark:ring-brand-400/25'
-                      : 'border-zinc-200 hover:border-brand-300 hover:bg-brand-50/40 dark:border-zinc-800 dark:hover:border-brand-700 dark:hover:bg-zinc-800/80'
+                      : 'border-border bg-surface hover:border-accent/40 hover:bg-default'
                   }`}
                 >
                   {skin.image ? (
-                    <img src={skin.image} alt="" className="h-12 w-14 object-contain" />
+                    <img
+                      src={skin.image}
+                      alt=""
+                      className="h-12 w-14 object-contain"
+                    />
                   ) : null}
                   <div className="min-w-0 flex-1">
-                    <ThemeText tone="primary" className="line-clamp-2 text-xs font-medium">
+                    <ThemeText
+                      tone="primary"
+                      className="line-clamp-2 text-xs font-medium"
+                    >
                       {skin.name}
                     </ThemeText>
                     {showPrizeValues ? (
@@ -323,7 +431,8 @@ export function CaseEditorSkinSearchSection({
                       />
                     ) : (
                       <ThemeText tone="label" className="mt-1 text-[11px]">
-                        {formatSkinsPrice(skin.priceWithTax, currency)} · taxa {skin.taxPercent}%
+                        {formatSkinsPrice(skin.priceWithTax, currency)} · taxa{' '}
+                        {skin.taxPercent}%
                       </ThemeText>
                     )}
                   </div>
@@ -343,7 +452,9 @@ export function CaseEditorSkinSearchSection({
             totalPages={skinSearchTotalPages}
             scrollTargetRef={skinSearchAnchorRef}
             onPageChange={(next) =>
-              setSkinSearchPage(Math.min(Math.max(next, 1), skinSearchTotalPages))
+              setSkinSearchPage(
+                Math.min(Math.max(next, 1), skinSearchTotalPages),
+              )
             }
           />
 

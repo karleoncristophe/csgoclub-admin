@@ -1,5 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react'
 import { SkinsCurrency } from '@/constants/skinsCurrency'
+import type { SkinWearCode } from '@/constants/skinCatalogFlags'
 import { SKINSBACK } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
 
@@ -75,6 +76,9 @@ export type GetSkinsCatalogParams = {
   search?: string
   weaponType?: string
   rarity?: string
+  wear?: SkinWearCode[]
+  stattrak?: boolean
+  souvenir?: boolean
   minPricePercent?: number
   maxPricePercent?: number
   minPrice?: number
@@ -98,6 +102,9 @@ export const skinsApi = createApi({
           ...(params?.search ? { search: params.search } : {}),
           ...(params?.weaponType ? { weaponType: params.weaponType } : {}),
           ...(params?.rarity ? { rarity: params.rarity } : {}),
+          ...(params?.wear?.length ? { wear: params.wear.join(',') } : {}),
+          ...(params?.stattrak ? { stattrak: true } : {}),
+          ...(params?.souvenir ? { souvenir: true } : {}),
           ...(typeof params?.minPricePercent === 'number'
             ? { minPricePercent: params.minPricePercent }
             : {}),
@@ -126,6 +133,38 @@ export const skinsApi = createApi({
         { type: 'SkinsCatalogItem', id: arg.name },
       ],
     }),
+    startSkinsCatalogExport: builder.mutation<
+      { jobId: string },
+      { currency: SkinsCurrency }
+    >({
+      query: ({ currency }) => ({
+        url: SKINSBACK.CATALOG_EXPORT,
+        method: 'POST',
+        params: { currency },
+      }),
+    }),
+    getSkinsCatalogExportJob: builder.query<
+      {
+        jobId: string
+        status: 'running' | 'done' | 'error'
+        percent: number
+        error?: string
+      },
+      string
+    >({
+      query: (jobId) => ({
+        url: SKINSBACK.CATALOG_EXPORT_JOB(jobId),
+        method: 'GET',
+      }),
+    }),
+    downloadSkinsCatalogExport: builder.mutation<Blob, string>({
+      query: (jobId) => ({
+        url: SKINSBACK.CATALOG_EXPORT_FILE(jobId),
+        method: 'GET',
+        headers: { accept: 'text/csv' },
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 })
 
@@ -134,4 +173,7 @@ export const {
   useLazyGetSkinsCatalogQuery,
   useGetSkinsCatalogItemQuery,
   useLazyGetSkinsCatalogItemQuery,
+  useStartSkinsCatalogExportMutation,
+  useLazyGetSkinsCatalogExportJobQuery,
+  useDownloadSkinsCatalogExportMutation,
 } = skinsApi

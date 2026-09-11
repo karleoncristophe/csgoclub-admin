@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Download } from 'lucide-react'
 import {
   formatSkinsPrice,
   SKINS_CURRENCY_OPTIONS,
   SkinsCurrency,
 } from '@/constants/skinsCurrency'
 import { useAdminPreferences } from '@/theme/AdminPreferencesContext'
+import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Pagination } from '@/components/ui/Pagination'
 import { Select } from '@/components/ui/Select'
@@ -15,7 +17,10 @@ import { PageTitle, SectionTitle } from '@/components/ui/Title'
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { listTable, linkBrand } from '@/components/ui/listTable'
 import {
+  useDownloadSkinsCatalogExportMutation,
   useGetSkinsCatalogQuery,
+  useLazyGetSkinsCatalogExportJobQuery,
+  useStartSkinsCatalogExportMutation,
 } from '@/redux/store/api/skins/api.skins'
 import { useGetWeaponCategoriesQuery } from '@/redux/store/api/weapon-categories/api.weapon-categories'
 import useDebounce from '@/hooks/useDebounce'
@@ -30,6 +35,12 @@ import {
   getSkinWeaponType,
 } from '@/utils/skinWeaponType'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
+import { CatalogSkinFlagFilters } from '@/components/skins/CatalogSkinFlagFilters'
+import {
+  parseOptionalPrice,
+  parseWearCodes,
+  serializeWearCodes,
+} from '@/constants/skinCatalogFlags'
 
 const PAGE_SIZE_OPTIONS = [12, 24, 30, 48, 60, 100] as const
 const DEFAULT_PAGE_SIZE = 30
@@ -38,29 +49,13 @@ const SKINS_FILTER_DEFAULTS = {
   q: '',
   weapon: '',
   rarity: '',
-  minP: '0',
-  maxP: '100',
+  wear: '',
+  st: '',
+  sv: '',
+  min: '',
+  max: '',
   page: '1',
   limit: String(DEFAULT_PAGE_SIZE),
-}
-
-function clampPercent(value: number) {
-  if (!Number.isFinite(value)) return 0
-  return Math.min(100, Math.max(0, Math.round(value)))
-}
-
-function toPercentPriceRange(
-  min: number,
-  max: number,
-  minPercent: number,
-  maxPercent: number,
-) {
-  if (max <= min) return { minPrice: min, maxPrice: max }
-  const range = max - min
-  return {
-    minPrice: min + (range * minPercent) / 100,
-    maxPrice: min + (range * maxPercent) / 100,
-  }
 }
 
 export default function SkinsPage() {
@@ -73,22 +68,18 @@ export default function SkinsPage() {
     setSearchInput(filters.q)
   }, [filters.q])
 
-  const [minPercentInput, setMinPercentInput] = useState(() =>
-    clampPercent(Number(filters.minP)),
-  )
-  const [maxPercentInput, setMaxPercentInput] = useState(() =>
-    clampPercent(Number(filters.maxP)),
-  )
+  const [minPriceInput, setMinPriceInput] = useState(filters.min)
+  const [maxPriceInput, setMaxPriceInput] = useState(filters.max)
   useEffect(() => {
-    setMinPercentInput(clampPercent(Number(filters.minP)))
-  }, [filters.minP])
+    setMinPriceInput(filters.min)
+  }, [filters.min])
   useEffect(() => {
-    setMaxPercentInput(clampPercent(Number(filters.maxP)))
-  }, [filters.maxP])
+    setMaxPriceInput(filters.max)
+  }, [filters.max])
 
   const debouncedSearch = useDebounce(searchInput.trim(), 350)
-  const debouncedMinPercent = useDebounce(minPercentInput, 350)
-  const debouncedMaxPercent = useDebounce(maxPercentInput, 350)
+  const debouncedMinPrice = useDebounce(minPriceInput.trim(), 150)
+  const debouncedMaxPrice = useDebounce(maxPriceInput.trim(), 150)
 
   useEffect(() => {
     if (debouncedSearch === filters.q) return
@@ -96,20 +87,23 @@ export default function SkinsPage() {
   }, [debouncedSearch, filters.q, setFilters])
 
   useEffect(() => {
-    const minP = String(clampPercent(debouncedMinPercent))
-    const maxP = String(clampPercent(debouncedMaxPercent))
-    if (minP === filters.minP && maxP === filters.maxP) return
-    setFilters({ minP, maxP })
+    if (debouncedMinPrice === filters.min && debouncedMaxPrice === filters.max) {
+      return
+    }
+    setFilters({ min: debouncedMinPrice, max: debouncedMaxPrice })
   }, [
-    debouncedMinPercent,
-    debouncedMaxPercent,
-    filters.minP,
-    filters.maxP,
+    debouncedMinPrice,
+    debouncedMaxPrice,
+    filters.min,
+    filters.max,
     setFilters,
   ])
 
-  const minPercent = Math.min(debouncedMinPercent, debouncedMaxPercent)
-  const maxPercent = Math.max(debouncedMinPercent, debouncedMaxPercent)
+  const minPrice = parseOptionalPrice(debouncedMinPrice)
+  const maxPrice = parseOptionalPrice(debouncedMaxPrice)
+  const selectedWears = parseWearCodes(filters.wear)
+  const stattrak = filters.st === '1'
+  const souvenir = filters.sv === '1'
   const page = parsePositiveInt(filters.page, 1)
   const itemsPerPage = parseBoundedInt(
     filters.limit,
@@ -120,14 +114,24 @@ export default function SkinsPage() {
   const safePage = Math.max(page, 1)
 
   const { data: weaponCategories = [] } = useGetWeaponCategoriesQuery()
+  const [startExport, startExportState] = useStartSkinsCatalogExportMutation()
+  const [fetchExportJob] = useLazyGetSkinsCatalogExportJobQuery()
+  const [downloadExport] = useDownloadSkinsCatalogExportMutation()
+  const [exportError, setExportError] = useState<string | null>(null)
+  const [exportJobId, setExportJobId] = useState<string | null>(null)
+  const [exportPercent, setExportPercent] = useState(0)
+  const downloadingRef = useRef(false)
 
   const { data, isLoading, isFetching, isError, error } = useGetSkinsCatalogQuery({
     currency: skinsCurrency,
     search: debouncedSearch || undefined,
     weaponType: filters.weapon || undefined,
     rarity: filters.rarity || undefined,
-    minPricePercent: minPercent,
-    maxPricePercent: maxPercent,
+    wear: selectedWears.length ? selectedWears : undefined,
+    stattrak: stattrak || undefined,
+    souvenir: souvenir || undefined,
+    ...(typeof minPrice === 'number' ? { minPrice } : {}),
+    ...(typeof maxPrice === 'number' ? { maxPrice } : {}),
     limit: itemsPerPage,
     offset: (safePage - 1) * itemsPerPage,
   })
@@ -140,10 +144,12 @@ export default function SkinsPage() {
   const currentPage = Math.min(safePage, totalPages)
 
   const priceRange = data?.priceRange ?? { min: 0, max: 0 }
-  const selectedPriceRange = useMemo(
-    () => toPercentPriceRange(priceRange.min, priceRange.max, minPercent, maxPercent),
-    [priceRange.min, priceRange.max, minPercent, maxPercent],
-  )
+  const selectedPriceLabel =
+    typeof minPrice === 'number' || typeof maxPrice === 'number'
+      ? `${typeof minPrice === 'number' ? formatSkinsPrice(minPrice, skinsCurrency) : '—'} - ${
+          typeof maxPrice === 'number' ? formatSkinsPrice(maxPrice, skinsCurrency) : '—'
+        }`
+      : 'Sem corte'
 
   const typeCounters = useMemo(() => {
     const counts = data?.typeCounts ?? {}
@@ -163,11 +169,123 @@ export default function SkinsPage() {
     }
   }, [page, totalPages, setFilter])
 
+  const finishExport = () => {
+    downloadingRef.current = false
+    setExportJobId(null)
+    setExportPercent(0)
+  }
+
+  const handleExportCatalog = async () => {
+    if (exportJobId || startExportState.isLoading) return
+    setExportError(null)
+    setExportPercent(1)
+    try {
+      const started = await startExport({ currency: skinsCurrency }).unwrap()
+      setExportJobId(started.jobId)
+    } catch (err) {
+      finishExport()
+      setExportError(getErrorMessage(err))
+    }
+  }
+
+  useEffect(() => {
+    if (!exportJobId) return
+
+    let cancelled = false
+    const tick = async () => {
+      try {
+        const job = await fetchExportJob(exportJobId).unwrap()
+        if (cancelled) return
+        setExportPercent(Math.max(1, Math.min(100, job.percent)))
+        if (job.status === 'running') return
+        if (job.status === 'error') {
+          finishExport()
+          setExportError(job.error || 'Falha ao gerar o catálogo')
+          return
+        }
+        if (downloadingRef.current) return
+        downloadingRef.current = true
+        const blob = await downloadExport(exportJobId).unwrap()
+        if (cancelled) return
+        const day = new Date().toISOString().slice(0, 10)
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `catalogo-skins-${skinsCurrency.toLowerCase()}-${day}.csv`
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        URL.revokeObjectURL(url)
+        finishExport()
+      } catch (err) {
+        if (cancelled) return
+        finishExport()
+        setExportError(getErrorMessage(err))
+      }
+    }
+
+    void tick()
+    const timer = window.setInterval(() => {
+      void tick()
+    }, 300)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [downloadExport, exportJobId, fetchExportJob, skinsCurrency])
+
   return (
     <div className="space-y-6">
-      <PageTitle subtitle="Catálogo com filtros por tipo, raridade e preço. Paginação configurável via API.">
-        Skins
-      </PageTitle>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <PageTitle subtitle="Catálogo com filtros por tipo, raridade, desgaste e preço. O CSV exporta o catálogo inteiro na moeda selecionada.">
+          Skins
+        </PageTitle>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={Boolean(exportJobId) || startExportState.isLoading}
+          isLoading={startExportState.isLoading}
+          onClick={() => void handleExportCatalog()}
+        >
+          <Download className="h-4 w-4" aria-hidden />
+          Exportar catálogo
+        </Button>
+      </div>
+      {exportError ? (
+        <Surface variant="errorBanner">{exportError}</Surface>
+      ) : null}
+      {exportJobId ? (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-zinc-950/70 p-4">
+          <Surface variant="modalShell" className="w-full max-w-md p-6">
+            <ThemeText as="h2" tone="primary" className="text-lg font-semibold">
+              Gerando catálogo
+            </ThemeText>
+            <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
+              A tela fica travada até o catálogo terminar. Não feche esta página.
+            </ThemeText>
+            <div className="mt-5">
+              <div className="mb-2 flex items-baseline justify-between">
+                <ThemeText as="span" tone="faint" className="text-xs uppercase">
+                  Progresso
+                </ThemeText>
+                <ThemeText as="span" tone="primary" className="text-2xl font-semibold tabular-nums">
+                  {exportPercent}%
+                </ThemeText>
+              </div>
+              <div className="h-3 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                <div
+                  className="h-full rounded-full bg-brand-600 transition-[width] duration-200"
+                  style={{ width: `${exportPercent}%` }}
+                />
+              </div>
+            </div>
+          </Surface>
+        </div>
+      ) : null}
 
       <Surface variant="card">
         <div className="grid gap-3 p-5 pb-4 md:grid-cols-2 xl:grid-cols-3">
@@ -224,6 +342,15 @@ export default function SkinsPage() {
             ))}
           </Select>
 
+          <CatalogSkinFlagFilters
+            wears={selectedWears}
+            onWearsChange={(next) => setFilter('wear', serializeWearCodes(next))}
+            stattrak={stattrak}
+            onStattrakChange={(next) => setFilter('st', next ? '1' : '')}
+            souvenir={souvenir}
+            onSouvenirChange={(next) => setFilter('sv', next ? '1' : '')}
+          />
+
           <Select
             label="Itens por página"
             name="pageSize"
@@ -238,23 +365,25 @@ export default function SkinsPage() {
           </Select>
 
           <Input
-            label="Preço mínimo (%)"
-            name="minPercent"
+            label={`Preço mín. (${skinsCurrency})`}
+            name="minPrice"
             type="number"
             min={0}
-            max={100}
-            value={String(minPercentInput)}
-            onChange={(e) => setMinPercentInput(clampPercent(Number(e.target.value)))}
+            step={0.01}
+            placeholder="Opcional"
+            value={minPriceInput}
+            onChange={(e) => setMinPriceInput(e.target.value)}
           />
 
           <Input
-            label="Preço máximo (%)"
-            name="maxPercent"
+            label={`Preço máx. (${skinsCurrency})`}
+            name="maxPrice"
             type="number"
             min={0}
-            max={100}
-            value={String(maxPercentInput)}
-            onChange={(e) => setMaxPercentInput(clampPercent(Number(e.target.value)))}
+            step={0.01}
+            placeholder="Opcional"
+            value={maxPriceInput}
+            onChange={(e) => setMaxPriceInput(e.target.value)}
           />
         </div>
 
@@ -294,8 +423,7 @@ export default function SkinsPage() {
               Faixa selecionada
             </ThemeText>
             <ThemeText as="p" tone="primary" className="mt-1 text-sm font-semibold">
-              {formatSkinsPrice(selectedPriceRange.minPrice, skinsCurrency)} -{' '}
-              {formatSkinsPrice(selectedPriceRange.maxPrice, skinsCurrency)}
+              {selectedPriceLabel}
             </ThemeText>
           </Surface>
         </div>

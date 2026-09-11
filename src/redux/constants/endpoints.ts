@@ -20,6 +20,10 @@ export const ADMIN_ACCOUNTS = {
 export const SKINSBACK = {
   CATALOG: '/skinsback/catalog',
   CATALOG_ITEM: '/skinsback/catalog/item',
+  CATALOG_EXPORT: '/skinsback/catalog/export',
+  CATALOG_EXPORT_JOB: (jobId: string) => `/skinsback/catalog/export/${jobId}`,
+  CATALOG_EXPORT_FILE: (jobId: string) =>
+    `/skinsback/catalog/export/${jobId}/file`,
   BALANCE: '/skinsback/balance',
 } as const
 

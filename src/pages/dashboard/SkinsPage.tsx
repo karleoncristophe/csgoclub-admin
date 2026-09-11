@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Download } from 'lucide-react'
+import { Download, Search } from 'lucide-react'
 import {
   formatSkinsPrice,
   SKINS_CURRENCY_OPTIONS,
@@ -8,19 +8,18 @@ import {
 } from '@/constants/skinsCurrency'
 import { useAdminPreferences } from '@/theme/AdminPreferencesContext'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { Pagination } from '@/components/ui/Pagination'
 import { Select } from '@/components/ui/Select'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
-import { PageTitle, SectionTitle } from '@/components/ui/Title'
-import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { PageTitle } from '@/components/ui/Title'
 import { listTable, linkBrand } from '@/components/ui/listTable'
 import {
   useDownloadSkinsCatalogExportMutation,
   useGetSkinsCatalogQuery,
   useLazyGetSkinsCatalogExportJobQuery,
   useStartSkinsCatalogExportMutation,
+  type CatalogSort,
 } from '@/redux/store/api/skins/api.skins'
 import { useGetWeaponCategoriesQuery } from '@/redux/store/api/weapon-categories/api.weapon-categories'
 import useDebounce from '@/hooks/useDebounce'
@@ -35,7 +34,8 @@ import {
   getSkinWeaponType,
 } from '@/utils/skinWeaponType'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
-import { CatalogSkinFlagFilters } from '@/components/skins/CatalogSkinFlagFilters'
+import { CatalogFiltersCard } from '@/components/skins/CatalogFiltersCard'
+import { CatalogQuickFilterCards } from '@/components/skins/CatalogQuickFilterCards'
 import {
   parseOptionalPrice,
   parseWearCodes,
@@ -44,6 +44,13 @@ import {
 
 const PAGE_SIZE_OPTIONS = [12, 24, 30, 48, 60, 100] as const
 const DEFAULT_PAGE_SIZE = 30
+
+const CATALOG_SORT_VALUES: CatalogSort[] = [
+  'price_desc',
+  'price_asc',
+  'name_asc',
+  'name_desc',
+]
 
 const SKINS_FILTER_DEFAULTS = {
   q: '',
@@ -54,8 +61,15 @@ const SKINS_FILTER_DEFAULTS = {
   sv: '',
   min: '',
   max: '',
+  sort: 'price_desc',
   page: '1',
   limit: String(DEFAULT_PAGE_SIZE),
+}
+
+function parseCatalogSort(value: string): CatalogSort {
+  return CATALOG_SORT_VALUES.includes(value as CatalogSort)
+    ? (value as CatalogSort)
+    : 'price_desc'
 }
 
 export default function SkinsPage() {
@@ -102,6 +116,7 @@ export default function SkinsPage() {
   const minPrice = parseOptionalPrice(debouncedMinPrice)
   const maxPrice = parseOptionalPrice(debouncedMaxPrice)
   const selectedWears = parseWearCodes(filters.wear)
+  const catalogSort = parseCatalogSort(filters.sort)
   const stattrak = filters.st === '1'
   const souvenir = filters.sv === '1'
   const page = parsePositiveInt(filters.page, 1)
@@ -132,6 +147,7 @@ export default function SkinsPage() {
     souvenir: souvenir || undefined,
     ...(typeof minPrice === 'number' ? { minPrice } : {}),
     ...(typeof maxPrice === 'number' ? { maxPrice } : {}),
+    sort: catalogSort,
     limit: itemsPerPage,
     offset: (safePage - 1) * itemsPerPage,
   })
@@ -168,6 +184,21 @@ export default function SkinsPage() {
       setFilter('page', String(totalPages), { resetPage: false })
     }
   }, [page, totalPages, setFilter])
+
+  const resetFilters = () => {
+    setMinPriceInput('')
+    setMaxPriceInput('')
+    setFilters({
+      weapon: '',
+      rarity: '',
+      wear: '',
+      st: '',
+      sv: '',
+      min: '',
+      max: '',
+      sort: 'price_desc',
+    })
+  }
 
   const finishExport = () => {
     downloadingRef.current = false
@@ -288,197 +319,156 @@ export default function SkinsPage() {
       ) : null}
 
       <Surface variant="card">
-        <div className="grid gap-3 p-5 pb-4 md:grid-cols-2 xl:grid-cols-3">
-          <Select
-            label="Moeda"
-            name="currency"
-            value={skinsCurrency}
-            onChange={(e) => {
-              setSkinsCurrency(e.target.value as SkinsCurrency)
-              setFilter('page', '1', { resetPage: false })
-            }}
-          >
-            {SKINS_CURRENCY_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-
-          <Input
-            label="Buscar skin"
-            name="searchSkin"
-            placeholder="Ex.: AK-47, AWP, Fade..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            autoComplete="off"
-          />
-
-          <Select
-            label="Tipo da arma"
-            name="weaponType"
-            value={filters.weapon}
-            onChange={(e) => setFilter('weapon', e.target.value)}
-          >
-            <option value="">Todos</option>
-            {weaponCategories.map((category) => (
-              <option key={category._id} value={category.name}>
-                {category.name}
-              </option>
-            ))}
-          </Select>
-
-          <Select
-            label="Raridade"
-            name="rarity"
-            value={filters.rarity}
-            onChange={(e) => setFilter('rarity', e.target.value)}
-          >
-            <option value="">Todas</option>
-            {rarityOptions.map((option) => (
-              <option key={option.name} value={option.name}>
-                {option.name} ({option.count})
-              </option>
-            ))}
-          </Select>
-
-          <CatalogSkinFlagFilters
+        <div className="space-y-6 p-5">
+          <CatalogFiltersCard
+            weaponType={filters.weapon}
+            onWeaponTypeChange={(value) => setFilter('weapon', value)}
+            rarity={filters.rarity}
+            onRarityChange={(value) => setFilter('rarity', value)}
+            rarityOptions={rarityOptions}
+            weaponCategories={weaponCategories}
+            currencyLabel={skinsCurrency}
+            minPriceInput={minPriceInput}
+            maxPriceInput={maxPriceInput}
+            onMinPriceChange={setMinPriceInput}
+            onMaxPriceChange={setMaxPriceInput}
+            sort={catalogSort}
+            onSortChange={(value) => setFilter('sort', value)}
             wears={selectedWears}
             onWearsChange={(next) => setFilter('wear', serializeWearCodes(next))}
             stattrak={stattrak}
             onStattrakChange={(next) => setFilter('st', next ? '1' : '')}
             souvenir={souvenir}
             onSouvenirChange={(next) => setFilter('sv', next ? '1' : '')}
+            onReset={resetFilters}
+            extraFields={
+              <>
+                <Select
+                  label="Moeda"
+                  name="currency"
+                  value={skinsCurrency}
+                  onChange={(event) => {
+                    setSkinsCurrency(event.target.value as SkinsCurrency)
+                    setFilter('page', '1', { resetPage: false })
+                  }}
+                >
+                  {SKINS_CURRENCY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+                <Select
+                  label="Itens por página"
+                  name="pageSize"
+                  value={String(itemsPerPage)}
+                  onChange={(event) => setFilter('limit', event.target.value)}
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </Select>
+              </>
+            }
           />
 
-          <Select
-            label="Itens por página"
-            name="pageSize"
-            value={String(itemsPerPage)}
-            onChange={(e) => setFilter('limit', e.target.value)}
-          >
-            {PAGE_SIZE_OPTIONS.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </Select>
-
-          <Input
-            label={`Preço mín. (${skinsCurrency})`}
-            name="minPrice"
-            type="number"
-            min={0}
-            step={0.01}
-            placeholder="Opcional"
-            value={minPriceInput}
-            onChange={(e) => setMinPriceInput(e.target.value)}
+          <CatalogQuickFilterCards
+            typeCounters={typeCounters}
+            weaponType={filters.weapon}
+            onWeaponTypeChange={(value) => setFilter('weapon', value)}
+            rarityOptions={rarityOptions}
+            rarity={filters.rarity}
+            onRarityChange={(value) => setFilter('rarity', value)}
           />
 
-          <Input
-            label={`Preço máx. (${skinsCurrency})`}
-            name="maxPrice"
-            type="number"
-            min={0}
-            step={0.01}
-            placeholder="Opcional"
-            value={maxPriceInput}
-            onChange={(e) => setMaxPriceInput(e.target.value)}
-          />
-        </div>
-
-        <div className="mb-4 grid gap-3 px-5 sm:grid-cols-2 lg:grid-cols-4">
-          <Surface variant="statTile" className="!p-4">
-            <ThemeText as="p" tone="label" className="text-xs uppercase">
-              Página atual
-            </ThemeText>
-            <ThemeText as="p" tone="primary" className="mt-1 text-xl font-semibold">
-              {catalogItems.length}
-            </ThemeText>
-            <ThemeText as="p" tone="faint" className="text-xs">
-              itens ({pageStart}-{pageEnd}) · {pageLimit}/página
-            </ThemeText>
-          </Surface>
-          <Surface variant="statTile" className="!p-4">
-            <ThemeText as="p" tone="label" className="text-xs uppercase">
-              Total filtrado
-            </ThemeText>
-            <ThemeText as="p" tone="primary" className="mt-1 text-xl font-semibold">
-              {catalogTotal}
-            </ThemeText>
-            <ThemeText as="p" tone="faint" className="text-xs">
-              páginas: {totalPages}
-            </ThemeText>
-          </Surface>
-          <Surface variant="statTile" className="!p-4">
-            <ThemeText as="p" tone="label" className="text-xs uppercase">
-              Faixa de preço base
-            </ThemeText>
-            <ThemeText as="p" tone="primary" className="mt-1 text-sm font-semibold">
-              {formatSkinsPrice(priceRange.min, skinsCurrency)} - {formatSkinsPrice(priceRange.max, skinsCurrency)}
-            </ThemeText>
-          </Surface>
-          <Surface variant="statTile" className="!p-4">
-            <ThemeText as="p" tone="label" className="text-xs uppercase">
-              Faixa selecionada
-            </ThemeText>
-            <ThemeText as="p" tone="primary" className="mt-1 text-sm font-semibold">
-              {selectedPriceLabel}
-            </ThemeText>
-          </Surface>
-        </div>
-
-        <div className="mb-6 px-5">
-          <SectionTitle>Tipos no catálogo (após busca)</SectionTitle>
-          <SegmentedTabs
-            ariaLabel="Tipo da arma"
-            className="mt-3"
-            value={filters.weapon || 'all'}
-            items={[
-              { id: 'all', label: 'Todos' },
-              ...typeCounters.map(([type, count]) => ({
-                id: type,
-                label: `${type} (${count})`,
-              })),
-            ]}
-            onChange={(next) => setFilter('weapon', next === 'all' ? '' : next)}
-          />
-        </div>
-
-        {rarityOptions.length > 0 ? (
-          <div className="mb-6 px-5">
-            <SectionTitle>Raridades (após busca e tipo)</SectionTitle>
-            <SegmentedTabs
-              ariaLabel="Raridade"
-              className="mt-3"
-              value={filters.rarity || 'all'}
-              items={[
-                { id: 'all', label: 'Todas' },
-                ...rarityOptions.map((option) => ({
-                  id: option.name,
-                  label: `${option.name} (${option.count})`,
-                })),
-              ]}
-              onChange={(next) => setFilter('rarity', next === 'all' ? '' : next)}
-            />
+          <div className="sticky top-0 z-10 rounded-2xl border border-border bg-overlay/95 p-3 shadow-lg shadow-black/10 backdrop-blur">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="relative min-w-0 flex-1">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
+                  aria-hidden
+                />
+                <input
+                  type="search"
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="Buscar por arma, skin ou acabamento..."
+                  className="h-11 w-full rounded-xl border border-field-border bg-field pl-10 pr-4 text-sm text-foreground outline-none shadow-field transition placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/20"
+                  autoComplete="off"
+                />
+              </div>
+              <ThemeText
+                tone="secondary"
+                className="shrink-0 text-xs tabular-nums sm:text-right"
+              >
+                {catalogTotal} skin{catalogTotal === 1 ? '' : 's'} encontrada
+                {catalogTotal === 1 ? '' : 's'}
+                {catalogTotal > 0
+                  ? ` · ${pageStart}–${pageEnd} · ${selectedPriceLabel}`
+                  : ''}
+              </ThemeText>
+            </div>
           </div>
-        ) : null}
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Surface variant="statTile" className="!p-4">
+              <ThemeText as="p" tone="label" className="text-xs uppercase">
+                Página atual
+              </ThemeText>
+              <ThemeText as="p" tone="primary" className="mt-1 text-xl font-semibold">
+                {catalogItems.length}
+              </ThemeText>
+              <ThemeText as="p" tone="faint" className="text-xs">
+                itens ({pageStart}-{pageEnd}) · {pageLimit}/página
+              </ThemeText>
+            </Surface>
+            <Surface variant="statTile" className="!p-4">
+              <ThemeText as="p" tone="label" className="text-xs uppercase">
+                Total filtrado
+              </ThemeText>
+              <ThemeText as="p" tone="primary" className="mt-1 text-xl font-semibold">
+                {catalogTotal}
+              </ThemeText>
+              <ThemeText as="p" tone="faint" className="text-xs">
+                páginas: {totalPages}
+              </ThemeText>
+            </Surface>
+            <Surface variant="statTile" className="!p-4">
+              <ThemeText as="p" tone="label" className="text-xs uppercase">
+                Faixa de preço base
+              </ThemeText>
+              <ThemeText as="p" tone="primary" className="mt-1 text-sm font-semibold">
+                {formatSkinsPrice(priceRange.min, skinsCurrency)} - {formatSkinsPrice(priceRange.max, skinsCurrency)}
+              </ThemeText>
+            </Surface>
+            <Surface variant="statTile" className="!p-4">
+              <ThemeText as="p" tone="label" className="text-xs uppercase">
+                Faixa selecionada
+              </ThemeText>
+              <ThemeText as="p" tone="primary" className="mt-1 text-sm font-semibold">
+                {selectedPriceLabel}
+              </ThemeText>
+            </Surface>
+          </div>
+        </div>
 
         {isLoading ? (
-          <div className="flex items-center gap-2 py-10 text-sm text-muted">
+          <div className="flex items-center gap-2 px-5 py-10 text-sm text-muted">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
             Carregando catálogo de skins...
           </div>
         ) : null}
 
         {isError ? (
-          <p className={`mb-4 ${surfaceClass('errorBanner')}`}>
+          <p className={`mx-5 mb-4 ${surfaceClass('errorBanner')}`}>
             {getErrorMessage(error)}
           </p>
         ) : null}
 
         {!isLoading && !isError && catalogItems.length === 0 ? (
-          <ThemeText as="p" tone="secondary" className="py-8 text-sm">
+          <ThemeText as="p" tone="secondary" className="px-5 py-8 text-sm">
             Nenhuma skin encontrada com os filtros atuais.
           </ThemeText>
         ) : null}

@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, Plus, RotateCcw, Search, SlidersHorizontal } from 'lucide-react'
-import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
-import { filterChipClass } from '@/components/skins/filterChipClass'
+import { Check, Plus, Search } from 'lucide-react'
+import { CatalogFiltersCard } from '@/components/skins/CatalogFiltersCard'
+import { CatalogQuickFilterCards } from '@/components/skins/CatalogQuickFilterCards'
 import { EditorSectionShell } from '@/components/cases/editor/EditorSectionShell'
 import { Pagination } from '@/components/ui/Pagination'
-import { Select } from '@/components/ui/Select'
 import { ThemeText } from '@/components/ui/ThemeText'
-import { SectionTitle } from '@/components/ui/Title'
 import { SkinTripleCurrencyPrices } from '@/components/skins/SkinTripleCurrencyPrices'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import useDebounce from '@/hooks/useDebounce'
@@ -16,10 +14,6 @@ import {
   type SkinsCatalogItem,
 } from '@/redux/store/api/skins/api.skins'
 import { useGetWeaponCategoriesQuery } from '@/redux/store/api/weapon-categories/api.weapon-categories'
-import {
-  CatalogSkinVariantFilters,
-  CatalogSkinWearFilters,
-} from '@/components/skins/CatalogSkinFlagFilters'
 import {
   parseOptionalPrice,
   type SkinWearCode,
@@ -167,185 +161,39 @@ export function CaseEditorSkinSearchSection({
         </>
       )}
 
-      <div className="mb-5 rounded-2xl border border-border bg-surface-secondary p-4 shadow-sm shadow-black/5">
-        <div className="mb-4 flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-accent-soft text-accent-soft-foreground">
-            <SlidersHorizontal className="size-4" aria-hidden />
-          </span>
-          <div>
-            <ThemeText as="h3" tone="primary" className="text-sm font-semibold">
-              Filtros do catálogo
-            </ThemeText>
-            <ThemeText as="p" tone="secondary" className="text-xs">
-              Refine os resultados antes de escolher as skins.
-            </ThemeText>
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Select
-            label="Tipo"
-            name="skinWeaponType"
-            value={skinWeaponType}
-            onChange={(e) => setSkinWeaponType(e.target.value)}
-          >
-            <option value="">Todos</option>
-            {weaponCategories.map((category) => (
-              <option key={category._id} value={category.name}>
-                {category.name}
-              </option>
-            ))}
-          </Select>
-          <Select
-            label="Raridade"
-            name="skinRarity"
-            value={skinRarity}
-            onChange={(e) => setSkinRarity(e.target.value)}
-          >
-            <option value="">Todas</option>
-            {skinRarityOptions.map((option) => (
-              <option key={option.name} value={option.name}>
-                {option.name} ({option.count})
-              </option>
-            ))}
-          </Select>
-          <CatalogSkinVariantFilters
-            stattrak={skinStattrak}
-            onStattrakChange={setSkinStattrak}
-            souvenir={skinSouvenir}
-            onSouvenirChange={setSkinSouvenir}
-          />
-        </div>
-        <div className="mt-3 grid gap-3 border-t border-separator pt-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Preço mínimo ({currency})
-            </label>
-            <input
-              type="number"
-              min={0}
-              step={0.01}
-              value={minPriceInput}
-              onChange={(e) => setMinPriceInput(e.target.value)}
-              placeholder="Opcional"
-              className="h-10 w-full rounded-xl border border-field-border bg-field px-3 text-sm text-foreground outline-none shadow-field transition placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/20"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Preço máximo ({currency})
-            </label>
-            <input
-              type="number"
-              min={0}
-              step={0.01}
-              value={maxPriceInput}
-              onChange={(e) => setMaxPriceInput(e.target.value)}
-              placeholder="Opcional"
-              className="h-10 w-full rounded-xl border border-field-border bg-field px-3 text-sm text-foreground outline-none shadow-field transition placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/20"
-            />
-          </div>
-          <Select
-            label="Ordenar"
-            name="skinCatalogSort"
-            value={catalogSort}
-            onChange={(e) => setCatalogSort(e.target.value as CatalogSort)}
-          >
-            <option value="price_desc">Mais cara primeiro</option>
-            <option value="price_asc">Mais barata primeiro</option>
-            <option value="name_asc">A–Z</option>
-            <option value="name_desc">Z–A</option>
-          </Select>
-          <div className="flex flex-col">
-            <span className="mb-1.5 text-sm font-medium text-foreground">
-              Ações
-            </span>
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-field-border bg-field px-3 text-sm font-medium text-muted shadow-field transition hover:border-field-border-hover hover:bg-field-hover hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/40"
-            >
-              <RotateCcw className="size-4" aria-hidden />
-              Limpar filtros
-            </button>
-          </div>
-        </div>
-        <div className="mt-3 border-t border-separator pt-3">
-          <CatalogSkinWearFilters
-            wears={skinWears}
-            onWearsChange={setSkinWears}
-            compact
-          />
-        </div>
+      <div className="mb-5">
+        <CatalogFiltersCard
+          weaponType={skinWeaponType}
+          onWeaponTypeChange={setSkinWeaponType}
+          rarity={skinRarity}
+          onRarityChange={setSkinRarity}
+          rarityOptions={skinRarityOptions}
+          weaponCategories={weaponCategories}
+          currencyLabel={currency}
+          minPriceInput={minPriceInput}
+          maxPriceInput={maxPriceInput}
+          onMinPriceChange={setMinPriceInput}
+          onMaxPriceChange={setMaxPriceInput}
+          sort={catalogSort}
+          onSortChange={setCatalogSort}
+          wears={skinWears}
+          onWearsChange={setSkinWears}
+          stattrak={skinStattrak}
+          onStattrakChange={setSkinStattrak}
+          souvenir={skinSouvenir}
+          onSouvenirChange={setSkinSouvenir}
+          onReset={resetFilters}
+        />
       </div>
 
-      {skinTypeCounters.length > 0 ? (
-        <div className="mb-6">
-          <SectionTitle>Tipos no catálogo</SectionTitle>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
-            {skinTypeCounters.slice(0, 8).map(([type, count]) => {
-              const active = skinWeaponType === type
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setSkinWeaponType(active ? '' : type)}
-                  className={`${active ? filterChipClass.active : filterChipClass.inactive} flex min-h-16 flex-col !px-3 !py-2`}
-                >
-                  <ThemeText
-                    as="p"
-                    tone="primary"
-                    className={`text-sm font-semibold ${active ? 'dark:text-brand-100' : ''}`}
-                  >
-                    {type}
-                  </ThemeText>
-                  <ThemeText
-                    as="p"
-                    tone="secondary"
-                    className="mt-auto pt-1 text-xs"
-                  >
-                    {count} skin{count === 1 ? '' : 's'}
-                  </ThemeText>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      ) : null}
-
-      {skinRarityOptions.length > 0 ? (
-        <div className="mb-6">
-          <SectionTitle>Raridades</SectionTitle>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
-            {skinRarityOptions.slice(0, 8).map((option) => {
-              const active = skinRarity === option.name
-              return (
-                <button
-                  key={option.name}
-                  type="button"
-                  onClick={() => setSkinRarity(active ? '' : option.name)}
-                  className={`${active ? filterChipClass.active : filterChipClass.inactive} flex min-h-28 flex-col !px-3 !py-3`}
-                >
-                  <SkinRarityBar rarity={option} className="mb-2" />
-                  <ThemeText
-                    as="p"
-                    tone="primary"
-                    className={`line-clamp-2 flex min-h-10 items-start text-sm font-semibold leading-5 ${active ? 'dark:text-brand-100' : ''}`}
-                  >
-                    {option.name}
-                  </ThemeText>
-                  <ThemeText
-                    as="p"
-                    tone="secondary"
-                    className="mt-auto pt-1 text-xs"
-                  >
-                    {option.count} skin{option.count === 1 ? '' : 's'}
-                  </ThemeText>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      ) : null}
+      <CatalogQuickFilterCards
+        typeCounters={skinTypeCounters}
+        weaponType={skinWeaponType}
+        onWeaponTypeChange={setSkinWeaponType}
+        rarityOptions={skinRarityOptions}
+        rarity={skinRarity}
+        onRarityChange={setSkinRarity}
+      />
 
       <div className="sticky top-0 z-10 -mx-1 mb-4 rounded-2xl border border-border bg-overlay/95 p-3 shadow-lg shadow-black/10 backdrop-blur">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

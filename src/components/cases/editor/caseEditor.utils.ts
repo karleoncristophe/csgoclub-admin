@@ -17,6 +17,12 @@ export function mapCaseToFormValues(lootCase: LootCase): CaseFormState {
     targetMarginPercent: lootCase.targetMarginPercent,
     probabilityTargetPercent: lootCase.probabilityTargetPercent ?? 100,
     discountPercent: lootCase.discountPercent ?? 0,
+    fixedPriceBrl:
+      lootCase.fixedPriceBrl ?? (lootCase.currency === 'BRL' ? lootCase.price : 0),
+    fixedPriceUsd:
+      lootCase.fixedPriceUsd ?? (lootCase.currency === 'USD' ? lootCase.price : 0),
+    fixedPriceEur:
+      lootCase.fixedPriceEur ?? (lootCase.currency === 'EUR' ? lootCase.price : 0),
     listPrice: lootCase.listPrice ?? lootCase.suggestedPrice ?? 0,
     price: lootCase.price ?? 0,
     listPriceManual: false,
@@ -152,6 +158,10 @@ export function toCaseDropItemPayload(item: CaseDropItem): CaseDropItemPayload {
     taxPercent: item.taxPercent,
     priceWithTax: item.priceWithTax,
     price: item.price,
+    fixedValueBrl: item.fixedValueBrl,
+    fixedValueUsd: item.fixedValueUsd,
+    fixedValueEur: item.fixedValueEur,
+    useFixedValue: item.useFixedValue ?? false,
     probability: item.probability,
     probabilityTolerance: DEFAULT_ITEM_PROBABILITY_TOLERANCE,
     enabled: item.enabled,

@@ -52,7 +52,13 @@ export type AiCaseAssistantContext = {
   targetMarginPercent?: number
   probabilityTargetPercent?: number
   discountPercent?: number
+  fixedPriceBrl?: number
+  fixedPriceUsd?: number
+  fixedPriceEur?: number
+  currentExpectedValue?: number
+  currentMarginPercent?: number
   itemNames?: string[]
+  fixedItemNames?: string[]
 }
 
 export type AiCaseAssistantRequest = {

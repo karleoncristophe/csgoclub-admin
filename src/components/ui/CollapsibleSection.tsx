@@ -10,7 +10,7 @@ type CollapsibleSectionProps = {
   defaultOpen?: boolean
   /** Abre a seção sempre que virar true (ex.: erro de validação dentro dela) */
   forceOpen?: boolean
-  variant?: 'card' | 'inset'
+  variant?: 'card' | 'inset' | 'plain'
   children: ReactNode
 }
 
@@ -18,6 +18,7 @@ const shellClass = {
   card: 'overflow-hidden rounded-xl border border-border bg-surface shadow-sm shadow-black/5',
   inset:
     'overflow-hidden rounded-xl border border-border bg-surface-secondary',
+  plain: 'overflow-hidden border-b border-separator',
 } as const
 
 export function CollapsibleSection({
@@ -39,7 +40,9 @@ export function CollapsibleSection({
         type="button"
         onClick={() => setUserOpen(!open)}
         aria-expanded={open}
-        className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-default"
+        className={`flex w-full items-center gap-3 text-left transition-colors hover:bg-default ${
+          variant === 'plain' ? 'px-0 py-4 hover:px-3' : 'px-5 py-4'
+        }`}
       >
         <div className="min-w-0 flex-1">
           <ThemeText as="p" tone="primary" className="text-sm font-semibold">
@@ -63,7 +66,13 @@ export function CollapsibleSection({
       </button>
 
       {open ? (
-        <div className="border-t border-separator px-5 py-5">
+        <div
+          className={
+            variant === 'plain'
+              ? 'border-t border-separator py-5'
+              : 'border-t border-separator px-5 py-5'
+          }
+        >
           {children}
         </div>
       ) : null}

@@ -51,11 +51,9 @@ import {
   catalogSkinToCaseItem,
   computePriceAfterDiscount,
   computeProbabilitySum,
-  computeSuggestedSalePrice,
   computeTotalExpectedValue,
   DEFAULT_ITEM_PROBABILITY_TOLERANCE,
   EMPTY_CASE_ECONOMY_LEDGER,
-  remapCaseItemsForValueMode,
   resolveFairCaseListPrice,
   roundEconomics,
   roundPrice,
@@ -166,6 +164,11 @@ export default function CaseEditorPage() {
           probabilityTargetPercent: values.probabilityTargetPercent,
           probabilityTolerance: DEFAULT_ITEM_PROBABILITY_TOLERANCE,
           discountPercent: values.discountPercent,
+          listPrice: values.listPrice,
+          price: values.price,
+          fixedPriceBrl: values.fixedPriceBrl || undefined,
+          fixedPriceUsd: values.fixedPriceUsd || undefined,
+          fixedPriceEur: values.fixedPriceEur || undefined,
           items: toCaseDropItemsPayload(values.items),
           sharedCaseIds: values.sharedCaseIds,
           vitrineId: values.vitrineId?.trim() ? values.vitrineId : null,
@@ -233,34 +236,25 @@ export default function CaseEditorPage() {
     [economicsItems],
   )
 
-  const suggestedPrice = useMemo(
-    () => roundPrice(computeSuggestedSalePrice(totalEV, values.targetMarginPercent)),
-    [totalEV, values.targetMarginPercent],
-  )
-
-  const priceFromDiscount = useMemo(
-    () =>
-      roundPrice(
-        computePriceAfterDiscount(values.listPrice ?? 0, values.discountPercent),
-      ),
-    [values.listPrice, values.discountPercent],
-  )
+  const fixedPrice =
+    values.currency === SkinsCurrency.USD
+      ? values.fixedPriceUsd
+      : values.currency === SkinsCurrency.EUR
+        ? values.fixedPriceEur
+        : values.fixedPriceBrl
 
   useEffect(() => {
-    if (values.listPriceManual) return
-    if (suggestedPrice <= 0) return
-    if (values.listPrice !== suggestedPrice) {
-      void setFieldValue('listPrice', suggestedPrice, false)
+    if (!(fixedPrice > 0)) return
+    const discountRate = Math.min(100, Math.max(0, values.discountPercent)) / 100
+    const fixedListPrice =
+      discountRate < 1 ? roundPrice(fixedPrice / (1 - discountRate)) : fixedPrice
+    if (values.price !== fixedPrice) {
+      void setFieldValue('price', fixedPrice, false)
     }
-  }, [suggestedPrice, values.listPrice, values.listPriceManual, setFieldValue])
-
-  useEffect(() => {
-    if (values.priceManual) return
-    if (priceFromDiscount <= 0) return
-    if (values.price !== priceFromDiscount) {
-      void setFieldValue('price', priceFromDiscount, false)
+    if (values.listPrice !== fixedListPrice) {
+      void setFieldValue('listPrice', fixedListPrice, false)
     }
-  }, [priceFromDiscount, values.price, values.priceManual, setFieldValue])
+  }, [fixedPrice, values.discountPercent, values.listPrice, values.price, setFieldValue])
 
   const addedSkinNames = useMemo(
     () => new Set(values.items.map((item) => item.skinName)),
@@ -275,7 +269,18 @@ export default function CaseEditorPage() {
       targetMarginPercent: values.targetMarginPercent,
       probabilityTargetPercent: values.probabilityTargetPercent,
       discountPercent: values.discountPercent,
+      fixedPriceBrl: values.fixedPriceBrl,
+      fixedPriceUsd: values.fixedPriceUsd,
+      fixedPriceEur: values.fixedPriceEur,
+      currentExpectedValue: totalEV,
+      currentMarginPercent:
+        totalEV > 0
+          ? roundEconomics((((values.price ?? 0) - totalEV) / totalEV) * 100, 4)
+          : 0,
       itemNames: values.items.map((item) => item.skinName),
+      fixedItemNames: values.items
+        .filter((item) => item.useFixedValue)
+        .map((item) => item.skinName),
     }),
     [
       values.name,
@@ -284,6 +289,11 @@ export default function CaseEditorPage() {
       values.targetMarginPercent,
       values.probabilityTargetPercent,
       values.discountPercent,
+      values.fixedPriceBrl,
+      values.fixedPriceUsd,
+      values.fixedPriceEur,
+      values.price,
+      totalEV,
       values.items,
     ],
   )
@@ -299,7 +309,25 @@ export default function CaseEditorPage() {
 
   const handleValueModeChange = (nextMode: CaseValueMode) => {
     void setFieldValue('valueMode', nextMode)
-    void setFieldValue('items', remapCaseItemsForValueMode(values.items, nextMode), false)
+    void setFieldValue(
+      'items',
+      values.items.map((item) => ({
+        ...item,
+        price: item.useFixedValue
+          ? item.price
+          : nextMode === 'base'
+            ? item.basePrice
+            : item.priceWithTax,
+        ...(nextMode === 'base'
+          ? { basePrice: item.useFixedValue ? item.price : item.basePrice }
+          : {
+              priceWithTax: item.useFixedValue
+                ? item.price
+                : item.priceWithTax,
+            }),
+      })),
+      false,
+    )
   }
 
   const handleCurrencyChange = async (nextCurrency: SkinsCurrency) => {
@@ -313,12 +341,30 @@ export default function CaseEditorPage() {
             name: item.skinName,
             currency: nextCurrency,
           }).unwrap()
+          const catalogItem = catalogSkinToCaseItem(
+            skin,
+            values.valueMode as CaseValueMode,
+            item.probability,
+          )
+          const fixedValue = item.useFixedValue
+            ? nextCurrency === SkinsCurrency.USD
+              ? item.fixedValueUsd
+              : nextCurrency === SkinsCurrency.EUR
+                ? item.fixedValueEur
+                : item.fixedValueBrl
+            : undefined
           return {
-            ...catalogSkinToCaseItem(
-              skin,
-              values.valueMode as CaseValueMode,
-              item.probability,
-            ),
+            ...catalogItem,
+            price: fixedValue ?? catalogItem.price,
+            ...(fixedValue == null
+              ? {}
+              : values.valueMode === 'base'
+                ? { basePrice: fixedValue }
+                : { priceWithTax: fixedValue }),
+            fixedValueBrl: item.fixedValueBrl,
+            fixedValueUsd: item.fixedValueUsd,
+            fixedValueEur: item.fixedValueEur,
+            useFixedValue: item.useFixedValue ?? false,
             enabled: item.enabled,
           }
         } catch {
@@ -467,7 +513,7 @@ export default function CaseEditorPage() {
   const currency = values.currency as SkinsCurrency
 
   return (
-    <form onSubmit={handleFormSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleFormSubmit} className="case-editor-form space-y-5" noValidate>
       <div className="sticky top-0 z-30 -mx-4 -mt-6 bg-slate-50/85 px-4 py-4 backdrop-blur dark:bg-zinc-950/85 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
@@ -562,6 +608,7 @@ export default function CaseEditorPage() {
       />
 
       <CollapsibleSection
+        variant="plain"
         title="Preço e margem"
         description="Margem alvo, meta de chances e desconto da vitrine."
         forceOpen={hasPricingError}
@@ -581,6 +628,7 @@ export default function CaseEditorPage() {
       </CollapsibleSection>
 
       <CollapsibleSection
+        variant="plain"
         title="Resumo econômico"
         description="VE, banco virtual, pool elegível e margem do editor em tempo real."
         summary={
@@ -602,6 +650,7 @@ export default function CaseEditorPage() {
       </CollapsibleSection>
 
       <CollapsibleSection
+        variant="plain"
         title="Margem acumulada compartilhada"
         description="Caixas que dividem o mesmo ledger de receita e payout."
         summary={

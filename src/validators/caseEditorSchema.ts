@@ -3,7 +3,6 @@ import { SkinsCurrency } from '@/constants/skinsCurrency'
 import {
   computeBankInjection,
   computeProbabilitySum,
-  computeTotalExpectedValue,
   countEligibleDropItems,
   isProbabilitySumValid,
   MIN_CASE_ITEM_PRICE,
@@ -25,6 +24,25 @@ export const caseDropItemSchema = Yup.object({
     .min(MIN_CASE_ITEM_PRICE, 'Preço com taxa inválido')
     .required(),
   price: Yup.number().min(MIN_CASE_ITEM_PRICE).required(),
+  fixedValueBrl: Yup.number().when('useFixedValue', {
+    is: true,
+    then: (schema) =>
+      schema.min(MIN_CASE_ITEM_PRICE, 'Valor fixo em BRL inválido').required(),
+    otherwise: (schema) => schema.optional(),
+  }),
+  fixedValueUsd: Yup.number().when('useFixedValue', {
+    is: true,
+    then: (schema) =>
+      schema.min(MIN_CASE_ITEM_PRICE, 'Valor fixo em USD inválido').required(),
+    otherwise: (schema) => schema.optional(),
+  }),
+  fixedValueEur: Yup.number().when('useFixedValue', {
+    is: true,
+    then: (schema) =>
+      schema.min(MIN_CASE_ITEM_PRICE, 'Valor fixo em EUR inválido').required(),
+    otherwise: (schema) => schema.optional(),
+  }),
+  useFixedValue: Yup.boolean().optional(),
   probability: Yup.number().min(0).max(100).required(),
   probabilityTolerance: Yup.number().min(0).max(5).required(),
   enabled: Yup.boolean().required(),
@@ -54,6 +72,9 @@ export const caseEditorSchema = Yup.object({
     .max(100)
     .required('Informe a meta de probabilidade'),
   discountPercent: Yup.number().min(0).max(100).required('Informe o desconto'),
+  fixedPriceBrl: Yup.number().min(0.01, 'Preço fixo em BRL inválido').required(),
+  fixedPriceUsd: Yup.number().min(0.01, 'Preço fixo em USD inválido').required(),
+  fixedPriceEur: Yup.number().min(0.01, 'Preço fixo em EUR inválido').required(),
   listPrice: Yup.number().when('items', {
     is: (items: unknown[]) => Array.isArray(items) && items.length > 0,
     then: (schema) =>
@@ -155,23 +176,6 @@ export const caseEditorSchema = Yup.object({
           'Nenhum item habilitado cabe no preço da abertura. Inclua um item mais barato ou aumente o preço.',
       })
     }),
-}).test('margin-check', 'Margem negativa', function (values) {
-  if (!values.items?.length) return true
-  const totalEV = computeTotalExpectedValue(
-    values.items.map((item) => ({
-      basePrice: item.basePrice,
-      priceWithTax: item.priceWithTax,
-      price: item.price,
-      probability: item.probability,
-      enabled: item.enabled,
-    })),
-    values.valueMode as CaseValueMode,
-  )
-  if ((values.price ?? 0) >= totalEV) return true
-  return this.createError({
-    path: 'price',
-    message: `Preço final não pode ser menor que o valor esperado (${totalEV.toFixed(2)})`,
-  })
 })
 
 export type CaseEditorFormValues = Yup.InferType<typeof caseEditorSchema>
@@ -186,6 +190,9 @@ export const caseEditorInitialValues: CaseEditorFormValues = {
   targetMarginPercent: 30,
   probabilityTargetPercent: 100,
   discountPercent: 0,
+  fixedPriceBrl: 0,
+  fixedPriceUsd: 0,
+  fixedPriceEur: 0,
   listPrice: 0,
   price: 0,
   listPriceManual: false,

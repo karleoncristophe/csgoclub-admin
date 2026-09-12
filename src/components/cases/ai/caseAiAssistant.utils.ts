@@ -8,8 +8,13 @@ import {
   type CaseValueMode,
 } from '@/utils/caseEconomics'
 
-export function aiDraftToCaseItems(draft: AiCaseDraft): CaseDropItem[] {
+export function aiDraftToCaseItems(
+  draft: AiCaseDraft,
+  currentItems: CaseDropItem[] = [],
+): CaseDropItem[] {
+  const currentByName = new Map(currentItems.map((item) => [item.skinName, item]))
   return draft.items.map((item) => ({
+    ...currentByName.get(item.skinName),
     skinName: item.skinName,
     image: item.image,
     rarity: item.rarity,
@@ -41,10 +46,6 @@ export function applyAiDraftToCaseForm(
     targetMarginPercent: draft.targetMarginPercent,
     probabilityTargetPercent: draft.probabilityTargetPercent,
     discountPercent: draft.discountPercent,
-    items: aiDraftToCaseItems(draft),
-    listPrice: draft.suggestedListPrice,
-    price: draft.suggestedFinalPrice,
-    listPriceManual: false,
-    priceManual: false,
+    items: aiDraftToCaseItems(draft, values.items),
   }
 }

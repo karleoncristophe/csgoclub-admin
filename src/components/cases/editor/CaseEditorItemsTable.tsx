@@ -11,6 +11,7 @@ import {
 import { SortableTh, sortByNumericColumn, useTableSort } from '@/components/ui/SortableTh'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
+import { Switch } from '@/components/ui/Switch'
 import { listTableAlt } from '@/components/ui/listTable'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import type { CaseDropItem } from '@/redux/store/api/cases/api.cases'
@@ -50,6 +51,12 @@ type CaseEditorItemsTableProps = {
 }
 
 type CaseItemSortKey = 'value' | 'drop' | 'bank' | 've'
+
+const FIXED_VALUE_INPUTS = [
+  { currency: SkinsCurrency.BRL, field: 'fixedValueBrl', label: 'BRL' },
+  { currency: SkinsCurrency.USD, field: 'fixedValueUsd', label: 'USD' },
+  { currency: SkinsCurrency.EUR, field: 'fixedValueEur', label: 'EUR' },
+] as const
 
 export function CaseEditorItemsTable({
   items,
@@ -109,7 +116,7 @@ export function CaseEditorItemsTable({
   }
 
   return (
-    <Surface variant="settingsPanel" className="!p-5">
+    <Surface variant="card" className="border-b border-separator !pb-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <ThemeText as="h2" tone="primary" className="text-base font-semibold">
@@ -148,7 +155,6 @@ export function CaseEditorItemsTable({
                   />
                 </th>
                 <th className="px-3 py-2">Item</th>
-                <th className="px-3 py-2">Raridade</th>
                 <SortableTh
                   label="Valor"
                   sortKey="value"
@@ -156,6 +162,7 @@ export function CaseEditorItemsTable({
                   onSort={toggle}
                   fieldHelp={caseFieldProps('itemValue').fieldHelp}
                 />
+                <th className="px-3 py-2">Raridade</th>
                 <SortableTh
                   label="Drop %"
                   sortKey="drop"
@@ -190,6 +197,12 @@ export function CaseEditorItemsTable({
             <tbody className={listTableAlt.tbody}>
               {displayedItems.map((item) => {
                 const itemValue = resolveItemEconomicsValue(item, valueMode)
+                const activeFixedValueField =
+                  currency === SkinsCurrency.USD
+                    ? 'fixedValueUsd'
+                    : currency === SkinsCurrency.EUR
+                      ? 'fixedValueEur'
+                      : 'fixedValueBrl'
                 const veItem = roundPrice(itemValue * (item.probability / 100))
                 const eligibility = evaluateDropEligibility({
                   item,
@@ -236,6 +249,84 @@ export function CaseEditorItemsTable({
                         </ThemeText>
                       </div>
                     </td>
+                    <td className="px-3 py-3 whitespace-nowrap font-medium">
+                      <div className="flex min-w-[455px] items-end gap-3">
+                        <div className="w-28 shrink-0 pb-1.5">
+                          <Switch
+                            label="Fixar valor"
+                            name={`fixed-${item.skinName}`}
+                            checked={item.useFixedValue === true}
+                            bare
+                            onChange={(checked) =>
+                              updateItem(item.skinName, {
+                                useFixedValue: checked,
+                                ...(checked && item[activeFixedValueField] == null
+                                  ? { [activeFixedValueField]: itemValue }
+                                  : {}),
+                                ...(!checked && item.flexiblePrice != null
+                                  ? {
+                                      price: item.flexiblePrice,
+                                      ...(valueMode === 'base'
+                                        ? { basePrice: item.flexiblePrice }
+                                        : { priceWithTax: item.flexiblePrice }),
+                                    }
+                                  : {}),
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="grid flex-1 grid-cols-3 gap-2">
+                          {FIXED_VALUE_INPUTS.map((input) => {
+                            const isActiveCurrency = input.currency === currency
+                            return (
+                              <label key={input.field} className="block min-w-0">
+                                <ThemeText
+                                  tone={isActiveCurrency ? 'label' : 'faint'}
+                                  className="mb-1 block text-[10px] font-semibold uppercase tracking-wide"
+                                >
+                                  {input.label}
+                                </ThemeText>
+                                <input
+                                  type="number"
+                                  min={0.01}
+                                  step="0.01"
+                                  value={formatNumberFieldValue(
+                                    item[input.field] ??
+                                      (isActiveCurrency ? itemValue : undefined),
+                                  )}
+                                  disabled={item.useFixedValue !== true}
+                                  onChange={(event) => {
+                                    const parsedValue = Number(event.target.value)
+                                    const value = Number.isFinite(parsedValue)
+                                      ? Math.max(0, parsedValue)
+                                      : 0
+                                    updateItem(item.skinName, {
+                                      [input.field]: value,
+                                      ...(isActiveCurrency
+                                        ? {
+                                            price: value,
+                                            ...(valueMode === 'base'
+                                              ? { basePrice: value }
+                                              : { priceWithTax: value }),
+                                          }
+                                        : {}),
+                                    })
+                                  }}
+                                  onFocus={selectNumberInputOnFocus}
+                                  className="w-full rounded-field border border-field-border bg-field px-2 py-1.5 text-sm font-medium text-field-foreground shadow-none outline-none transition placeholder:text-field-placeholder focus:border-focus focus:ring-4 focus:ring-focus/15 disabled:cursor-not-allowed disabled:bg-default disabled:text-muted disabled:opacity-70"
+                                  aria-label={`Valor fixo de ${item.skinName} em ${input.label}`}
+                                />
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      <ThemeText tone="faint" className="mt-0.5 block text-[10px]">
+                        {item.useFixedValue
+                          ? `Valor operacional em ${currency}; demais moedas ficam salvas para a troca de moeda.`
+                          : 'Acompanha o catálogo'}
+                      </ThemeText>
+                    </td>
                     <td className="px-3 py-3">
                       {item.rarity?.name || item.rarity?.color ? (
                         <div className="min-w-[110px]">
@@ -249,12 +340,6 @@ export function CaseEditorItemsTable({
                           —
                         </ThemeText>
                       )}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap font-medium">
-                      {formatSkinsPrice(itemValue, currency)}
-                      <ThemeText tone="faint" className="mt-0.5 block text-[10px]">
-                        {valueMode === 'with_tax' ? 'Com taxa' : 'Base'}
-                      </ThemeText>
                     </td>
                     <td className="px-3 py-3">
                       <input

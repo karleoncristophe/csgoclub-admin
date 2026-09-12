@@ -24,6 +24,11 @@ export type CaseDropItem = {
   taxPercent: number
   priceWithTax: number
   price: number
+  fixedValueBrl?: number
+  fixedValueUsd?: number
+  fixedValueEur?: number
+  useFixedValue?: boolean
+  flexiblePrice?: number
   probability: number
   probabilityTolerance: number
   enabled: boolean
@@ -47,6 +52,18 @@ export type LootCase = {
   probabilityTolerance: number
   discountPercent: number
   expectedValue: number
+  fixedPriceBrl?: number
+  fixedPriceUsd?: number
+  fixedPriceEur?: number
+  flexibleExpectedValue?: number
+  expectedValueVariationPercent?: number
+  expectedValueAlert?: boolean
+  itemValueAlerts?: Array<{
+    skinName: string
+    fixedValue: number
+    flexibleValue: number
+    variationPercent: number
+  }>
   suggestedPrice: number
   realMarginPercent: number
   probabilitySum: number
@@ -73,6 +90,11 @@ export type CreateCasePayload = {
   probabilityTargetPercent?: number
   probabilityTolerance?: number
   discountPercent?: number
+  listPrice?: number
+  price?: number
+  fixedPriceBrl?: number
+  fixedPriceUsd?: number
+  fixedPriceEur?: number
   items: CaseDropItemPayload[]
   sharedCaseIds?: string[]
   vitrineId?: string | null
@@ -95,6 +117,9 @@ export type AdminCaseDetailsCase = {
   discountPercent: number
   targetMarginPercent: number
   expectedValue: number
+  flexibleExpectedValue?: number
+  expectedValueVariationPercent?: number
+  expectedValueAlert?: boolean
   suggestedPrice: number
   realMarginPercent: number
   probabilitySum: number

@@ -36,12 +36,39 @@ export function CaseEditorPricingSection({
         </ThemeText>
       )}
       <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-        Com base no VE total dos itens ({formatSkinsPrice(totalEV, currency)}), a margem soma em
-        cima do VE para formar o preço de tabela e o desconto ajusta o valor final na vitrine.
+        O preço permanece fixo. O VE atual ({formatSkinsPrice(totalEV, currency)})
+        acompanha as skins e recalcula a margem automaticamente pela fórmula
+        ((preço − VE) ÷ VE) × 100.
       </ThemeText>
+      <div className="mb-4 grid gap-4 md:grid-cols-3">
+        <CurrencyInput
+          label="Preço fixo (BRL)"
+          name="fixedPriceBrl"
+          currency={SkinsCurrency.BRL}
+          value={values.fixedPriceBrl ?? 0}
+          onChange={(value) => void setFieldValue('fixedPriceBrl', value)}
+          hint="Preço final cobrado em reais"
+        />
+        <CurrencyInput
+          label="Preço fixo (USD)"
+          name="fixedPriceUsd"
+          currency={SkinsCurrency.USD}
+          value={values.fixedPriceUsd ?? 0}
+          onChange={(value) => void setFieldValue('fixedPriceUsd', value)}
+          hint="Preço final cobrado em dólares"
+        />
+        <CurrencyInput
+          label="Preço fixo (EUR)"
+          name="fixedPriceEur"
+          currency={SkinsCurrency.EUR}
+          value={values.fixedPriceEur ?? 0}
+          onChange={(value) => void setFieldValue('fixedPriceEur', value)}
+          hint="Preço final cobrado em euros"
+        />
+      </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Input
-          label="Margem alvo (%)"
+          label="Margem de referência (%)"
           name="targetMarginPercent"
           type="number"
           min={0}
@@ -53,8 +80,6 @@ export function CaseEditorPricingSection({
               'targetMarginPercent',
               parseNumberFieldValue(e.target.value),
             )
-            void setFieldValue('listPriceManual', false)
-            void setFieldValue('priceManual', false)
           }}
           onBlur={handleBlur}
           error={fieldError(touched.targetMarginPercent, errors.targetMarginPercent)}
@@ -88,7 +113,7 @@ export function CaseEditorPricingSection({
           value={values.listPrice ?? 0}
           onChange={() => {}}
           disabled
-          hint="Calculado: VE × (1 + margem)"
+          hint="Derivado do preço fixo antes do desconto"
           {...caseFieldProps('listPrice')}
         />
         <Input
@@ -104,20 +129,19 @@ export function CaseEditorPricingSection({
               'discountPercent',
               parseNumberFieldValue(e.target.value),
             )
-            void setFieldValue('priceManual', false)
           }}
           onBlur={handleBlur}
           error={fieldError(touched.discountPercent, errors.discountPercent)}
           {...caseFieldProps('discountPercent')}
         />
         <CurrencyInput
-          label="Preço final (vitrine)"
+          label="Preço fixo final (vitrine)"
           name="price"
           currency={currency}
           value={values.price ?? 0}
           onChange={() => {}}
           disabled
-          hint="Tabela com desconto aplicado"
+          hint="Valor fixo da moeda selecionada"
           error={fieldError(touched.price, errors.price)}
           {...caseFieldProps('price')}
         />

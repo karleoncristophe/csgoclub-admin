@@ -126,7 +126,19 @@ export default function CasesPage() {
               </thead>
               <tbody className={listTable.tbody}>
                 {data.map((lootCase) => (
-                  <tr key={lootCase._id} className={listTable.tr}>
+                  <tr
+                    key={lootCase._id}
+                    className={`${listTable.tr} ${
+                      lootCase.expectedValueAlert
+                        ? 'bg-red-50/90 dark:bg-red-950/25'
+                        : ''
+                    }`}
+                    title={
+                      lootCase.expectedValueAlert
+                        ? `A margem atual desviou ${lootCase.expectedValueVariationPercent?.toFixed(2)} p.p. da referência. Skins com variação: ${lootCase.itemValueAlerts?.map((item) => item.skinName).join(', ') || 'consulte os detalhes'}`
+                        : undefined
+                    }
+                  >
                     <td className={listTable.td}>
                       <Link
                         to={`/dashboard/cases/${lootCase._id}/details`}
@@ -150,7 +162,31 @@ export default function CasesPage() {
                       ) : null}
                     </td>
                     <td className={listTable.td}>
-                      {formatSkinsPrice(lootCase.expectedValue, lootCase.currency)}
+                      <ThemeText
+                        tone={lootCase.expectedValueAlert ? 'danger' : 'primary'}
+                        className="text-sm font-medium"
+                      >
+                        {formatSkinsPrice(lootCase.expectedValue, lootCase.currency)}
+                      </ThemeText>
+                      {lootCase.flexibleExpectedValue != null ? (
+                        <ThemeText tone="faint" className="text-xs">
+                          Catálogo {formatSkinsPrice(lootCase.flexibleExpectedValue, lootCase.currency)}
+                        </ThemeText>
+                      ) : null}
+                      {lootCase.expectedValueAlert && lootCase.itemValueAlerts?.length ? (
+                        <ThemeText tone="danger" className="mt-1 max-w-56 text-xs">
+                          {lootCase.itemValueAlerts
+                            .slice(0, 2)
+                            .map(
+                              (item) =>
+                                `${item.skinName} ${item.variationPercent > 0 ? '+' : ''}${item.variationPercent.toFixed(1)}%`,
+                            )
+                            .join(' · ')}
+                          {lootCase.itemValueAlerts.length > 2
+                            ? ` · +${lootCase.itemValueAlerts.length - 2}`
+                            : ''}
+                        </ThemeText>
+                      ) : null}
                     </td>
                     <td className={listTable.td}>{lootCase.targetMarginPercent}%</td>
                     <td className={listTable.td}>{lootCase.items.length}</td>

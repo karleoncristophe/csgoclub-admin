@@ -139,20 +139,8 @@ function formatDateTime(value?: string) {
 }
 
 const FALLBACK_REWARD_TYPE_OPTIONS: Array<{ value: AdminCouponRewardType; label: string }> = [
-  { value: 'DEPOSIT_PERCENT', label: 'Desconto em depósito (%)' },
-  { value: 'DEPOSIT_FIXED', label: 'Desconto fixo em depósito' },
-  { value: 'DEPOSIT_BONUS_PERCENT', label: 'Bônus extra em depósito (%)' },
-  { value: 'DEPOSIT_CASHBACK_PERCENT', label: 'Cashback em depósito (%)' },
-  { value: 'CASE_PRICE_PERCENT', label: 'Desconto em abertura de caixa (%)' },
-  { value: 'CASE_PRICE_FIXED', label: 'Desconto fixo em abertura de caixa' },
-  { value: 'FREE_CASE_OPEN', label: 'Abertura grátis de caixa' },
+  { value: 'DEPOSIT_BONUS_PERCENT', label: 'Bônus em depósito (%)' },
   { value: 'ARENA_TICKET', label: 'Tickets de Arena' },
-  { value: 'UPGRADE_PERCENT', label: 'Desconto no upgrade (%)' },
-  { value: 'UPGRADE_BONUS_CHANCE', label: 'Chance extra no upgrade (%)' },
-  { value: 'WITHDRAW_FEE_DISCOUNT_PERCENT', label: 'Desconto em taxa de saque (%)' },
-  { value: 'LOYALTY_POINTS_MULTIPLIER', label: 'Multiplicador de pontos de fidelidade' },
-  { value: 'BATTLEPASS_XP_BOOST', label: 'Boost de XP de battlepass (%)' },
-  { value: 'CUSTOM', label: 'Regra customizada' },
 ]
 
 export default function CouponsPage() {
@@ -229,7 +217,7 @@ export default function CouponsPage() {
   const [formOwnerId, setFormOwnerId] = useState('')
   const [formValidFrom, setFormValidFrom] = useState('')
   const [formValidTo, setFormValidTo] = useState('')
-  const [formRewardType, setFormRewardType] = useState<AdminCouponRewardType>('DEPOSIT_PERCENT')
+  const [formRewardType, setFormRewardType] = useState<AdminCouponRewardType>('DEPOSIT_BONUS_PERCENT')
   const [formRewardValue, setFormRewardValue] = useState('10')
   const [formCurrencies, setFormCurrencies] = useState<SkinsCurrency[]>([
     SkinsCurrency.BRL,
@@ -245,7 +233,9 @@ export default function CouponsPage() {
   const [editValidTo, setEditValidTo] = useState('')
 
   const list = data?.data ?? []
-  const rewardPresets = rewardPresetsData ?? []
+  const rewardPresets = (rewardPresetsData ?? []).filter((preset) =>
+    !preset.futureUse && FALLBACK_REWARD_TYPE_OPTIONS.some((option) => option.value === preset.type),
+  )
   const rewardTypeOptions = useMemo(
     () =>
       rewardPresets.length > 0
@@ -277,7 +267,7 @@ export default function CouponsPage() {
     setInfluencerSearch('')
     setFormValidFrom('')
     setFormValidTo('')
-    setFormRewardType('DEPOSIT_PERCENT')
+    setFormRewardType('DEPOSIT_BONUS_PERCENT')
     setFormRewardValue('10')
     setFormCurrencies([SkinsCurrency.BRL, SkinsCurrency.USD, SkinsCurrency.EUR])
     setFormAmounts(emptyAmountsForm())
@@ -303,7 +293,7 @@ export default function CouponsPage() {
 
   const onCreate = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!formCode.trim() || !formOwnerId || !formValidTo) return
+    if (!formCode.trim() || !formOwnerId || !formValidTo || !selectedRewardPreset) return
 
     const valueKind = selectedRewardPreset?.valueKind
     await createCoupon({
@@ -315,12 +305,12 @@ export default function CouponsPage() {
         valueKind === 'fixed'
           ? undefined
           : Math.max(0, Number(formRewardValue) || 0),
-      currencies: formCurrencies,
-      amounts: buildCouponAmountsPayload(formCurrencies, formAmounts, valueKind),
+      currencies: formRewardType === 'ARENA_TICKET' ? [] : formCurrencies,
+      amounts: formRewardType === 'ARENA_TICKET' ? undefined : buildCouponAmountsPayload(formCurrencies, formAmounts, valueKind),
       validFrom: formValidFrom ? new Date(formValidFrom).toISOString() : undefined,
       validTo: new Date(formValidTo).toISOString(),
       maxUses: formMaxUses ? Math.max(1, Number(formMaxUses)) : undefined,
-      maxUsesPerUser: formMaxUsesPerUser
+      maxUsesPerUser: formRewardType === 'ARENA_TICKET' ? 1 : formMaxUsesPerUser
         ? Math.max(1, Number(formMaxUsesPerUser))
         : undefined,
     }).unwrap()
@@ -367,7 +357,7 @@ export default function CouponsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageTitle subtitle="Percentual e tickets são iguais em todas as carteiras. Valores em dinheiro são definidos por moeda — sem câmbio.">
+        <PageTitle subtitle="Bônus de depósito e tickets de Arena. Cada campanha suporta até 10.000 resgates; limites por usuário incluem benefícios anteriores.">
           Cupons
         </PageTitle>
         <Button type="button" className="gap-2 px-5 py-3 text-base" onClick={openCreateModal}>
@@ -436,7 +426,7 @@ export default function CouponsPage() {
                         <td className={listTable.tdStrong}>{coupon.code}</td>
                         <td className={listTable.td}>{coupon.ownerUserName || coupon.ownerUserId}</td>
                         <td className={listTable.td}>
-                          {rewardLabelByType.get(coupon.rewardType) ?? coupon.rewardType}
+                          {rewardLabelByType.get(coupon.rewardType) ?? `${coupon.rewardType} — fora de uso`}
                           {rewardKind === 'fixed' ? null : ` · ${coupon.rewardValue}`}
                           {coupon.currencies?.length ? (
                             <span className="mt-0.5 block text-xs text-zinc-500">
@@ -561,7 +551,7 @@ export default function CouponsPage() {
               type="submit"
               form="create-coupon-form"
               isLoading={createState.isLoading}
-              disabled={!formCode.trim() || !formOwnerId || !formValidTo}
+              disabled={!formCode.trim() || !formOwnerId || !formValidTo || !selectedRewardPreset}
             >
               Criar cupom
             </Button>
@@ -655,7 +645,8 @@ export default function CouponsPage() {
               }
               name="couponRewardValue"
               type="number"
-              min={0}
+              min={selectedRewardPreset?.minValue ?? 1}
+              max={selectedRewardPreset?.maxValue}
               step={String(selectedRewardPreset?.step ?? 1)}
               value={formRewardValue}
               onChange={(e) => setFormRewardValue(e.target.value)}
@@ -667,7 +658,12 @@ export default function CouponsPage() {
             />
           )}
 
-          <div className="xl:col-span-3">
+          <p className="text-sm text-zinc-500 md:col-span-2 xl:col-span-3">
+            {formRewardType === 'ARENA_TICKET'
+              ? 'Tickets concedidos ao aplicar o cupom no cadastro ou perfil, uma única vez por conta. Reaplicar não concede novos tickets.'
+              : 'Bônus sobre o valor confirmado na moeda da carteira. O código deve ser informado no depósito. Crédito em saldo bônus; não altera o preço pago nem as chances dos jogos.'}
+          </p>
+          {formRewardType === 'DEPOSIT_BONUS_PERCENT' && <div className="xl:col-span-3">
             <ThemeText as="p" tone="label" className="mb-2 text-sm font-medium">
               Moedas
             </ThemeText>
@@ -695,12 +691,12 @@ export default function CouponsPage() {
               ))}
             </div>
             <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-              O cupom só vale nessas carteiras. Cada uma tem min, máx e valor
-              fixo próprios — R$ 50 não é US$ 50.
+              O cupom só vale nessas carteiras. Mínimo, máximo e teto são
+              definidos por moeda — R$ 50 não é US$ 50.
             </ThemeText>
-          </div>
+          </div>}
 
-          {formCurrencies.map((currency) => {
+          {formRewardType === 'DEPOSIT_BONUS_PERCENT' && formCurrencies.map((currency) => {
             const option = SKINS_CURRENCY_OPTIONS.find((item) => item.value === currency)
             const slice = formAmounts[currency]
             return (
@@ -723,7 +719,7 @@ export default function CouponsPage() {
                   />
                 ) : null}
                 <Input
-                  label="Compra mínima"
+                  label="Depósito mínimo"
                   name={`couponMinimumAmount-${currency}`}
                   type="number"
                   min={0}
@@ -735,7 +731,7 @@ export default function CouponsPage() {
                   }
                 />
                 <Input
-                  label="Compra máxima"
+                  label="Depósito máximo"
                   name={`couponMaximumAmount-${currency}`}
                   type="number"
                   min={0}
@@ -748,7 +744,7 @@ export default function CouponsPage() {
                 />
                 {selectedRewardPreset?.valueKind === 'percent' ? (
                   <Input
-                    label="Teto de desconto"
+                    label="Teto de bônus por depósito"
                     name={`couponMaximumDiscount-${currency}`}
                     type="number"
                     min={0}
@@ -765,7 +761,7 @@ export default function CouponsPage() {
           })}
 
           <Input
-            label="Máx. contas vinculadas"
+            label="Máx. usuários beneficiados"
             name="couponMaxUses"
             type="number"
             min={1}
@@ -775,11 +771,12 @@ export default function CouponsPage() {
           />
 
           <Input
-            label="Máx. usos por usuário"
+            label="Depósitos bonificados por usuário"
+            disabled={formRewardType === 'ARENA_TICKET'}
             name="couponMaxUsesPerUser"
             type="number"
             min={1}
-            value={formMaxUsesPerUser}
+            value={formRewardType === 'ARENA_TICKET' ? '1' : formMaxUsesPerUser}
             onChange={(e) => setFormMaxUsesPerUser(e.target.value)}
           />
 

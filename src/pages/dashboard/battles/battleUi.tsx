@@ -46,6 +46,7 @@ export function battleStatusLabel(status: string) {
 export function battleModeLabel(mode: string) {
   if (mode === 'crazy') return 'Crazy'
   if (mode === 'classic') return 'Classic'
+  if (mode === 'shared') return 'Dividido'
   return mode
 }
 

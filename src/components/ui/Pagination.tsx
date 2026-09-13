@@ -1,12 +1,13 @@
 import { Pagination as HeroPagination } from '@heroui/react'
-import type { RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
+import { useSmoothScrollIntoView } from '@/hooks/useSmoothScrollIntoView'
 
 export interface PaginationProps {
   page: number
   totalPages: number
   onPageChange: (page: number) => void
   className?: string
-  /** Rola até o topo da lista ao mudar de página. */
+  /** Âncora explícita usada fora da área principal da dashboard. */
   scrollTargetRef?: RefObject<HTMLElement | null>
 }
 
@@ -34,52 +35,69 @@ export function Pagination({
   className = '',
   scrollTargetRef,
 }: PaginationProps) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const previousPageRef = useRef(page)
+  const scrollToList = useSmoothScrollIntoView()
+
+  useEffect(() => {
+    if (previousPageRef.current === page) return
+    previousPageRef.current = page
+
+    const frame = window.requestAnimationFrame(() => {
+      scrollToList(rootRef.current, scrollTargetRef?.current)
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [page, scrollTargetRef, scrollToList])
+
   if (totalPages <= 1) return null
 
   const currentPage = Math.min(Math.max(page, 1), totalPages)
   const changePage = (nextPage: number) => {
+    if (nextPage === currentPage || nextPage < 1 || nextPage > totalPages) return
     onPageChange(nextPage)
-    scrollTargetRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    scrollToList(rootRef.current, scrollTargetRef?.current)
   }
 
   return (
-    <HeroPagination size="sm" className={`flex-wrap justify-center sm:justify-end ${className}`}>
-      <HeroPagination.Content>
-        <HeroPagination.Item>
-          <HeroPagination.Previous
-            isDisabled={currentPage <= 1}
-            onPress={() => changePage(currentPage - 1)}
-          >
-            <HeroPagination.PreviousIcon />
-            <span>Anterior</span>
-          </HeroPagination.Previous>
-        </HeroPagination.Item>
-
-        {getPageItems(currentPage, totalPages).map((item) => (
-          <HeroPagination.Item key={item}>
-            {typeof item === 'number' ? (
-              <HeroPagination.Link
-                isActive={item === currentPage}
-                onPress={() => changePage(item)}
-              >
-                {item}
-              </HeroPagination.Link>
-            ) : (
-              <HeroPagination.Ellipsis />
-            )}
+    <div ref={rootRef}>
+      <HeroPagination size="sm" className={`flex-wrap justify-center sm:justify-end ${className}`}>
+        <HeroPagination.Content>
+          <HeroPagination.Item>
+            <HeroPagination.Previous
+              isDisabled={currentPage <= 1}
+              onPress={() => changePage(currentPage - 1)}
+            >
+              <HeroPagination.PreviousIcon />
+              <span>Anterior</span>
+            </HeroPagination.Previous>
           </HeroPagination.Item>
-        ))}
 
-        <HeroPagination.Item>
-          <HeroPagination.Next
-            isDisabled={currentPage >= totalPages}
-            onPress={() => changePage(currentPage + 1)}
-          >
-            <span>Próxima</span>
-            <HeroPagination.NextIcon />
-          </HeroPagination.Next>
-        </HeroPagination.Item>
-      </HeroPagination.Content>
-    </HeroPagination>
+          {getPageItems(currentPage, totalPages).map((item) => (
+            <HeroPagination.Item key={item}>
+              {typeof item === 'number' ? (
+                <HeroPagination.Link
+                  isActive={item === currentPage}
+                  onPress={() => changePage(item)}
+                >
+                  {item}
+                </HeroPagination.Link>
+              ) : (
+                <HeroPagination.Ellipsis />
+              )}
+            </HeroPagination.Item>
+          ))}
+
+          <HeroPagination.Item>
+            <HeroPagination.Next
+              isDisabled={currentPage >= totalPages}
+              onPress={() => changePage(currentPage + 1)}
+            >
+              <span>Próxima</span>
+              <HeroPagination.NextIcon />
+            </HeroPagination.Next>
+          </HeroPagination.Item>
+        </HeroPagination.Content>
+      </HeroPagination>
+    </div>
   )
 }

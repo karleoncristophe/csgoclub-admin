@@ -78,6 +78,11 @@ export const INVENTORY_STATUS_ENUMS: DocumentationEnumGroup = {
       label: 'Virou saldo',
       hint: 'O valor fixo do item foi creditado na carteira.',
     },
+    {
+      code: 'Trocado',
+      label: 'Usado no swap',
+      hint: 'A skin saiu do inventário para pagar o alvo da troca.',
+    },
   ],
 }
 

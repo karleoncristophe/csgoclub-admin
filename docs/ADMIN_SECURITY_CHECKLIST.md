@@ -34,7 +34,13 @@ O painel administrativo não tem hoje a mesma complexidade de upload e conteúdo
   - criar sanitização central antes de exibir HTML
   - validar arquivo no frontend antes de enviar
 
-## 5. Checklist antes de merge
+## 5. Carteira / rollover
+
+- Quitar rollover (`POST /admin/users/:id/wallet/settle-rollover`) só aparece e só funciona para `MASTER`.
+- A ação não altera saldo: só zera rollover/preso e deve aparecer no extrato com o admin e o motivo.
+- Admin comum continua só lendo carteira e extrato.
+
+## 6. Checklist antes de merge
 
 - Existe fluxo novo que usa `refreshToken` fora do refresh?
 - Alguma tela permanece autenticada após `401` seguido de refresh inválido?

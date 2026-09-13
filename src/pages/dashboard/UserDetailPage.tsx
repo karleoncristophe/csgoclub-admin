@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowLeftRight,
   Calendar,
+  Repeat2,
   Check,
   Clock,
   Copy,
@@ -21,6 +22,7 @@ import { UserEditPanel } from '@/components/users/UserEditPanel'
 import { UserKycPanel } from '@/components/users/UserKycPanel'
 import { UserSiteInventoryPanel } from '@/components/users/UserSiteInventoryPanel'
 import { UserWalletPanel } from '@/components/users/UserWalletPanel'
+import { UserWalletTransactionsPanel } from '@/components/users/UserWalletTransactionsPanel'
 import { steamCommunityProfileUrl } from '@/components/users/SteamIdLink'
 import { labelUserAppRole } from '@/i18n/enumLabels'
 import { useGetUserByIdQuery } from '@/redux/store/api/users/api.users'
@@ -240,6 +242,12 @@ export default function UserDetailPage() {
                     Trades
                   </Button>
                 </Link>
+                <Link to={`/dashboard/swaps?userId=${data._id}`} className="inline-flex">
+                  <Button variant="secondary" size="sm">
+                    <Repeat2 className="h-4 w-4" />
+                    Swap
+                  </Button>
+                </Link>
                 {data.profileUrl ? (
                   <a
                     href={data.profileUrl}
@@ -294,6 +302,8 @@ export default function UserDetailPage() {
           </div>
 
           <UserWalletPanel user={data} />
+
+          <UserWalletTransactionsPanel userId={data._id} />
 
           <UserSiteInventoryPanel
             userId={data._id}

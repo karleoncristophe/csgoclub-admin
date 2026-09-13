@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, RefreshCw, Search, Target } from 'lucide-react'
+import { Search, Target } from 'lucide-react'
 import { SteamIdLink } from '@/components/users/SteamIdLink'
 import { UserAvatarLink } from '@/components/users/UserAvatarLink'
 import { UpgradePageNavigation } from '@/components/upgrades/UpgradePageNavigation'
@@ -10,7 +10,6 @@ import {
   DateRangePickerTrigger,
   getActiveQuickPresetLabel,
 } from '@/components/ui/DateRangePickerModal'
-import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Pagination } from '@/components/ui/Pagination'
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
@@ -18,7 +17,7 @@ import { Select } from '@/components/ui/Select'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { SectionTitle } from '@/components/ui/Title'
-import { listTable } from '@/components/ui/listTable'
+import { linkBrand, listTable } from '@/components/ui/listTable'
 import useDebounce from '@/hooks/useDebounce'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import { parsePositiveInt, useUrlFilters } from '@/hooks/useUrlFilters'
@@ -71,6 +70,8 @@ const RESULT_TABS = [
   { id: 'won', label: 'Upgrade bem-sucedido' },
   { id: 'lost', label: 'Upgrade sem sucesso' },
 ]
+
+const PAGE_SIZE_OPTIONS = [20, 30, 50, 100] as const
 
 function formatPercent(value: number, signed = false) {
   const prefix = signed && value > 0 ? '+' : ''
@@ -135,8 +136,9 @@ export default function UpgradeResultsPage() {
       : undefined
   const sort = filters.sort as UpgradeSort
   const page = parsePositiveInt(filters.page, 1)
-  const limit = [20, 30, 50, 100].includes(parsePositiveInt(filters.limit, 20))
-    ? parsePositiveInt(filters.limit, 20)
+  const parsedLimit = parsePositiveInt(filters.limit, 20)
+  const limit = (PAGE_SIZE_OPTIONS as readonly number[]).includes(parsedLimit)
+    ? parsedLimit
     : 20
   const rangeStart = parseDateInputLocal(filters.from) ?? INITIAL_RANGE.start
   const rangeEnd = parseDateInputLocal(filters.to) ?? INITIAL_RANGE.end
@@ -144,8 +146,8 @@ export default function UpgradeResultsPage() {
 
   const queryArgs = useMemo(
     () => ({
-      page: view === 'plays' ? page : 1,
-      limit: view === 'plays' ? limit : 20,
+      page,
+      limit,
       currency,
       dataEnvironment,
       from: startOfLocalDay(rangeStart).toISOString(),
@@ -170,15 +172,26 @@ export default function UpgradeResultsPage() {
     ],
   )
 
-  const { data, isLoading, isFetching, isError, error, refetch } =
+  const { data, isLoading, isError, error } =
     useGetAdminUpgradeAnalyticsQuery(queryArgs, { skip: !queryOk })
-  const totalPages = Math.max(1, data?.totalPages ?? 1)
+  const listTotalPages =
+    view === 'plays'
+      ? Math.max(1, data?.totalPages ?? 1)
+      : view === 'skins'
+        ? Math.max(1, data?.targetsTotalPages ?? 1)
+        : Math.max(1, data?.chanceBucketsTotalPages ?? 1)
+  const listTotal =
+    view === 'plays'
+      ? (data?.total ?? 0)
+      : view === 'skins'
+        ? (data?.targetsTotal ?? data?.targets.length ?? 0)
+        : (data?.chanceBucketsTotal ?? data?.chanceBuckets.length ?? 0)
 
   useEffect(() => {
-    if (view === 'plays' && page > totalPages) {
-      setFilter('page', String(totalPages), { resetPage: false })
+    if (page > listTotalPages) {
+      setFilter('page', String(listTotalPages), { resetPage: false })
     }
-  }, [page, setFilter, totalPages, view])
+  }, [listTotalPages, page, setFilter])
 
   return (
     <div className="space-y-6">
@@ -205,50 +218,39 @@ export default function UpgradeResultsPage() {
           />
         </div>
 
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div className="flex min-w-0 flex-1 flex-col gap-4 md:flex-row md:items-end">
-            <div>
-              <ThemeText as="p" tone="label" className="mb-2 text-sm font-medium">
-                Moeda dos valores
-              </ThemeText>
-              <SegmentedTabs
-                ariaLabel="Moeda dos valores do Upgrade"
-                value={currency}
-                items={CURRENCY_TABS}
-                onChange={(value) => setFilter('currency', value)}
-              />
-            </div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <ThemeText as="p" tone="label" className="mb-2 text-sm font-medium">
+              Moeda dos valores
+            </ThemeText>
+            <SegmentedTabs
+              ariaLabel="Moeda dos valores do Upgrade"
+              value={currency}
+              items={CURRENCY_TABS}
+              onChange={(value) => setFilter('currency', value)}
+            />
+          </div>
+          <div className="w-full max-w-md shrink-0">
             <DateRangePickerTrigger
               appliedStart={rangeStart}
               appliedEnd={rangeEnd}
               presetLabel={getActiveQuickPresetLabel(rangeStart, rangeEnd)}
               onClick={() => setPickerOpen(true)}
             />
-            {view !== 'chance' ? (
-              <div className="min-w-[260px] flex-1">
-                <Input
-                  label={view === 'skins' ? 'Localizar skin ou jogador' : 'Localizar jogada'}
-                  value={searchInput}
-                  onChange={(event) => setSearchInput(event.target.value)}
-                  placeholder="Nome, Steam ID ou skin alvo"
-                  endAdornment={<Search className="h-4 w-4" aria-hidden />}
-                />
-              </div>
-            ) : null}
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="shrink-0 gap-2"
-            onClick={() => refetch()}
-            disabled={!queryOk}
-            isLoading={isFetching && !isLoading}
-          >
-            <RefreshCw className="h-4 w-4" aria-hidden />
-            Atualizar dados
-          </Button>
         </div>
+
+        {view !== 'chance' ? (
+          <div className="max-w-md">
+            <Input
+              label={view === 'skins' ? 'Localizar skin ou jogador' : 'Localizar jogada'}
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Nome, Steam ID ou skin alvo"
+              endAdornment={<Search className="h-4 w-4" aria-hidden />}
+            />
+          </div>
+        ) : null}
 
         {view === 'plays' ? (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
@@ -299,16 +301,32 @@ export default function UpgradeResultsPage() {
 
       {data && view === 'skins' ? (
         <Surface variant="card">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <SectionTitle>Desempenho por skin escolhida como alvo</SectionTitle>
               <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
-                As 15 skins com maior valor entregue no período selecionado.
+                {listTotal.toLocaleString('pt-BR')} skin
+                {listTotal === 1 ? '' : 's'} com tentativas no período, ordenadas pelo valor entregue.
               </ThemeText>
             </div>
-            <ThemeText as="p" tone="faint" className="text-xs">
-              Valores exclusivamente em {currency}
-            </ThemeText>
+            <div className="flex flex-wrap items-end gap-4">
+              <ThemeText as="p" tone="faint" className="text-xs">
+                Valores exclusivamente em {currency}
+              </ThemeText>
+              <div className="w-36">
+                <Select
+                  label="Itens por página"
+                  value={String(limit)}
+                  onChange={(event) => setFilter('limit', event.target.value)}
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
           </div>
           <div className={listTable.wrap}>
             <table className={`${listTable.table} min-w-[1250px]`}>
@@ -322,6 +340,7 @@ export default function UpgradeResultsPage() {
                   <th className={listTable.th}>Valor entregue</th>
                   <th className={listTable.th}>Resultado da plataforma</th>
                   <th className={listTable.th}>Margem bruta</th>
+                  <th className={`${listTable.th} text-right`}>Ação</th>
                 </tr>
               </thead>
               <tbody className={listTable.tbody}>
@@ -331,11 +350,7 @@ export default function UpgradeResultsPage() {
                     className={listTable.tr}
                   >
                     <td className={listTable.tdStrong}>
-                      <Link
-                        to={targetDetailUrl(row.target, currency, filters.from, filters.to)}
-                        className="group flex min-w-[280px] items-center gap-3 rounded-lg outline-none transition hover:text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-500/50 dark:hover:text-brand-400"
-                        aria-label={`Ver todas as tentativas de ${row.target.name}`}
-                      >
+                      <div className="flex min-w-[280px] items-center gap-3">
                         <span
                           className="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-secondary"
                           style={{
@@ -354,15 +369,8 @@ export default function UpgradeResultsPage() {
                           <ThemeText as="p" tone="faint" className="mt-0.5 text-xs">
                             {row.target.rarityName ?? 'Raridade não informada'}
                           </ThemeText>
-                          <span className="mt-1 block text-xs font-medium text-brand-600 dark:text-brand-400">
-                            Ver todas as tentativas
-                          </span>
                         </div>
-                        <ChevronRight
-                          className="ml-auto h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-brand-600 dark:group-hover:text-brand-400"
-                          aria-hidden
-                        />
-                      </Link>
+                      </div>
                     </td>
                     <td className={listTable.tdMuted}>
                       {row.attempts.toLocaleString('pt-BR')}
@@ -389,16 +397,30 @@ export default function UpgradeResultsPage() {
                     <td className={`${listTable.tdMuted} font-semibold ${platformResultTone(row.marginPercent)}`}>
                       {formatPercent(row.marginPercent)}
                     </td>
+                    <td className={`${listTable.td} text-right`}>
+                      <Link
+                        to={targetDetailUrl(row.target, currency, filters.from, filters.to)}
+                        className={linkBrand}
+                      >
+                        Ver detalhes
+                      </Link>
+                    </td>
                   </tr>
                 ))}
                 {!data.targets.length ? (
                   <tr>
-                    <td colSpan={8} className={listTable.empty}>Nenhuma skin encontrada no período.</td>
+                    <td colSpan={9} className={listTable.empty}>Nenhuma skin encontrada no período.</td>
                   </tr>
                 ) : null}
               </tbody>
             </table>
           </div>
+          <Pagination
+            page={page}
+            totalPages={listTotalPages}
+            onPageChange={(next) => setFilter('page', String(next), { resetPage: false })}
+            className="mt-4"
+          />
         </Surface>
       ) : null}
 
@@ -417,10 +439,11 @@ export default function UpgradeResultsPage() {
                 value={String(limit)}
                 onChange={(event) => setFilter('limit', event.target.value)}
               >
-                <option value="20">20</option>
-                <option value="30">30</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
               </Select>
             </div>
           </div>
@@ -517,7 +540,7 @@ export default function UpgradeResultsPage() {
           </div>
           <Pagination
             page={page}
-            totalPages={totalPages}
+            totalPages={listTotalPages}
             onPageChange={(next) => setFilter('page', String(next), { resetPage: false })}
             className="mt-4"
           />
@@ -526,11 +549,26 @@ export default function UpgradeResultsPage() {
 
       {data && view === 'chance' ? (
         <Surface variant="card">
-          <div className="mb-4">
-            <SectionTitle>Conferência dos sorteios por faixa de chance</SectionTitle>
-            <ThemeText as="p" tone="secondary" className="mt-1 max-w-3xl text-sm">
-              Uma tentativa pode vencer com qualquer chance válida. Aqui você compara quantas venceram com a chance média registrada nos sorteios.
-            </ThemeText>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <SectionTitle>Conferência dos sorteios por faixa de chance</SectionTitle>
+              <ThemeText as="p" tone="secondary" className="mt-1 max-w-3xl text-sm">
+                Uma tentativa pode vencer com qualquer chance válida. Aqui você compara quantas venceram com a chance média registrada nos sorteios.
+              </ThemeText>
+            </div>
+            <div className="w-36">
+              <Select
+                label="Itens por página"
+                value={String(limit)}
+                onChange={(event) => setFilter('limit', event.target.value)}
+              >
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </Select>
+            </div>
           </div>
           <div className={listTable.wrap}>
             <table className={`${listTable.table} min-w-[1050px]`}>
@@ -576,6 +614,12 @@ export default function UpgradeResultsPage() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            page={page}
+            totalPages={listTotalPages}
+            onPageChange={(next) => setFilter('page', String(next), { resetPage: false })}
+            className="mt-4"
+          />
         </Surface>
       ) : null}
 

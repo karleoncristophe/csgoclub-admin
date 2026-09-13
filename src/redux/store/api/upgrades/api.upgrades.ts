@@ -129,6 +129,10 @@ export type AdminUpgradeAnalyticsResponse = {
   page: number
   limit: number
   totalPages: number
+  targetsTotal?: number
+  targetsTotalPages?: number
+  chanceBucketsTotal?: number
+  chanceBucketsTotalPages?: number
   currency: UpgradeCurrency
   filters: {
     from: string

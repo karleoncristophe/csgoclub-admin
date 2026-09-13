@@ -9,6 +9,7 @@ import { paymentApi } from '@/redux/store/api/payment/api.payment'
 import { casesApi } from '@/redux/store/api/cases/api.cases'
 import { caseOpensApi } from '@/redux/store/api/case-opens/api.case-opens'
 import { tradesApi } from '@/redux/store/api/trades/api.trades'
+import { swapsApi } from '@/redux/store/api/swaps/api.swaps'
 import { bannersApi } from '@/redux/store/api/banners/api.banners'
 import { caseVitrinesApi } from '@/redux/store/api/case-vitrines/api.case-vitrines'
 import { couponsApi } from '@/redux/store/api/coupons/api.coupons'
@@ -32,6 +33,7 @@ export const store = configureStore({
     [casesApi.reducerPath]: casesApi.reducer,
     [caseOpensApi.reducerPath]: caseOpensApi.reducer,
     [tradesApi.reducerPath]: tradesApi.reducer,
+    [swapsApi.reducerPath]: swapsApi.reducer,
     [caseVitrinesApi.reducerPath]: caseVitrinesApi.reducer,
     [bannersApi.reducerPath]: bannersApi.reducer,
     [couponsApi.reducerPath]: couponsApi.reducer,
@@ -53,6 +55,7 @@ export const store = configureStore({
       casesApi.middleware,
       caseOpensApi.middleware,
       tradesApi.middleware,
+      swapsApi.middleware,
       caseVitrinesApi.middleware,
       bannersApi.middleware,
       couponsApi.middleware,

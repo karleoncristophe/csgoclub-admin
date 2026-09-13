@@ -37,6 +37,10 @@ export type UserAdminDetail = AppUser & {
   influencerSkinWithdrawLimitBrl?: number
   totalSpendable: number
   withdrawableBalance: number
+  /** Parte do saldo real presa até o rollover zerar (0 quando não há rollover). */
+  lockedBalance?: number
+  /** Quanto ainda precisa ser utilizado em jogo para liberar o saldo preso. */
+  rolloverBalance?: number
   walletCurrency: SkinsCurrency
   wallets?: Record<
     SkinsCurrency,
@@ -45,6 +49,8 @@ export type UserAdminDetail = AppUser & {
       bonusBalance: number
       totalSpendable: number
       withdrawableBalance: number
+      lockedBalance?: number
+      rolloverBalance?: number
     }
   >
   kycStatus?:
@@ -98,6 +104,8 @@ export type CaseOpenRecord = {
   userId: string
   wonSkinName: string
   pricePaid: number
+  expectedValueAtOpen?: number
+  houseMarginValue?: number
   itemValue: number
   currency: string
   valueUsd?: number
@@ -184,6 +192,7 @@ export type AdminCaseOpenListSummary = {
   totalOpens: number
   totalPaid: number
   totalWonValue: number
+  totalHouseMargin: number
   pendingCount: number
   keptCount: number
   convertedCount: number
@@ -324,6 +333,56 @@ export type UserListPaginatedDto = {
   totalPages: number
 }
 
+export const WALLET_TRANSACTION_TYPES = [
+  'deposit',
+  'case_open_debit',
+  'case_open_convert',
+  'inventory_convert',
+  'upgrade_debit',
+  'swap_debit',
+  'swap_change',
+  'battle_escrow_debit',
+  'battle_escrow_refund',
+  'battle_payout',
+  'arena_entry_debit',
+  'arena_entry_refund',
+  'admin_bonus_credit',
+  'admin_balance_adjust',
+  'wallet_fx_debit',
+  'wallet_fx_credit',
+] as const
+
+export type WalletTransactionType = (typeof WALLET_TRANSACTION_TYPES)[number]
+
+export type WalletTransactionItem = {
+  id: string
+  type: WalletTransactionType
+  /** Positivo = crédito; negativo = débito. */
+  amount: number
+  balanceType: 'balance' | 'bonusBalance'
+  balanceAfter: number
+  currency: SkinsCurrency | null
+  referenceId: string | null
+  description: string | null
+  meta: Record<string, unknown> | null
+  createdAt: string | null
+}
+
+export type WalletTransactionsResponse = {
+  items: WalletTransactionItem[]
+  total: number
+  page: number
+  limit: number
+}
+
+export type GetUserWalletTransactionsParams = {
+  userId: string
+  page?: number
+  limit?: number
+  type?: WalletTransactionType
+  currency?: SkinsCurrency
+}
+
 export type GetUsersParams = WithPlatformDataEnvironment<{
   page?: number
   limit?: number
@@ -386,7 +445,10 @@ export const usersApi = createApi({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Users', id }],
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: 'Users', id },
+        { type: 'Users', id: `${id}-wallet-transactions` },
+      ],
     }),
     getUserSiteInventory: builder.query<
       SiteInventoryResponse,
@@ -453,6 +515,7 @@ export const usersApi = createApi({
         { type: 'Users', id: `${userId}-site-inventory` },
         { type: 'Users', id: `${userId}-case-opens` },
         { type: 'Users', id: `${userId}-case-open-${openId}` },
+        { type: 'Users', id: `${userId}-wallet-transactions` },
       ],
     }),
     convertAllUserSiteInventory: builder.mutation<
@@ -466,6 +529,7 @@ export const usersApi = createApi({
       invalidatesTags: (_result, _error, { userId }) => [
         { type: 'Users', id: userId },
         { type: 'Users', id: `${userId}-site-inventory` },
+        { type: 'Users', id: `${userId}-wallet-transactions` },
       ],
       async onQueryStarted({ userId }, { dispatch, queryFulfilled, getState }) {
         const patchResults: Array<{ undo: () => void }> = []
@@ -532,6 +596,41 @@ export const usersApi = createApi({
         { type: 'Users', id: `${id}-kyc` },
       ],
     }),
+    settleUserRollover: builder.mutation<
+      UserAdminDetail,
+      { id: string; currency: SkinsCurrency; reason?: string }
+    >({
+      query: ({ id, currency, reason }) => ({
+        url: USERS.SETTLE_ROLLOVER(id),
+        method: 'POST',
+        body: {
+          currency,
+          ...(reason ? { reason } : {}),
+        },
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: 'Users', id },
+        { type: 'Users', id: `${id}-wallet-transactions` },
+      ],
+    }),
+    getUserWalletTransactions: builder.query<
+      WalletTransactionsResponse,
+      GetUserWalletTransactionsParams
+    >({
+      query: ({ userId, ...params }) => ({
+        url: USERS.WALLET_TRANSACTIONS(userId),
+        method: 'GET',
+        params: {
+          ...(params.page != null ? { page: params.page } : {}),
+          ...(params.limit != null ? { limit: params.limit } : {}),
+          ...(params.type ? { type: params.type } : {}),
+          ...(params.currency ? { currency: params.currency } : {}),
+        },
+      }),
+      providesTags: (_result, _error, { userId }) => [
+        { type: 'Users', id: `${userId}-wallet-transactions` },
+      ],
+    }),
   }),
 })
 
@@ -545,4 +644,6 @@ export const {
   useResolveUserTestCaseOpenMutation,
   useConvertAllUserSiteInventoryMutation,
   useGetUserKycQuery,
+  useGetUserWalletTransactionsQuery,
+  useSettleUserRolloverMutation,
 } = usersApi

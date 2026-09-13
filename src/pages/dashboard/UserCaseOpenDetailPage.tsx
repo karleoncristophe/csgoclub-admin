@@ -111,6 +111,57 @@ export default function UserCaseOpenDetailPage() {
 
       {data ? (
         <>
+          <Surface variant="cardInset">
+            <div className="mb-4">
+              <SectionTitle>Resumo da abertura</SectionTitle>
+              <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
+                Dados principais solicitados para conferência financeira.
+              </ThemeText>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div
+                className={`rounded-xl border p-4 ${
+                  typeof data.houseMarginValue !== 'number'
+                    ? 'border-border bg-surface-secondary'
+                    : data.houseMarginValue >= 0
+                      ? 'border-emerald-500/30 bg-emerald-500/10'
+                      : 'border-rose-500/30 bg-rose-500/10'
+                }`}
+              >
+                <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
+                  Ganho líquido da plataforma
+                </ThemeText>
+                <p
+                  className={`mt-2 text-xl font-bold tabular-nums ${
+                    typeof data.houseMarginValue !== 'number'
+                      ? 'text-muted'
+                      : data.houseMarginValue >= 0
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-rose-600 dark:text-rose-400'
+                  }`}
+                >
+                  {typeof data.houseMarginValue === 'number'
+                    ? formatMoney(data.houseMarginValue, data.currency)
+                    : '—'}
+                </p>
+                <ThemeText as="p" tone="faint" className="mt-1 text-xs">
+                  Preço pago − VE real
+                </ThemeText>
+              </div>
+              <ValueTile label="Nick / perfil" value={data.user?.name ?? 'Usuário removido'} hint={data.user?.steamId} />
+              <ValueTile label="Caixa" value={data.case.name} />
+              <ValueTile label="Horário da abertura" value={formatDateTime(data.createdAt)} />
+            </div>
+            {data.userId ? (
+              <Link
+                to={`/dashboard/users/${data.userId}`}
+                className="mt-3 inline-flex text-sm font-medium text-brand-600 hover:underline dark:text-brand-400"
+              >
+                Abrir perfil do cliente
+              </Link>
+            ) : null}
+          </Surface>
+
           <Surface variant="settingsPanel" className="!p-5">
             <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
               <div className="mx-auto w-full max-w-[220px]">

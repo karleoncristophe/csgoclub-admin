@@ -24,11 +24,18 @@ import { filterChipClasses, userStatCardSpaciousClass } from '@/components/users
 const PAGE_SIZE = 30
 
 const CASE_OPENS_FILTER_DEFAULTS = {
+  currency: 'BRL',
   caseId: '',
   q: '',
   disposition: '',
   page: '1',
 }
+
+const CURRENCY_TABS = [
+  { id: 'BRL', label: 'BRL' },
+  { id: 'USD', label: 'USD' },
+  { id: 'EUR', label: 'EUR' },
+]
 
 function formatMoney(value: number, currency = 'USD') {
   return new Intl.NumberFormat('pt-BR', {
@@ -98,10 +105,12 @@ export default function CaseOpensPage() {
 
   const page = parsePositiveInt(filters.page, 1)
   const safePage = Math.max(page, 1)
+  const currency = filters.currency as 'BRL' | 'USD' | 'EUR'
   const caseId = filters.caseId
   const disposition = filters.disposition as AdminCaseOpenGlobalItem['disposition'] | ''
 
   const { data, isLoading, isFetching, isError, error } = useGetAllCaseOpensQuery({
+    currency,
     page: safePage,
     limit: PAGE_SIZE,
     dataEnvironment,
@@ -138,73 +147,44 @@ export default function CaseOpensPage() {
         Aberturas
       </PageTitle>
 
+      <Surface variant="cardInset">
+        <ThemeText as="p" tone="label" className="mb-2 text-sm font-medium">
+          Moeda dos valores
+        </ThemeText>
+        <SegmentedTabs
+          ariaLabel="Moeda dos valores das aberturas"
+          value={currency}
+          items={CURRENCY_TABS}
+          onChange={(value) => setFilter('currency', value)}
+        />
+      </Surface>
+
       {summary ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {summary.topWonItem ? (
-            <Link
-              to={`/dashboard/case-opens/${summary.topWonItem.openId}`}
-              className={`${userStatCardSpaciousClass.brand} group flex items-center gap-3 transition hover:border-brand-400 dark:hover:border-brand-400/50`}
-            >
-              <SkinRarityVisual
-                rarity={{
-                  name: summary.topWonItem.rarityName,
-                  color: summary.topWonItem.rarityColor,
-                }}
-                className="h-16 w-16 shrink-0"
-                showStar={false}
-              >
-                {summary.topWonItem.image ? (
-                  <img
-                    src={summary.topWonItem.image}
-                    alt=""
-                    className="max-h-14 max-w-full object-contain"
-                  />
-                ) : (
-                  <ThemeText as="span" tone="faint" className="text-[10px]">
-                    —
-                  </ThemeText>
-                )}
-              </SkinRarityVisual>
-              <div className="min-w-0">
-                <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
-                  Maior valor sorteado
-                </ThemeText>
-                <ThemeText as="p" tone="primary" className="mt-1 truncate text-sm font-semibold">
-                  {summary.topWonItem.skinName}
-                </ThemeText>
-                <ThemeText as="p" tone="primary" className="mt-1 text-lg font-bold">
-                  {formatMoney(summary.topWonItem.itemValue, summary.topWonItem.currency)}
-                </ThemeText>
-                <ThemeText as="p" tone="faint" className="mt-1 truncate text-xs">
-                  {[summary.topWonItem.userName, summary.topWonItem.caseName]
-                    .filter(Boolean)
-                    .join(' · ') || 'Ver abertura'}
-                </ThemeText>
-              </div>
-            </Link>
-          ) : (
-            <StatCard
-              label="Maior valor sorteado"
-              value="—"
-              hint="Nenhuma abertura ainda"
-              variant="brand"
-            />
-          )}
+        <div className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-3">
           <StatCard
-            label="Total de aberturas"
-            value={String(summary.totalOpens)}
-            hint={`${summary.testOpensCount} de teste`}
+            label="Margem da plataforma"
+            value={formatMoney(summary.totalHouseMargin, currency)}
+            hint="Preço pago menos o VE real registrado nas aberturas"
+            variant="brand"
           />
           <StatCard
             label="Total pago"
-            value={formatMoney(summary.totalPaid)}
+            value={formatMoney(summary.totalPaid, currency)}
             hint="Soma do preço pago nas aberturas"
           />
           <StatCard
             label="Total ganho"
-            value={formatMoney(summary.totalWonValue)}
+            value={formatMoney(summary.totalWonValue, currency)}
             hint="Soma do valor dos itens dropados"
             variant="amber"
+          />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+          <StatCard
+            label="Total de aberturas"
+            value={String(summary.totalOpens)}
+            hint={`${summary.testOpensCount} de teste`}
           />
           <StatCard
             label="Destinos"
@@ -212,6 +192,7 @@ export default function CaseOpensPage() {
             hint={`${summary.pendingCount} pendentes · guardados / convertidos`}
             variant="rose"
           />
+          </div>
         </div>
       ) : null}
 
@@ -283,11 +264,11 @@ export default function CaseOpensPage() {
             <table className={listTable.table}>
               <thead>
                 <tr className={listTable.theadRow}>
-                  <th className={listTable.th}>Quando</th>
+                  <th className={listTable.th}>Horário da abertura</th>
                   <th className={listTable.th}>Jogador</th>
                   <th className={listTable.th}>Caixa</th>
                   <th className={listTable.th}>Item recebido</th>
-                  <th className={`${listTable.th} text-right`}>Valores</th>
+                  <th className={`${listTable.th} text-right`}>Valores / nossa margem</th>
                   <th className={listTable.th}>Destino</th>
                   <th className={`${listTable.th} text-right`}>Ação</th>
                 </tr>
@@ -329,6 +310,21 @@ export default function CaseOpensPage() {
                       <td className={`${listTable.tdMuted} text-right tabular-nums`}>
                         <span className="block font-medium text-foreground">{formatMoney(open.itemValue, open.currency)}</span>
                         <span className="text-[11px]">pago {formatMoney(open.pricePaid, open.currency)}</span>
+                        <span
+                          className={`mt-1 block text-xs font-semibold ${
+                            typeof open.houseMarginValue !== 'number'
+                              ? 'text-muted'
+                              : open.houseMarginValue >= 0
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-rose-600 dark:text-rose-400'
+                          }`}
+                          title="Preço pago menos o VE real no momento da abertura"
+                        >
+                          margem{' '}
+                          {typeof open.houseMarginValue === 'number'
+                            ? formatMoney(open.houseMarginValue, open.currency)
+                            : '—'}
+                        </span>
                       </td>
                       <td className={listTable.td}>
                         <div className="flex gap-1"><TextBadge>{dispositionLabel(open.disposition)}</TextBadge>{open.isTestOpen ? <TextBadge>Teste</TextBadge> : null}</div>

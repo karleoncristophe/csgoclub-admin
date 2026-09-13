@@ -37,6 +37,10 @@ export const USERS = {
   BY_ID: (id: string) => `/admin/users/${id}`,
   SITE_INVENTORY: (id: string) => `/admin/users/${id}/site-inventory`,
   CASE_OPENS: (id: string) => `/admin/users/${id}/case-opens`,
+  WALLET_TRANSACTIONS: (id: string) =>
+    `/admin/users/${id}/wallet-transactions`,
+  SETTLE_ROLLOVER: (id: string) =>
+    `/admin/users/${id}/wallet/settle-rollover`,
   CASE_OPEN_BY_ID: (userId: string, openId: string) =>
     `/admin/users/${userId}/case-opens/${openId}`,
   CONVERT_ALL_SITE_INVENTORY: (id: string) =>
@@ -66,6 +70,11 @@ export const CASE_OPENS = {
 
 export const TRADES = {
   ROOT: '/admin/trades',
+} as const
+
+export const SWAPS = {
+  ROOT: '/admin/swaps',
+  BY_ID: (id: string) => `/admin/swaps/${id}`,
 } as const
 
 export const CASE_VITRINES = {

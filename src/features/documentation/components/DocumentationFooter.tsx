@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Crosshair,
   Package,
+  Repeat2,
   Swords,
   Users,
 } from 'lucide-react'
@@ -70,6 +71,12 @@ export function DocumentationFooter() {
             <Package className="h-4 w-4" aria-hidden />
             Caixas
             <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          </Button>
+        </Link>
+        <Link to="/dashboard/swaps">
+          <Button type="button" size="sm" variant="secondary" className="gap-2">
+            <Repeat2 className="h-4 w-4" aria-hidden />
+            Swap
           </Button>
         </Link>
         <Link to="/dashboard/cambio">

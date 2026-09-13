@@ -16,6 +16,7 @@ import {
   LogOut,
   Menu,
   Package,
+  Repeat2,
   Swords,
   TicketPercent,
   Target,
@@ -66,6 +67,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
     items: [
       { href: '/dashboard/case-opens', label: 'Aberturas', Icon: History },
       { href: '/dashboard/trades', label: 'Trades', Icon: ArrowLeftRight },
+      { href: '/dashboard/swaps', label: 'Swap', Icon: Repeat2 },
       { href: '/dashboard/deposits', label: 'Depósitos', Icon: Wallet },
       { href: '/dashboard/coupons', label: 'Cupons', Icon: TicketPercent },
       { href: '/dashboard/cambio', label: 'Câmbio', Icon: Banknote },
@@ -312,7 +314,10 @@ export default function DashboardLayout() {
             <ColorThemePicker />
             <ThemeToggle />
           </div>
-          <main className="scrollbar-edge min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+          <main
+            data-page-scroll-container
+            className="scrollbar-edge min-h-0 flex-1 overflow-y-auto overscroll-contain p-4"
+          >
             <Suspense
               fallback={
                 <div className="flex min-h-[min(50vh,28rem)] flex-col items-center justify-center gap-3">

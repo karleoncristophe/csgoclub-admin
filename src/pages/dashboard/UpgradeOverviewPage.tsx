@@ -7,7 +7,6 @@ import {
   BarChart3,
   CircleDollarSign,
   ListTree,
-  RefreshCw,
   Trophy,
 } from 'lucide-react'
 import {
@@ -22,7 +21,6 @@ import {
   DateRangePickerTrigger,
   getActiveQuickPresetLabel,
 } from '@/components/ui/DateRangePickerModal'
-import { Button } from '@/components/ui/Button'
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
@@ -67,6 +65,14 @@ function formatPercent(value: number, signed = false) {
 
 function formatCount(value: number) {
   return value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+}
+
+function formatShortDate(value: Date) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(value)
 }
 
 function MetricCard({
@@ -172,7 +178,7 @@ export default function UpgradeOverviewPage() {
     [currency, dataEnvironment, rangeEnd, rangeStart],
   )
 
-  const { data, isLoading, isFetching, isError, error, refetch } =
+  const { data, isLoading, isError, error } =
     useGetAdminUpgradeAnalyticsQuery(queryArgs, { skip: !queryOk })
   const summary = data?.summary
   const sourceShare = summary?.totalStakedCents
@@ -181,6 +187,12 @@ export default function UpgradeOverviewPage() {
   const balanceShare = summary?.totalStakedCents
     ? (summary.balanceStakeCents / summary.totalStakedCents) * 100
     : 0
+  const periodDays =
+    Math.floor(
+      (startOfLocalDay(rangeEnd).getTime() - startOfLocalDay(rangeStart).getTime()) /
+        86_400_000,
+    ) + 1
+  const periodLabel = `${formatShortDate(rangeStart)} até ${formatShortDate(rangeEnd)}`
 
   return (
     <div className="space-y-6">
@@ -195,19 +207,19 @@ export default function UpgradeOverviewPage() {
       <UpgradePageNavigation />
 
       <Surface variant="cardInset">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div>
-              <ThemeText as="p" tone="label" className="mb-2 text-sm font-medium">
-                Moeda dos valores
-              </ThemeText>
-              <SegmentedTabs
-                ariaLabel="Moeda dos valores do Upgrade"
-                value={currency}
-                items={CURRENCY_TABS}
-                onChange={(value) => setFilter('currency', value)}
-              />
-            </div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <ThemeText as="p" tone="label" className="mb-2 text-sm font-medium">
+              Moeda dos valores
+            </ThemeText>
+            <SegmentedTabs
+              ariaLabel="Moeda dos valores do Upgrade"
+              value={currency}
+              items={CURRENCY_TABS}
+              onChange={(value) => setFilter('currency', value)}
+            />
+          </div>
+          <div className="w-full max-w-md shrink-0">
             <DateRangePickerTrigger
               appliedStart={rangeStart}
               appliedEnd={rangeEnd}
@@ -215,18 +227,6 @@ export default function UpgradeOverviewPage() {
               onClick={() => setPickerOpen(true)}
             />
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="gap-2"
-            onClick={() => refetch()}
-            disabled={!queryOk}
-            isLoading={isFetching && !isLoading}
-          >
-            <RefreshCw className="h-4 w-4" aria-hidden />
-            Atualizar dados
-          </Button>
         </div>
         {!queryOk ? (
           <ThemeText as="p" tone="warning" className="mt-4 text-sm">
@@ -249,31 +249,53 @@ export default function UpgradeOverviewPage() {
 
       {summary && data ? (
         <>
+          <Surface variant="cardInset" className="border-l-4 border-l-brand-500">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div>
+                <ThemeText as="p" tone="label" className="text-xs uppercase tracking-wide">
+                  Como o resultado final é calculado
+                </ThemeText>
+                <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
+                  Entradas recebidas dos jogadores menos as skins entregues aos vencedores.
+                </ThemeText>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-base font-semibold tabular-nums sm:text-lg">
+                <span>{formatCentsMoney(summary.totalStakedCents, currency)}</span>
+                <ThemeText as="span" tone="faint">−</ThemeText>
+                <span>{formatCentsMoney(summary.totalPayoutCents, currency)}</span>
+                <ThemeText as="span" tone="faint">=</ThemeText>
+                <span className={summary.grossProfitCents >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
+                  {formatCentsMoney(summary.grossProfitCents, currency)}
+                </span>
+              </div>
+            </div>
+          </Surface>
+
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
-              label="Resultado bruto da plataforma"
-              value={formatCentsMoney(summary.grossProfitCents, currency)}
-              hint={`Valor apostado menos as skins entregues. Margem bruta de ${formatPercent(summary.marginPercent)}.`}
-              icon={summary.grossProfitCents >= 0 ? ArrowUpRight : ArrowDownRight}
-              tone={summary.grossProfitCents >= 0 ? 'positive' : 'negative'}
-            />
-            <MetricCard
-              label="Valor total apostado"
+              label="1. Total apostado (entrada)"
               value={formatCentsMoney(summary.totalStakedCents, currency)}
-              hint={`Soma das skins e do saldo utilizados em ${summary.totalPlays.toLocaleString('pt-BR')} upgrades concluídos.`}
+              hint={`Tudo que entrou: skins e saldo usados em ${summary.totalPlays.toLocaleString('pt-BR')} upgrades concluídos.`}
               icon={CircleDollarSign}
               tone="brand"
             />
             <MetricCard
-              label="Valor entregue aos vencedores"
+              label="2. Valor entregue (saída)"
               value={formatCentsMoney(summary.totalPayoutCents, currency)}
-              hint={`Valor das skins concedidas nas ${summary.wins.toLocaleString('pt-BR')} jogadas vencidas.`}
+              hint={`Tudo que saiu: skins concedidas nas ${summary.wins.toLocaleString('pt-BR')} jogadas vencedoras.`}
               icon={Trophy}
             />
             <MetricCard
-              label="Percentual devolvido aos jogadores"
+              label="3. Resultado final"
+              value={formatCentsMoney(summary.grossProfitCents, currency)}
+              hint={`Total apostado − valor entregue. Representa ${formatPercent(summary.marginPercent)} do valor recebido.`}
+              icon={summary.grossProfitCents >= 0 ? ArrowUpRight : ArrowDownRight}
+              tone={summary.grossProfitCents >= 0 ? 'positive' : 'negative'}
+            />
+            <MetricCard
+              label="Retorno aos jogadores (RTP)"
               value={formatPercent(summary.rtpPercent)}
-              hint={`Também chamado de RTP real. Projeção estatística: ${formatPercent(100 - summary.expectedMarginPercent)}.`}
+              hint={`Parte do total apostado que voltou em prêmios. RTP esperado: ${formatPercent(100 - summary.expectedMarginPercent)}.`}
               icon={BarChart3}
             />
           </div>
@@ -313,13 +335,13 @@ export default function UpgradeOverviewPage() {
               <div className="mb-1">
                 <SectionTitle>Leitura do período</SectionTitle>
                 <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
-                  Indicadores para interpretar o resultado sem misturar moedas.
+                  {periodLabel} · {periodDays} {periodDays === 1 ? 'dia' : 'dias'} · valores em {currency}.
                 </ThemeText>
               </div>
               <InsightRow
-                label="Diferença entre o resultado obtido e o esperado"
+                label="Resultado real comparado ao esperado"
                 value={formatCentsMoney(summary.profitVsExpectedCents, currency)}
-                detail={`Pelas probabilidades dos sorteios, o resultado bruto esperado era ${formatCentsMoney(summary.expectedProfitCents, currency)}. Positivo favorece a plataforma; negativo significa que ela entregou mais valor que o esperado.`}
+                detail={`O resultado esperado pelas probabilidades era ${formatCentsMoney(summary.expectedProfitCents, currency)}. Este valor mostra quanto o resultado final ficou acima ou abaixo dessa projeção.`}
                 positive={summary.profitVsExpectedCents >= 0}
               />
               <InsightRow

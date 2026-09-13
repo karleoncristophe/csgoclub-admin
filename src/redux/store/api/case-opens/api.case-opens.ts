@@ -12,6 +12,7 @@ import {
 } from '@/utils/platformDataEnvironmentStorage'
 
 export type GetAllCaseOpensParams = WithPlatformDataEnvironment<{
+  currency?: 'BRL' | 'USD' | 'EUR'
   page?: number
   limit?: number
   disposition?: 'pending' | 'kept' | 'converted'
@@ -48,6 +49,7 @@ export const caseOpensApi = createApi({
           url: CASE_OPENS.ROOT,
           method: 'GET',
           params: {
+            ...(clean?.currency ? { currency: clean.currency } : {}),
             ...(clean?.page != null ? { page: clean.page } : {}),
             ...(clean?.limit != null ? { limit: clean.limit } : {}),
             ...(clean?.disposition ? { disposition: clean.disposition } : {}),

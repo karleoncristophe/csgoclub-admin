@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Package, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Button } from '@/components/ui/Button'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { IconButton } from '@/components/ui/IconButton'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
-import { SearchableMultiSelect } from '@/components/ui/SearchableMultiSelect'
+import { VitrineCasePicker } from '@/components/vitrines/VitrineCasePicker'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { TextBadge } from '@/components/StatusPill'
 import { ThemeText } from '@/components/ui/ThemeText'
@@ -59,23 +59,20 @@ function preloadDescriptionI18n(vitrine: CaseVitrine): Record<VitrineLocale, str
   }
 }
 
-function buildCaseOptions(
-  cases: LootCase[],
-  options: { currentVitrineId?: string | null; allowAny?: boolean },
-) {
-  return [...cases]
-    .filter((lootCase) => {
-      if (options.allowAny) return true
-      if (!lootCase.vitrineId) return true
-      if (!options.currentVitrineId) return false
-      return String(lootCase.vitrineId) === options.currentVitrineId
-    })
-    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
-    .map((lootCase) => ({
-      value: lootCase._id,
-      label: lootCase.name,
-      description: lootCase.active ? undefined : 'Inativa',
-    }))
+function resolveVitrineCaseIds(vitrine: CaseVitrine, cases: LootCase[]) {
+  if (vitrine.isHero) return [...(vitrine.heroCaseIds ?? vitrine.caseIds ?? [])]
+  if (vitrine.caseIds?.length) return [...vitrine.caseIds]
+  return cases
+    .filter((item) => item.vitrineId === vitrine._id)
+    .map((item) => item._id)
+}
+
+function previewCasesForVitrine(vitrine: CaseVitrine, cases: LootCase[], limit = 4) {
+  const byId = new Map(cases.map((item) => [item._id, item]))
+  return resolveVitrineCaseIds(vitrine, cases)
+    .slice(0, limit)
+    .map((id) => byId.get(id))
+    .filter((item): item is LootCase => Boolean(item))
 }
 
 export default function VitrinesPage() {
@@ -154,13 +151,7 @@ export default function VitrinesPage() {
     setEditSortOrder(String(vitrine.sortOrder))
     setEditActive(vitrine.active)
     setEditIsHero(Boolean(vitrine.isHero))
-    setEditCaseIds(
-      vitrine.isHero
-        ? [...(vitrine.heroCaseIds ?? [])]
-        : cases
-            .filter((item) => item.vitrineId === vitrine._id)
-            .map((item) => item._id),
-    )
+    setEditCaseIds(resolveVitrineCaseIds(vitrine, cases))
   }
 
   const cancelEdit = () => {
@@ -254,41 +245,17 @@ export default function VitrinesPage() {
     onChange: (ids: string[]) => void,
     disabled: boolean,
     options: { currentVitrineId?: string | null; isHero?: boolean },
-  ) => {
-    const allowAny = Boolean(options.isHero)
-    const selectOptions = buildCaseOptions(cases, {
-      currentVitrineId: options.currentVitrineId,
-      allowAny,
-    })
-    const assignedElsewhereCount = cases.filter(
-      (lootCase) =>
-        lootCase.vitrineId &&
-        String(lootCase.vitrineId) !== String(options.currentVitrineId ?? ''),
-    ).length
-
-    return (
-      <SearchableMultiSelect
-        label={allowAny ? 'Caixas no hero da home' : 'Caixas nesta vitrine'}
-        placeholder="Buscar caixa pelo nome…"
-        hint={
-          allowAny
-            ? 'Escolha qualquer caixa do catálogo. Elas continuam nas outras vitrines normalmente.'
-            : 'Digite para filtrar e clique para adicionar. Caixas já vinculadas a outra vitrine não aparecem aqui.'
-        }
-        options={selectOptions}
-        value={selectedIds}
-        onChange={onChange}
-        disabled={disabled}
-        emptyMessage={
-          cases.length === 0
-            ? 'Nenhuma caixa cadastrada ainda.'
-            : !allowAny && assignedElsewhereCount === cases.length
-              ? 'Todas as caixas já estão em outras vitrines.'
-              : 'Nenhuma caixa encontrada para esta busca.'
-        }
-      />
-    )
-  }
+  ) => (
+    <VitrineCasePicker
+      selectedIds={selectedIds}
+      onChange={onChange}
+      cases={cases}
+      vitrines={data}
+      disabled={disabled}
+      isHero={Boolean(options.isHero)}
+      currentVitrineId={options.currentVitrineId}
+    />
+  )
 
   const renderLocaleTitleFields = (
     values: Record<VitrineLocale, string>,
@@ -385,6 +352,7 @@ export default function VitrinesPage() {
               <tbody className={listTable.tbody}>
                 {data.map((vitrine) => {
                   const isEditing = editingId === vitrine._id
+                  const previewCases = previewCasesForVitrine(vitrine, cases)
 
                   if (isEditing) {
                     return (
@@ -483,9 +451,31 @@ export default function VitrinesPage() {
                         </ThemeText>
                       </td>
                       <td className={listTable.td}>
-                        <ThemeText as="span" tone="secondary" className="tabular-nums">
-                          {vitrine.casesCount}
-                        </ThemeText>
+                        <div className="flex items-center gap-2">
+                          {previewCases.length ? (
+                            <div className="flex -space-x-2">
+                              {previewCases.map((lootCase) => (
+                                <span
+                                  key={lootCase._id}
+                                  className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-secondary"
+                                >
+                                  {lootCase.imageUrl ? (
+                                    <img
+                                      src={lootCase.imageUrl}
+                                      alt=""
+                                      className="max-h-7 max-w-full object-contain"
+                                    />
+                                  ) : (
+                                    <Package className="h-3.5 w-3.5 text-zinc-400" />
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+                          <ThemeText as="span" tone="secondary" className="tabular-nums">
+                            {vitrine.casesCount}
+                          </ThemeText>
+                        </div>
                       </td>
                       <td className={listTable.td}>
                         <TextBadge>
@@ -589,13 +579,7 @@ export default function VitrinesPage() {
               Já existe uma vitrine com este nome.
             </ThemeText>
           ) : null}
-          {createNameNormalized ? (
-            renderCasePicker(createCaseIds, setCreateCaseIds, createState.isLoading, {})
-          ) : (
-            <ThemeText as="p" tone="faint" className="text-sm">
-              Informe o título (pt-BR) da vitrine para buscar e adicionar caixas.
-            </ThemeText>
-          )}
+          {renderCasePicker(createCaseIds, setCreateCaseIds, createState.isLoading, {})}
           {createState.isError ? (
             <ThemeText as="p" tone="danger" className="text-sm">
               {getErrorMessage(createState.error)}

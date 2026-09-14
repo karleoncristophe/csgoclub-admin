@@ -65,10 +65,9 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'visao-geral',
     question: 'Quais telas uso no dia a dia?',
     answer:
-      'Operação diária: Dashboard (métricas), Caixas, Usuários, Depósitos, Aberturas e Swap.\n\nConfiguração: Categorias, Câmbio (cotação + APIs), Cupons, Vitrines/Banners.\n\nModos: Battles (bots + histórico), Arena (crates, preços, plays). Documentação (esta página) é a referência rápida.',
+      'Operação diária: Dashboard (métricas), Caixas, Usuários, Depósitos e Aberturas.\n\nConfiguração: Categorias, Câmbio (cotação + APIs), Cupons, Vitrines/Banners.\n\nModos: Battles (bots + histórico), Arena (crates, preços, plays). Documentação (esta página) é a referência rápida.',
     bullets: [
       'Câmbio → aba Câmbio (reserva FX) e aba APIs de pagamento (XGate/Woovi).',
-      'Swap → o que saiu da conta (skins e/ou saldo), o custo do alvo na dash e o troco.',
       'Battles → bots e battles recentes; create de bot no modal.',
       'Arena → crates por raridade, preço global da jogada, histórico de plays.',
     ],
@@ -505,26 +504,10 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     bullets: [
       'Ativo = ainda na plataforma.',
       'Convertido = virou saldo; não volta.',
-      'Trocado = saiu no swap.',
       'Admin lista só inventário do site.',
     ],
     enumGroups: [INVENTORY_STATUS_ENUMS],
     tags: ['inventário', 'skin', 'converter', 'valor fixo'],
-  },
-  {
-    id: 'users-swap',
-    category: 'usuarios-inventario',
-    question: 'Como funciona o swap?',
-    answer:
-      'O jogador troca skins do inventário do site (e/ou saldo liberado) por uma skin do catálogo.\n\nO alvo custa o preço da dash com taxa. Se as skins não cobrem, o restante sai do saldo. Se sobra, o troco volta para a carteira.\n\nNo painel (Operações → Swap) cada troca mostra o que saiu da conta, o montante, o custo na dash e o que sobrou.',
-    bullets: [
-      'Saiu da conta = skins ofertadas e/ou saldo debitado.',
-      'Montante = soma do que saiu (skins + saldo).',
-      'Custou na dash = preço com taxa do alvo no momento do swap.',
-      'Sobrou = troco creditado quando as skins valiam mais que o alvo.',
-      'Conta: skins + saldo = custo na dash + troco.',
-    ],
-    tags: ['swap', 'troca', 'inventário', 'troco', 'saldo'],
   },
   {
     id: 'users-5',
@@ -651,7 +634,6 @@ export const DOCUMENTATION_POPULAR_TAGS = [
   'cupom',
   'influencer',
   'carteira',
-  'swap',
   'elegível',
 ]
 

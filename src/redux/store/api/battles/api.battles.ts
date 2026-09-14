@@ -8,7 +8,7 @@ export type AdminBattleBot = {
   avatarUrl?: string
   balance: number
   active: boolean
-  weight: number
+  lastShownAt?: string | null
   createdAt?: string
   updatedAt?: string
 }
@@ -87,7 +87,6 @@ export const battlesAdminApi = createApi({
       {
         name: string
         avatarUrl?: string
-        weight?: number
         active?: boolean
       }
     >({

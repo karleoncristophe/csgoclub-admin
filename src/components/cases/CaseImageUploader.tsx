@@ -44,6 +44,7 @@ type CaseImageUploaderProps = {
   emptyLabel?: string
   variant?: 'cover' | 'avatar'
   compactActions?: boolean
+  placeholderSrc?: string
 }
 
 export function CaseImageUploader({
@@ -55,6 +56,7 @@ export function CaseImageUploader({
   description,
   emptyLabel,
   compactActions = false,
+  placeholderSrc,
 }: CaseImageUploaderProps) {
   const resolvedLabel =
     label === undefined
@@ -210,6 +212,12 @@ export function CaseImageUploader({
           />
           {preview ? (
             <img src={preview} alt="" className="h-full w-full object-cover" />
+          ) : placeholderSrc ? (
+            <img
+              src={placeholderSrc}
+              alt=""
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div className="flex flex-col items-center gap-2 px-3 text-center">
               <ImagePlus className={`${isAvatar ? 'h-5 w-5' : 'h-8 w-8'} text-zinc-400`} />

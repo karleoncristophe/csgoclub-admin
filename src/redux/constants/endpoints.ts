@@ -105,6 +105,14 @@ export const AI_ASSISTANT = {
   CASE_ASSISTANT: '/admin/ai/case-assistant',
 } as const
 
+export const SITE_BOTS = {
+  ROOT: '/admin/site-bots',
+  STATUS: '/admin/site-bots/status',
+  GENERATE: '/admin/site-bots/generate',
+  BULK_DELETE: '/admin/site-bots/bulk-delete',
+  BY_ID: (id: string) => `/admin/site-bots/${id}`,
+} as const
+
 export const BATTLES_ADMIN = {
   ROOT: '/admin/battles',
   BY_ID: (id: string) => `/admin/battles/${id}`,

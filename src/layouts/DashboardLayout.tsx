@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   ArrowLeftRight,
   Banknote,
+  Bot,
   BookOpenText,
   Crosshair,
   Gem,
@@ -77,6 +78,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
     title: 'Modos de jogo',
     items: [
       { href: '/dashboard/battles', label: 'Battles', Icon: Swords },
+      { href: '/dashboard/bots', label: 'Bots', Icon: Bot },
       { href: '/dashboard/arena', label: 'Arena', Icon: Crosshair },
       { href: '/dashboard/arena/plays', label: 'Jogadas', Icon: Target },
       { href: '/dashboard/arena/crate-opens', label: 'Aberturas Arena', Icon: Sparkles },

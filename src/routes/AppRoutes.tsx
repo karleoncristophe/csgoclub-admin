@@ -83,6 +83,9 @@ const CouponsPage = lazy(
 const BattlesAdminPage = lazy(
   () => import('@/pages/dashboard/BattlesAdminPage'),
 )
+const BotsAdminPage = lazy(
+  () => import('@/pages/dashboard/BotsAdminPage'),
+)
 const ArenaCratesPage = lazy(
   () => import('@/pages/dashboard/ArenaCratesPage'),
 )
@@ -169,6 +172,7 @@ function ProtectedRoutes() {
         <Route path="banners" element={<BannersPage />} />
         <Route path="coupons" element={<CouponsPage />} />
         <Route path="battles" element={<BattlesAdminPage />} />
+        <Route path="bots" element={<BotsAdminPage />} />
         <Route path="battles/:id" element={<BattleDetailPage />} />
         <Route path="arena" element={<ArenaCratesPage />} />
         <Route path="arena/new" element={<ArenaCrateEditorPage />} />

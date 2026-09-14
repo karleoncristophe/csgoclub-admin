@@ -15,6 +15,7 @@ import {
   BattleStatusBadge,
   battleModeLabel,
   battleSeatTypeLabel,
+  battleSeatAvatarSrc,
   formatBattleDateTime,
   formatBattleMoney,
 } from './battleUi'
@@ -168,9 +169,9 @@ export default function BattleDetailPage() {
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      {seat.avatarUrl ? (
+                      {battleSeatAvatarSrc(seat) ? (
                         <img
-                          src={seat.avatarUrl}
+                          src={battleSeatAvatarSrc(seat) ?? ''}
                           alt={seat.name ?? 'Seat'}
                           className="h-12 w-12 rounded-full object-cover ring-2 ring-white dark:ring-zinc-900"
                         />
@@ -326,9 +327,9 @@ export default function BattleDetailPage() {
                             >
                               <td className={listTable.td}>
                                 <div className="flex items-center gap-2">
-                                  {seat.avatarUrl ? (
+                                  {battleSeatAvatarSrc(seat) ? (
                                     <img
-                                      src={seat.avatarUrl}
+                                      src={battleSeatAvatarSrc(seat) ?? ''}
                                       alt=""
                                       className="h-6 w-6 rounded-full object-cover"
                                     />

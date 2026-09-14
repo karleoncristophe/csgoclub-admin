@@ -1,5 +1,16 @@
 import type { AdminBattleSeat } from '@/redux/store/api/battles/api.battles'
+import { resolveBotAvatar } from '@/lib/bot-avatar'
 import { Chip } from '@heroui/react'
+
+export function battleSeatAvatarSrc(seat: AdminBattleSeat) {
+  if (seat.type === 'bot') {
+    return resolveBotAvatar(
+      seat.avatarUrl,
+      seat.botId ?? seat.name ?? String(seat.index),
+    )
+  }
+  return seat.avatarUrl?.trim() || null
+}
 
 export function formatBattleMoney(value: number, currency = 'USD') {
   const code =
@@ -106,9 +117,9 @@ export function BattlePlayerAvatars({
             }`}
             title={`${label}${isWinner ? ' (vencedor)' : ''}`}
           >
-            {seat.avatarUrl ? (
+            {battleSeatAvatarSrc(seat) ? (
               <img
-                src={seat.avatarUrl}
+                src={battleSeatAvatarSrc(seat) ?? ''}
                 alt={label}
                 className={`${dim} rounded-full bg-default object-cover`}
               />

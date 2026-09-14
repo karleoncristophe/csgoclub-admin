@@ -4,6 +4,7 @@ import { authApi } from '@/redux/store/api/auth/api.auth'
 import { adminAccountsApi } from '@/redux/store/api/admins/api.admins'
 import { arenaApi } from '@/redux/store/api/arena/api.arena'
 import { battlesAdminApi } from '@/redux/store/api/battles/api.battles'
+import { siteBotsApi } from '@/redux/store/api/site-bots/api.site-bots'
 import { cambioApi } from '@/redux/store/api/cambio/api.cambio'
 import { paymentApi } from '@/redux/store/api/payment/api.payment'
 import { casesApi } from '@/redux/store/api/cases/api.cases'
@@ -38,6 +39,7 @@ export const store = configureStore({
     [bannersApi.reducerPath]: bannersApi.reducer,
     [couponsApi.reducerPath]: couponsApi.reducer,
     [battlesAdminApi.reducerPath]: battlesAdminApi.reducer,
+    [siteBotsApi.reducerPath]: siteBotsApi.reducer,
     [arenaApi.reducerPath]: arenaApi.reducer,
     [cambioApi.reducerPath]: cambioApi.reducer,
     [paymentApi.reducerPath]: paymentApi.reducer,
@@ -60,6 +62,7 @@ export const store = configureStore({
       bannersApi.middleware,
       couponsApi.middleware,
       battlesAdminApi.middleware,
+      siteBotsApi.middleware,
       arenaApi.middleware,
       cambioApi.middleware,
       paymentApi.middleware,

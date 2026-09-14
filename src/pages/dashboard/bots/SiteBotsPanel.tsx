@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Plus, Sparkles, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/Checkbox'
 import {
@@ -39,7 +39,7 @@ function formatShownAt(value?: string | null) {
   })
 }
 
-function SiteBotAvatarEditor({
+const SiteBotAvatarEditor = memo(function SiteBotAvatarEditor({
   bot,
   onError,
 }: {
@@ -88,9 +88,9 @@ function SiteBotAvatarEditor({
       placeholderSrc={pickBotFallbackAvatar(bot._id || bot.name)}
     />
   )
-}
+})
 
-function SiteBotNameEditor({
+const SiteBotNameEditor = memo(function SiteBotNameEditor({
   bot,
   onError,
 }: {
@@ -139,7 +139,63 @@ function SiteBotNameEditor({
       }}
     />
   )
-}
+})
+
+const SiteBotRow = memo(function SiteBotRow({
+  bot,
+  selected,
+  onToggleSelected,
+  onError,
+  onToggleActive,
+  onDelete,
+}: {
+  bot: AdminSiteBot
+  selected: boolean
+  onToggleSelected: (id: string, checked: boolean) => void
+  onError: (message: string | null) => void
+  onToggleActive: (bot: AdminSiteBot) => void
+  onDelete: (bot: AdminSiteBot) => void
+}) {
+  return (
+    <tr className={listTable.tr}>
+      <td className={listTable.td}>
+        <Checkbox
+          name={`select-bot-${bot._id}`}
+          label={`Selecionar ${bot.name}`}
+          hideLabel
+          checked={selected}
+          onChange={(event) => onToggleSelected(bot._id, event.target.checked)}
+        />
+      </td>
+      <td className={listTable.td}>
+        <SiteBotAvatarEditor bot={bot} onError={onError} />
+      </td>
+      <td className={listTable.td}>
+        <SiteBotNameEditor bot={bot} onError={onError} />
+      </td>
+      <td className={listTable.td}>{formatBotBalance(bot.balance)}</td>
+      <td className={listTable.td}>{formatShownAt(bot.lastShownAt)}</td>
+      <td className={listTable.td}>
+        <button
+          className="underline"
+          onClick={() => onToggleActive(bot)}
+          type="button"
+        >
+          {bot.active ? 'Sim' : 'Não'}
+        </button>
+      </td>
+      <td className={listTable.td}>
+        <button
+          className="text-red-500"
+          onClick={() => onDelete(bot)}
+          type="button"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </td>
+    </tr>
+  )
+})
 
 export function SiteBotsPanel() {
   const { confirm } = useConfirm()
@@ -160,7 +216,8 @@ export function SiteBotsPanel() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
 
-  const botIds = useMemo(() => bots.map((bot) => bot._id), [bots])
+  const botIdKey = useMemo(() => bots.map((bot) => bot._id).join(','), [bots])
+  const botIds = useMemo(() => (botIdKey ? botIdKey.split(',') : []), [botIdKey])
   const selectedOnPage = selectedIds.filter((id) => botIds.includes(id))
   const allSelected =
     botIds.length > 0 && selectedOnPage.length === botIds.length
@@ -172,14 +229,44 @@ export function SiteBotsPanel() {
     })
   }, [botIds])
 
-  function toggleSelected(id: string, checked: boolean) {
+  const toggleSelected = useCallback((id: string, checked: boolean) => {
     setSelectedIds((current) => {
       if (checked) {
         return current.includes(id) ? current : [...current, id]
       }
       return current.filter((item) => item !== id)
     })
-  }
+  }, [])
+
+  const handleToggleActive = useCallback(
+    (bot: AdminSiteBot) => {
+      void updateBot({
+        id: bot._id,
+        body: { active: !bot.active },
+      })
+    },
+    [updateBot],
+  )
+
+  const handleDeleteBot = useCallback(
+    async (bot: AdminSiteBot) => {
+      const ok = await confirm({
+        title: 'Excluir bot do site?',
+        description:
+          'Ele some do gerador de livedrop. Drops antigos de vitrine continuam até expirar.',
+        subjectLabel: 'Bot',
+        subjectName: bot.name,
+        confirmLabel: 'Excluir',
+        confirmVariant: 'danger',
+      })
+      if (!ok) return
+      if (bot.avatarUrl) {
+        void deleteUploadFile(bot.avatarUrl)
+      }
+      await deleteBot(bot._id)
+    },
+    [confirm, deleteBot],
+  )
 
   function toggleSelectAll(checked: boolean) {
     setSelectedIds(checked ? botIds : [])
@@ -327,7 +414,7 @@ export function SiteBotsPanel() {
                 <Checkbox
                   name="select-all-bots"
                   label="Selecionar todos"
-                  className="gap-0 [&>span:last-child]:sr-only"
+                  hideLabel
                   checked={allSelected}
                   disabled={bots.length === 0}
                   onChange={(event) => toggleSelectAll(event.target.checked)}
@@ -356,68 +443,15 @@ export function SiteBotsPanel() {
               </tr>
             ) : (
               bots.map((bot) => (
-                <tr key={bot._id} className={listTable.tr}>
-                  <td className={listTable.td}>
-                    <Checkbox
-                      name={`select-bot-${bot._id}`}
-                      label={bot.name}
-                      className="gap-0 [&>span:last-child]:sr-only"
-                      checked={selectedIds.includes(bot._id)}
-                      onChange={(event) =>
-                        toggleSelected(bot._id, event.target.checked)
-                      }
-                    />
-                  </td>
-                  <td className={listTable.td}>
-                    <SiteBotAvatarEditor bot={bot} onError={setPageError} />
-                  </td>
-                  <td className={listTable.td}>
-                    <SiteBotNameEditor bot={bot} onError={setPageError} />
-                  </td>
-                  <td className={listTable.td}>
-                    {formatBotBalance(bot.balance)}
-                  </td>
-                  <td className={listTable.td}>{formatShownAt(bot.lastShownAt)}</td>
-                  <td className={listTable.td}>
-                    <button
-                      className="underline"
-                      onClick={() =>
-                        updateBot({
-                          id: bot._id,
-                          body: { active: !bot.active },
-                        })
-                      }
-                      type="button"
-                    >
-                      {bot.active ? 'Sim' : 'Não'}
-                    </button>
-                  </td>
-                  <td className={listTable.td}>
-                    <button
-                      className="text-red-500"
-                      onClick={async () => {
-                        const ok = await confirm({
-                          title: 'Excluir bot do site?',
-                          description:
-                            'Ele some do gerador de livedrop. Drops antigos de vitrine continuam até expirar.',
-                          subjectLabel: 'Bot',
-                          subjectName: bot.name,
-                          confirmLabel: 'Excluir',
-                          confirmVariant: 'danger',
-                        })
-                        if (ok) {
-                          if (bot.avatarUrl) {
-                            void deleteUploadFile(bot.avatarUrl)
-                          }
-                          await deleteBot(bot._id)
-                        }
-                      }}
-                      type="button"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
+                <SiteBotRow
+                  key={bot._id}
+                  bot={bot}
+                  selected={selectedIds.includes(bot._id)}
+                  onToggleSelected={toggleSelected}
+                  onError={setPageError}
+                  onToggleActive={handleToggleActive}
+                  onDelete={handleDeleteBot}
+                />
               ))
             )}
           </tbody>

@@ -111,6 +111,11 @@ export default function UserCaseOpenDetailPage() {
 
       {data ? (
         <>
+          {data.valueSnapshotMismatch && (
+            <p role="alert" className={surfaceClass('errorBanner')}>
+              Divergência histórica: o valor do prêmio e seu snapshot na moeda original não coincidem. Confira inventário e carteira antes de usar esta abertura na conciliação financeira. Nenhum saldo foi corrigido automaticamente.
+            </p>
+          )}
           <Surface variant="cardInset">
             <div className="mb-4">
               <SectionTitle>Resumo da abertura</SectionTitle>
@@ -129,7 +134,7 @@ export default function UserCaseOpenDetailPage() {
                 }`}
               >
                 <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
-                  Ganho líquido da plataforma
+                  Margem esperada da plataforma
                 </ThemeText>
                 <p
                   className={`mt-2 text-xl font-bold tabular-nums ${
@@ -145,7 +150,7 @@ export default function UserCaseOpenDetailPage() {
                     : '—'}
                 </p>
                 <ThemeText as="p" tone="faint" className="mt-1 text-xs">
-                  Preço pago − VE real
+                  Preço pago − VE registrado na abertura; não representa o resultado do prêmio sorteado.
                 </ThemeText>
               </div>
               <ValueTile label="Nick / perfil" value={data.user?.name ?? 'Usuário removido'} hint={data.user?.steamId} />
@@ -211,11 +216,11 @@ export default function UserCaseOpenDetailPage() {
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   <ValueTile
-                    label="Preço pago"
+                    label="Preço registrado na moeda da caixa"
                     value={formatMoney(data.pricePaid, data.currency)}
                     hint={
-                      data.paymentFromBalance != null || data.paymentFromBonusBalance != null
-                        ? `Saldo ${formatMoney(data.paymentFromBalance ?? 0, data.currency)} · Bônus ${formatMoney(data.paymentFromBonusBalance ?? 0, data.currency)}`
+                      data.paymentCurrency && data.chargedAmount != null
+                        ? `Débito efetivo ${formatMoney(data.chargedAmount, data.paymentCurrency)} · Saldo ${formatMoney(data.paymentFromBalance ?? 0, data.paymentCurrency)} · Bônus ${formatMoney(data.paymentFromBonusBalance ?? 0, data.paymentCurrency)}`
                         : undefined
                     }
                   />

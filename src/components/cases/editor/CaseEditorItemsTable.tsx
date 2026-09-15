@@ -260,6 +260,14 @@ export function CaseEditorItemsTable({
                             onChange={(checked) =>
                               updateItem(item.skinName, {
                                 useFixedValue: checked,
+                                ...(checked
+                                  ? {
+                                      price: item[activeFixedValueField] ?? itemValue,
+                                      ...(valueMode === 'base'
+                                        ? { basePrice: item[activeFixedValueField] ?? itemValue }
+                                        : { priceWithTax: item[activeFixedValueField] ?? itemValue }),
+                                    }
+                                  : {}),
                                 ...(checked && item[activeFixedValueField] == null
                                   ? { [activeFixedValueField]: itemValue }
                                   : {}),

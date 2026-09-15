@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { listTable } from '@/components/ui/listTable'
-import { deleteUploadFile } from '@/lib/upload'
+import { deleteUploadFile, uploadSingleFile } from '@/lib/upload'
 import {
   useCreateSiteBotMutation,
   useDeleteSiteBotMutation,
@@ -215,6 +215,45 @@ export function SiteBotsPanel() {
   const [pageError, setPageError] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [batchProgress, setBatchProgress] = useState('')
+  const [batchUploading, setBatchUploading] = useState(false)
+
+  async function uploadSelectedAvatars(files: File[]) {
+    const targets = bots.filter((bot) => selectedIds.includes(bot._id))
+    if (!files.length || batchUploading) return
+    if (files.length !== targets.length || files.length > 100) {
+      setPageError('Selecione um arquivo por bot selecionado, no máximo 100. A associação segue a ordem da listagem.')
+      return
+    }
+    if (files.some((file) => !['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024)) {
+      setPageError('Use PNG, JPEG ou WebP, com até 10 MB por arquivo.')
+      return
+    }
+    const approved = await confirm({
+      title: 'Atualizar avatares selecionados',
+      description: targets.map((bot, i) => `${bot.name} ← ${files[i].name}`).join('\n'),
+      confirmLabel: 'Enviar avatares',
+    })
+    if (!approved) return
+    setBatchUploading(true)
+    setPageError(null)
+    const errors: string[] = []
+    try {
+      for (let i = 0; i < files.length; i++) {
+        setBatchProgress(`Enviando ${i + 1}/${files.length}: ${targets[i].name}`)
+        try {
+          const uploaded = await uploadSingleFile(files[i], 'bots')
+          await updateBot({ id: targets[i]._id, body: { avatarUrl: uploaded.url } }).unwrap()
+        } catch (error) {
+          errors.push(`${targets[i].name}: ${getErrorMessage(error)}`)
+        }
+      }
+      setBatchProgress(`Concluído: ${files.length - errors.length}/${files.length} avatares atualizados.`)
+      if (errors.length) setPageError(errors.join(' · '))
+    } finally {
+      setBatchUploading(false)
+    }
+  }
 
   const botIdKey = useMemo(() => bots.map((bot) => bot._id).join(','), [bots])
   const botIds = useMemo(() => (botIdKey ? botIdKey.split(',') : []), [botIdKey])
@@ -369,6 +408,21 @@ export function SiteBotsPanel() {
       ) : null}
 
       <div className="flex flex-wrap items-center justify-end gap-2">
+        <label className="text-sm">
+          Avatares dos selecionados (ordem da listagem)
+          <input
+            type="file"
+            multiple
+            accept="image/png,image/jpeg,image/webp"
+            disabled={batchUploading || selectedOnPage.length === 0}
+            onChange={(event) => {
+              const files = Array.from(event.target.files ?? [])
+              event.target.value = ''
+              void uploadSelectedAvatars(files)
+            }}
+          />
+        </label>
+        <span role="status" aria-live="polite" className="text-sm">{batchProgress}</span>
         {selectedOnPage.length > 0 ? (
           <Button
             type="button"

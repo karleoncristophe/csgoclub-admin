@@ -104,6 +104,9 @@ export type CaseOpenRecord = {
   userId: string
   wonSkinName: string
   pricePaid: number
+  paymentCurrency?: string
+  chargedAmount?: number
+  valueSnapshotMismatch?: boolean
   expectedValueAtOpen?: number
   houseMarginValue?: number
   itemValue: number

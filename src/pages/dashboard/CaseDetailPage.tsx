@@ -176,7 +176,7 @@ export default function CaseDetailPage() {
   const isSandbox = dataEnvironment === 'SANDBOX'
   const { data, isLoading, isError, error } = useGetCaseDetailsQuery(
     { id, dataEnvironment },
-    { skip: !id },
+    { skip: !id, refetchOnMountOrArgChange: true },
   )
   const chart = useChartVariant('cs2-case-daily')
   const dailySeries = useMemo(
@@ -238,13 +238,13 @@ export default function CaseDetailPage() {
             <ExternalLink className="h-4 w-4" />
             Aberturas
           </Link>
-          <Link
+          {!lootCase.deleted && !lootCase.archivedAt && <Link
             to={`/dashboard/cases/${lootCase._id}`}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-medium text-white shadow-md shadow-brand-600/25 transition hover:bg-brand-700"
           >
             <Pencil className="h-4 w-4" />
             Editar caixa
-          </Link>
+          </Link>}
         </div>
       </div>
 
@@ -265,7 +265,7 @@ export default function CaseDetailPage() {
           </div>
           <div className="min-w-[14rem] flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <TextBadge>{lootCase.active ? 'Ativa' : 'Inativa'}</TextBadge>
+              <TextBadge>{lootCase.deleted || lootCase.archivedAt ? 'Excluída do catálogo — histórico preservado' : lootCase.active ? 'Ativa' : 'Inativa'}</TextBadge>
               <TextBadge>{currency}</TextBadge>
               <TextBadge>
                 {lootCase.valueMode === 'with_tax' ? 'Valor com taxa' : 'Valor base'}
@@ -310,13 +310,13 @@ export default function CaseDetailPage() {
           </div>
           <div>
             <ThemeText tone="faint" className="text-xs">
-              Margem
+              Margem atual sobre o VE
             </ThemeText>
             <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
-              {lootCase.targetMarginPercent}%
+              {lootCase.realMarginPercent.toFixed(2)}%
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
-              A mesma margem alvo do editor · preço = VE × (1 + margem)
+              (Preço fixo − VE atual) ÷ VE atual × 100. Referência: {lootCase.targetMarginPercent}%.
             </ThemeText>
           </div>
         </div>
@@ -342,7 +342,7 @@ export default function CaseDetailPage() {
           <Metric
             label="Sobrou (lucro)"
             value={money(financials.profit)}
-            hint={`Das aberturas: ${financials.marginPercent.toFixed(2)}% · margem da caixa: ${lootCase.targetMarginPercent}%`}
+            hint={`Resultado realizado sobre a receita: ${financials.marginPercent.toFixed(2)}% · margem atual sobre o VE: ${lootCase.realMarginPercent.toFixed(2)}%`}
           />
         </div>
 

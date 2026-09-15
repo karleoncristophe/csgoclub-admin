@@ -163,9 +163,9 @@ export default function CaseOpensPage() {
         <div className="space-y-3">
           <div className="grid gap-3 md:grid-cols-3">
           <StatCard
-            label="Margem da plataforma"
+            label="Margem esperada da plataforma"
             value={formatMoney(summary.totalHouseMargin, currency)}
-            hint="Preço pago menos o VE real registrado nas aberturas"
+            hint="Preço pago menos VE registrado na abertura. Pode ser negativa quando o VE supera o preço."
             variant="brand"
           />
           <StatCard

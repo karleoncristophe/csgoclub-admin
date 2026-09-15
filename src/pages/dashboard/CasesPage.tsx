@@ -29,22 +29,16 @@ export default function CasesPage() {
   const [actionError, setActionError] = useState<string | null>(null)
 
   const handleDelete = async (lootCase: LootCase) => {
-    const hasRealOpens = lootCase.totalOpens > 0
     setActionError(null)
 
     const confirmed = await confirm({
       title: 'Excluir caixa',
-      description: hasRealOpens
-        ? 'Esta caixa já possui aberturas reais e não pode ser removida do sistema.'
-        : 'A caixa será removida permanentemente do catálogo. Esta ação não pode ser desfeita.',
+      description: 'A caixa será arquivada e removida do catálogo, impedindo novas aberturas. O histórico e os registros financeiros serão preservados.',
       subjectLabel: 'Caixa',
       subjectName: lootCase.name,
       confirmLabel: 'Excluir',
       confirmVariant: 'danger',
-      confirmDisabled: hasRealOpens,
-      warning: hasRealOpens
-        ? 'Somente caixas sem aberturas reais podem ser excluídas.'
-        : 'Itens, chances e configurações desta caixa serão perdidos.',
+      warning: 'Esta ação não apaga aberturas nem altera saldos anteriores.',
     })
 
     if (!confirmed) return

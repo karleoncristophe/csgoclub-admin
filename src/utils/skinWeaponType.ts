@@ -7,6 +7,7 @@ type WeaponTypeBucket =
   | 'Machinegun'
   | 'Knife'
   | 'Gloves'
+  | 'Graffiti'
   | 'Other'
 
 const WEAPON_BUCKETS: Record<WeaponTypeBucket, readonly string[]> = {
@@ -18,6 +19,7 @@ const WEAPON_BUCKETS: Record<WeaponTypeBucket, readonly string[]> = {
   Machinegun: ['M249', 'NEGEV'],
   Knife: ['KNIFE', 'BAYONET', 'KARAMBIT', 'M9 BAYONET', 'FLIP KNIFE', 'HUNTSMAN KNIFE', 'BOWIE KNIFE', 'FALCHION KNIFE', 'NAVAJA KNIFE', 'STILETTO KNIFE', 'URSUS KNIFE', 'TALON KNIFE', 'SKELETON KNIFE', 'PARACORD KNIFE', 'SURVIVAL KNIFE', 'CLASSIC KNIFE', 'SHADOW DAGGERS', 'GUT KNIFE', 'BUTTERFLY KNIFE'],
   Gloves: ['GLOVES', 'HAND WRAPS', 'BLOODHOUND GLOVES', 'DRIVER GLOVES', 'SPECIALIST GLOVES', 'SPORT GLOVES', 'MOTO GLOVES', 'HYDRA GLOVES'],
+  Graffiti: ['SEALED GRAFFITI', 'GRAFFITI'],
   Other: [],
 }
 

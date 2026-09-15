@@ -2,8 +2,10 @@ import { createApi } from '@reduxjs/toolkit/query/react'
 import { WEAPON_CATEGORIES } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
 import { skinsApi } from '@/redux/store/api/skins/api.skins'
+import { casesApi } from '@/redux/store/api/cases/api.cases'
 
 export type WeaponCategory = {
+  swapTaxPercent?: number
   _id: string
   name: string
   taxPercent: number
@@ -12,11 +14,13 @@ export type WeaponCategory = {
 }
 
 export type CreateWeaponCategoryPayload = {
+  swapTaxPercent?: number
   name: string
   taxPercent: number
 }
 
 export type UpdateWeaponCategoryPayload = {
+  swapTaxPercent?: number
   id: string
   name?: string
   taxPercent?: number
@@ -47,6 +51,7 @@ export const weaponCategoriesApi = createApi({
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         await queryFulfilled
         dispatch(skinsApi.util.invalidateTags(['SkinsCatalog']))
+        dispatch(casesApi.util.invalidateTags(['Cases', 'Case']))
       },
     }),
     updateWeaponCategory: builder.mutation<
@@ -62,6 +67,7 @@ export const weaponCategoriesApi = createApi({
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         await queryFulfilled
         dispatch(skinsApi.util.invalidateTags(['SkinsCatalog']))
+        dispatch(casesApi.util.invalidateTags(['Cases', 'Case']))
       },
     }),
     deleteWeaponCategory: builder.mutation<{ success: true }, string>({
@@ -73,6 +79,7 @@ export const weaponCategoriesApi = createApi({
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         await queryFulfilled
         dispatch(skinsApi.util.invalidateTags(['SkinsCatalog']))
+        dispatch(casesApi.util.invalidateTags(['Cases', 'Case']))
       },
     }),
   }),

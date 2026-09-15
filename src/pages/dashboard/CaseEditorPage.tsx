@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFormik } from 'formik'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus, Sparkles } from 'lucide-react'
 import { BackLink } from '@/components/ui/BackLink'
 import { useGoBack } from '@/hooks/useGoBack'
@@ -91,7 +91,7 @@ export default function CaseEditorPage() {
 
   const { data: existingCase, isLoading: isLoadingCase } = useGetCaseByIdQuery(
     id ?? '',
-    { skip: !id },
+    { skip: !id, refetchOnMountOrArgChange: true },
   )
   const { data: allCases = [] } = useGetCasesQuery()
 
@@ -225,8 +225,9 @@ export default function CaseEditorPage() {
 
   const totalEV = useMemo(
     () =>
-      roundPrice(
+      roundEconomics(
         computeTotalExpectedValue(economicsItems, values.valueMode as CaseValueMode),
+        8,
       ),
     [economicsItems, values.valueMode],
   )
@@ -512,6 +513,14 @@ export default function CaseEditorPage() {
 
   const currency = values.currency as SkinsCurrency
 
+  if (existingCase?.deleted || existingCase?.archivedAt) {
+    return <Surface variant="settingsPanel" className="!p-6 space-y-3">
+      <ThemeText as="h1" tone="primary" className="text-lg font-semibold">Caixa arquivada</ThemeText>
+      <ThemeText tone="secondary">Esta caixa foi retirada do catálogo e não pode mais ser aberta ou editada. O histórico e os registros financeiros foram preservados.</ThemeText>
+      <Link to={`/dashboard/cases/${existingCase._id}/details`} className="text-brand-600 underline">Ver detalhes e histórico</Link>
+    </Surface>
+  }
+
   return (
     <form onSubmit={handleFormSubmit} className="case-editor-form space-y-5" noValidate>
       <div className="sticky top-0 z-30 -mx-4 -mt-6 bg-slate-50/85 px-4 py-4 backdrop-blur dark:bg-zinc-950/85 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
@@ -565,6 +574,10 @@ export default function CaseEditorPage() {
           <SummaryChip label="Soma chances" value={`${probabilitySum.toFixed(2)}%`} />
           <SummaryChip label="VE total" value={formatSkinsPrice(totalEV, currency)} />
           <SummaryChip
+            label="Margem atual sobre VE"
+            value={totalEV > 0 ? `${(((values.price ?? 0) - totalEV) / totalEV * 100).toFixed(2)}%` : 'Indefinida (VE zero)'}
+          />
+          <SummaryChip
             label="Preço final"
             value={formatSkinsPrice(values.price ?? 0, currency)}
           />
@@ -577,6 +590,23 @@ export default function CaseEditorPage() {
         onCurrencyChange={handleCurrencyChange}
         onValueModeChange={handleValueModeChange}
       />
+
+      {!!existingCase?.itemValueAlerts?.length && (
+        <Surface variant="settingsPanel" className="space-y-3 !p-4">
+          <ThemeText as="h2" tone="primary" className="font-semibold">Variações do catálogo acima de 10%</ThemeText>
+          <ThemeText as="p" tone="secondary" className="text-sm">Comparação com os valores de referência salvos na moeda original da caixa. Skins fixadas não alteram o VE enquanto a fixação estiver ativa.</ThemeText>
+          {existingCase.itemValueAlerts.map((alert) => (
+            <div key={alert.skinName} className="border-b border-current/10 py-2 text-sm">
+              <ThemeText tone="primary" className="font-medium">{alert.skinName}</ThemeText>
+              <ThemeText tone="secondary">
+                {formatSkinsPrice(alert.fixedValue, existingCase.currency)} → {formatSkinsPrice(alert.flexibleValue, existingCase.currency)}
+                {' · '}{alert.variationPercent > 0 ? 'Aumentou' : 'Diminuiu'} {formatSkinsPrice(Math.abs(alert.flexibleValue - alert.fixedValue), existingCase.currency)} ({Math.abs(alert.variationPercent).toFixed(2)}%)
+                {' · '}{values.items.find((item) => item.skinName === alert.skinName)?.useFixedValue ? 'Preço fixado' : 'Acompanha o catálogo'}
+              </ThemeText>
+            </div>
+          ))}
+        </Surface>
+      )}
 
       <CaseEditorItemsTable
         items={values.items}
@@ -614,7 +644,7 @@ export default function CaseEditorPage() {
         forceOpen={hasPricingError}
         summary={
           <ThemeText as="span" tone="faint" className="text-xs">
-            Margem {values.targetMarginPercent}% ·{' '}
+            Margem atual {totalEV > 0 ? `${(((values.price ?? 0) - totalEV) / totalEV * 100).toFixed(2)}%` : 'indefinida'} ·{' '}
             {formatSkinsPrice(values.price ?? 0, currency)}
           </ThemeText>
         }

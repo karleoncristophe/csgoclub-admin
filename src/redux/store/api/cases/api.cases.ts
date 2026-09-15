@@ -74,6 +74,8 @@ export type LootCase = {
   sharedCaseIds?: string[]
   vitrineId?: string
   active: boolean
+  archivedAt?: string | null
+  deleted?: boolean
   totalOpens: number
   totalTestOpens: number
   createdAt?: string
@@ -104,6 +106,8 @@ export type CreateCasePayload = {
 export type UpdateCasePayload = Partial<CreateCasePayload>
 
 export type AdminCaseDetailsCase = {
+  deleted?: boolean
+  archivedAt?: string | null
   _id: string
   name: string
   slug: string
@@ -279,7 +283,7 @@ export const casesApi = createApi({
         url: CASES.BY_ID(id),
         method: 'DELETE',
       }),
-      invalidatesTags: ['Cases'],
+      invalidatesTags: (_result, _error, id) => ['Cases', { type: 'Case', id }],
       async onQueryStarted(id, { dispatch, queryFulfilled }) {
         const patch = dispatch(
           casesApi.util.updateQueryData('getCases', undefined, (draft) => {

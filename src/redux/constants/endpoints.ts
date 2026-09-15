@@ -33,6 +33,8 @@ export const WEAPON_CATEGORIES = {
 } as const
 
 export const USERS = {
+  SETTLE_ROLLOVER: (id: string) => `/admin/users/${id}/wallet/settle-rollover`,
+  WALLET_TRANSACTIONS: (id: string) => `/admin/users/${id}/wallet-transactions`,
   LIST: '/admin/users',
   BY_ID: (id: string) => `/admin/users/${id}`,
   SITE_INVENTORY: (id: string) => `/admin/users/${id}/site-inventory`,
@@ -50,6 +52,19 @@ export const UPLOAD = {
   SINGLE: '/upload/single',
   REPLACE: '/upload/replace',
   DELETE: '/upload/file',
+} as const
+
+export const SITE_BOTS = {
+  ROOT: '/admin/site-bots',
+  STATUS: '/admin/site-bots/status',
+  GENERATE: '/admin/site-bots/generate',
+  BULK_DELETE: '/admin/site-bots/bulk-delete',
+  BY_ID: (id: string) => `/admin/site-bots/${id}`,
+} as const
+
+export const SWAPS = {
+  ROOT: '/admin/swaps',
+  BY_ID: (id: string) => `/admin/swaps/${id}`,
 } as const
 
 export const CASES = {

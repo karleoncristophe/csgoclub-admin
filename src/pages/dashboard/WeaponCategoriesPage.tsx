@@ -48,10 +48,12 @@ export default function WeaponCategoriesPage() {
 
   const [createName, setCreateName] = useState('')
   const [createTax, setCreateTax] = useState('0')
+  const [createSwapTax, setCreateSwapTax] = useState('0')
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editTax, setEditTax] = useState('0')
+  const [editSwapTax, setEditSwapTax] = useState('0')
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const existingNames = useMemo(
@@ -75,6 +77,7 @@ export default function WeaponCategoriesPage() {
     setEditingId(category._id)
     setEditName(category.name)
     setEditTax(String(category.taxPercent))
+    setEditSwapTax(String(category.swapTaxPercent ?? 0))
   }
 
   const cancelEdit = () => {
@@ -86,6 +89,7 @@ export default function WeaponCategoriesPage() {
   const resetCreateForm = () => {
     setCreateName('')
     setCreateTax('0')
+    setCreateSwapTax('0')
   }
 
   const openCreateModal = () => {
@@ -106,6 +110,7 @@ export default function WeaponCategoriesPage() {
       await createCategory({
         name: createNameNormalized,
         taxPercent: clampTax(Number(createTax)),
+        swapTaxPercent: clampTax(Number(createSwapTax)),
       }).unwrap()
       setCreateModalOpen(false)
       resetCreateForm()
@@ -120,6 +125,7 @@ export default function WeaponCategoriesPage() {
         id,
         name: normalizeCategoryName(editName),
         taxPercent: clampTax(Number(editTax)),
+        swapTaxPercent: clampTax(Number(editSwapTax)),
       }).unwrap()
       cancelEdit()
     } catch {
@@ -185,14 +191,15 @@ export default function WeaponCategoriesPage() {
             <thead>
               <tr className={listTable.theadRow}>
                 <th className={listTable.th}>Tipo de arma</th>
-                <th className={listTable.th}>Taxa (%)</th>
+                <th className={listTable.th}>Taxa catálogo (%)</th>
+                <th className={listTable.th}>Taxa exclusiva Swap (%)</th>
                 <th className={listTable.th}>Ações</th>
               </tr>
             </thead>
             <tbody className={listTable.tbody}>
               {data.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className={listTable.empty}>
+                  <td colSpan={4} className={listTable.empty}>
                     Nenhuma categoria cadastrada.
                   </td>
                 </tr>
@@ -231,6 +238,9 @@ export default function WeaponCategoriesPage() {
                         ) : (
                           `${category.taxPercent}%`
                         )}
+                      </td>
+                      <td className={listTable.td}>
+                        {isEditing ? <Input label="Taxa exclusiva Swap (%)" name={`swap-tax-${category._id}`} type="number" min={0} max={1000} step="0.01" value={editSwapTax} onChange={(event) => setEditSwapTax(event.target.value)} /> : `${category.swapTaxPercent ?? 0}%`}
                       </td>
                       <td className={listTable.td}>
                         {isEditing ? (
@@ -353,6 +363,8 @@ export default function WeaponCategoriesPage() {
               {getErrorMessage(createState.error)}
             </p>
           ) : null}
+          <Input label="Taxa exclusiva Swap (%)" name="createSwapTax" type="number" min={0} max={1000} step="0.01" value={createSwapTax} onChange={(event) => setCreateSwapTax(event.target.value)} />
+          <ThemeText as="p" tone="secondary" className="text-xs">Taxa do catálogo: skins não fixadas em caixas no modo com taxa. Taxa Swap: aplicada somente à cotação de troca.</ThemeText>
         </div>
       </Modal>
     </div>

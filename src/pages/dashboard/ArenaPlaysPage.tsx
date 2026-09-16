@@ -17,8 +17,10 @@ import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { listTable, linkBrand } from '@/components/ui/listTable'
+import { DataVisionBanner } from '@/components/ui/DataVisionBanner'
 import useDebounce from '@/hooks/useDebounce'
 import { parsePositiveInt, useUrlFilters } from '@/hooks/useUrlFilters'
+import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import {
   useGetArenaMatchesQuery,
   type ArenaMatchStatus,
@@ -79,6 +81,8 @@ function StatCard({
 }
 
 export default function ArenaPlaysPage() {
+  const dataEnvironment = usePlatformDataEnvironment()
+  const isSandbox = dataEnvironment === 'SANDBOX'
   const { filters, setFilters, setFilter } = useUrlFilters(ARENA_PLAYS_FILTER_DEFAULTS)
 
   const [searchInput, setSearchInput] = useState(filters.q)
@@ -99,6 +103,7 @@ export default function ArenaPlaysPage() {
   const { data, isLoading, isFetching, isError, error } = useGetArenaMatchesQuery({
     page,
     limit: PAGE_SIZE,
+    dataEnvironment,
     ...(status ? { status } : {}),
     ...(paymentMethod ? { paymentMethod } : {}),
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
@@ -117,7 +122,13 @@ export default function ArenaPlaysPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageTitle subtitle="Todas as jogadas da Arena: pagamento, resultado e crates premiadas.">
+        <PageTitle
+          subtitle={
+            isSandbox
+              ? 'Só jogadas de influencer. Pagamento, resultado e crates premiadas desta visão.'
+              : 'Só jogadas de user normal. Pagamento, resultado e crates premiadas desta visão.'
+          }
+        >
           Jogadas da Arena
         </PageTitle>
         <Link
@@ -128,6 +139,8 @@ export default function ArenaPlaysPage() {
           Crates
         </Link>
       </div>
+
+      <DataVisionBanner />
 
       {summary ? (
         <>

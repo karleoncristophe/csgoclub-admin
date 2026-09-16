@@ -7,7 +7,9 @@ import { Pagination } from '@/components/ui/Pagination'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle } from '@/components/ui/Title'
 import { listTable } from '@/components/ui/listTable'
+import { DataVisionBanner } from '@/components/ui/DataVisionBanner'
 import { parsePositiveInt, useUrlFilters } from '@/hooks/useUrlFilters'
+import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import {
   useCancelAdminBattleMutation,
   useGetAdminBattlesQuery,
@@ -27,6 +29,8 @@ const BATTLES_FILTER_DEFAULTS = {
 
 export default function BattlesAdminPage() {
   const { confirm } = useConfirm()
+  const dataEnvironment = usePlatformDataEnvironment()
+  const isSandbox = dataEnvironment === 'SANDBOX'
   const { filters, setFilter } = useUrlFilters(BATTLES_FILTER_DEFAULTS)
   const page = parsePositiveInt(filters.page, 1)
   const safePage = Math.max(page, 1)
@@ -35,7 +39,11 @@ export default function BattlesAdminPage() {
     isLoading: battlesLoading,
     isFetching: battlesFetching,
     refetch,
-  } = useGetAdminBattlesQuery({ page: safePage, limit: BATTLES_PAGE_SIZE })
+  } = useGetAdminBattlesQuery({
+    page: safePage,
+    limit: BATTLES_PAGE_SIZE,
+    dataEnvironment,
+  })
   const battles = battlesData?.data ?? []
   const totalPages = Math.max(1, battlesData?.totalPages ?? 1)
   const currentPage = Math.min(safePage, totalPages)
@@ -49,9 +57,17 @@ export default function BattlesAdminPage() {
 
   return (
     <div className="space-y-8">
-      <PageTitle subtitle="Histórico de case battles. Bots de vaga e de livedrop ficam em Bots.">
+      <PageTitle
+        subtitle={
+          isSandbox
+            ? 'Só battles com influencer na vaga. Bots de vaga e de livedrop ficam em Bots.'
+            : 'Só battles de user normal (e lobbies só com bot). Bots de vaga e de livedrop ficam em Bots.'
+        }
+      >
         Battles
       </PageTitle>
+
+      <DataVisionBanner />
 
       <div className="flex items-center justify-between gap-3">
         <ThemeText as="h2" className="text-lg font-semibold">

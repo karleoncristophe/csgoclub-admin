@@ -1,6 +1,10 @@
 import { createApi } from '@reduxjs/toolkit/query/react'
 import { BATTLES_ADMIN } from '@/redux/constants/endpoints'
 import { baseQueryWithReauth } from '@/redux/store/api/global.api'
+import {
+  omitDataEnvironmentQueryArg,
+  type WithPlatformDataEnvironment,
+} from '@/utils/platformDataEnvironmentStorage'
 
 export type AdminBattleBot = {
   _id: string
@@ -123,11 +127,12 @@ export const battlesAdminApi = createApi({
         limit: number
         totalPages: number
       },
-      { page?: number; limit?: number } | void
+      WithPlatformDataEnvironment<{ page?: number; limit?: number }> | void
     >({
       query: (params) => {
-        const page = params?.page ?? 1
-        const limit = params?.limit ?? 20
+        const clean = params ? omitDataEnvironmentQueryArg(params) : undefined
+        const page = clean?.page ?? 1
+        const limit = clean?.limit ?? 20
         return {
           url: `${BATTLES_ADMIN.ROOT}?page=${page}&limit=${limit}`,
           method: 'GET',

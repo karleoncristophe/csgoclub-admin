@@ -16,11 +16,15 @@ import {
   useGetCasesQuery,
   type LootCase,
 } from '@/redux/store/api/cases/api.cases'
+import { DataVisionBanner } from '@/components/ui/DataVisionBanner'
+import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
 export default function CasesPage() {
   const navigate = useNavigate()
   const { confirm } = useConfirm()
+  const dataEnvironment = usePlatformDataEnvironment()
+  const isSandbox = dataEnvironment === 'SANDBOX'
   const { data = [], isLoading, isError, error } = useGetCasesQuery()
   const [deleteCase, deleteState] = useDeleteCaseMutation()
   const [duplicateCase, duplicateState] = useDuplicateCaseMutation()
@@ -68,7 +72,13 @@ export default function CasesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageTitle subtitle="Caixas de drop com economia calculada em tempo real (estilo CSGONet).">
+        <PageTitle
+          subtitle={
+            isSandbox
+              ? 'Aberturas desta lista são só influencer. Preço, VE e margem agora são do catálogo (iguais nos dois lados).'
+              : 'Aberturas desta lista são só produção. Preço, VE e margem agora são do catálogo (iguais nos dois lados).'
+          }
+        >
           Caixas
         </PageTitle>
         <Link
@@ -79,6 +89,8 @@ export default function CasesPage() {
           Nova caixa
         </Link>
       </div>
+
+      <DataVisionBanner />
 
       <Surface variant="card">
         {isLoading ? (
@@ -184,13 +196,8 @@ export default function CasesPage() {
                     <td className={listTable.td}>{lootCase.items.length}</td>
                     <td className={listTable.td}>
                       <ThemeText tone="primary" className="text-sm">
-                        {lootCase.totalOpens}
+                        {isSandbox ? lootCase.totalTestOpens : lootCase.totalOpens}
                       </ThemeText>
-                      {lootCase.totalTestOpens > 0 ? (
-                        <ThemeText tone="faint" className="text-xs">
-                          +{lootCase.totalTestOpens} teste
-                        </ThemeText>
-                      ) : null}
                     </td>
                     <td className={listTable.td}>
                       <TextBadge>

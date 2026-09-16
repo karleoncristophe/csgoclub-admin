@@ -233,14 +233,14 @@ export type ArenaMatchesResponse = {
   summary: ArenaMatchSummary
 }
 
-export type GetArenaMatchesParams = {
+export type GetArenaMatchesParams = WithPlatformDataEnvironment<{
   page?: number
   limit?: number
   status?: ArenaMatchStatus | ''
   paymentMethod?: ArenaPaymentMethod | ''
   search?: string
   crateId?: string
-}
+}>
 
 export type ArenaCrateOpenUser = {
   _id: string
@@ -452,20 +452,21 @@ export const arenaApi = createApi({
       providesTags: ['ArenaPlayPricing'],
     }),
     getArenaMatches: builder.query<ArenaMatchesResponse, GetArenaMatchesParams | void>({
-      query: (args) => ({
-        url: ARENA.MATCHES,
-        method: 'GET',
-        params: {
-          page: args && 'page' in args ? args.page : 1,
-          limit: args && 'limit' in args ? args.limit : 20,
-          ...(args && 'status' in args && args.status ? { status: args.status } : {}),
-          ...(args && 'paymentMethod' in args && args.paymentMethod
-            ? { paymentMethod: args.paymentMethod }
-            : {}),
-          ...(args && 'search' in args && args.search ? { search: args.search } : {}),
-          ...(args && 'crateId' in args && args.crateId ? { crateId: args.crateId } : {}),
-        },
-      }),
+      query: (args) => {
+        const clean = args ? omitDataEnvironmentQueryArg(args) : undefined
+        return {
+          url: ARENA.MATCHES,
+          method: 'GET',
+          params: {
+            page: clean?.page ?? 1,
+            limit: clean?.limit ?? 20,
+            ...(clean?.status ? { status: clean.status } : {}),
+            ...(clean?.paymentMethod ? { paymentMethod: clean.paymentMethod } : {}),
+            ...(clean?.search ? { search: clean.search } : {}),
+            ...(clean?.crateId ? { crateId: clean.crateId } : {}),
+          },
+        }
+      },
       transformResponse: (response: ArenaMatchesResponse) => ({
         ...response,
         items: (response.items ?? []).map((item) => {

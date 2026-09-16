@@ -23,6 +23,7 @@ export function formatSwapDateTime(value?: string | null, style: 'short' | 'long
 export function swapStatusLabel(status: string) {
   if (status === 'completed') return 'Concluído'
   if (status === 'failed') return 'Falhou'
+  if (status === 'pending') return 'Pendente'
   if (status === 'reserved') return 'Reservado'
   if (status === 'debited') return 'Debitado'
   if (status === 'created') return 'Criado'

@@ -10,6 +10,7 @@ export const SWAP_STATUSES = [
   'created',
   'reserved',
   'debited',
+  'pending',
   'completed',
   'failed',
 ] as const

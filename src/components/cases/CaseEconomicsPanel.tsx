@@ -32,6 +32,7 @@ type CaseEconomicsPanelProps = {
   finalPrice: number
   ledger?: CaseEconomyLedger
   sharedLedger?: boolean
+  ledgerHint?: string
 }
 
 export function CaseEconomicsPanel({
@@ -43,6 +44,7 @@ export function CaseEconomicsPanel({
   finalPrice,
   ledger = EMPTY_CASE_ECONOMY_LEDGER,
   sharedLedger = false,
+  ledgerHint,
 }: CaseEconomicsPanelProps) {
   const enabledItems = getEnabledDropItems(items)
   const aggregatedTolerance = computeAggregatedProbabilityTolerance(items)
@@ -68,6 +70,10 @@ export function CaseEconomicsPanel({
   )
   const negativeMargin = finalPrice > 0 && finalPrice < totalEV
   const targetMargin = config.targetMarginPercent / 100
+  const currentMarginPercent =
+    totalEV > 0
+      ? roundEconomics(((finalPrice - totalEV) / totalEV) * 100, 2)
+      : null
 
   const bankInjection = computeBankInjection(
     finalPrice,
@@ -106,23 +112,21 @@ export function CaseEconomicsPanel({
           Economia da caixa (tempo real)
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mb-4 text-xs">
-          Cada abertura injeta o Valor Esperado no banco virtual
-          {sharedLedger ? ' compartilhado' : ''} e o item ganho é retirado pelo valor exato.
-          Itens até o preço da caixa saem sempre; os mais caros só ficam elegíveis quando o
-          saldo alcança o valor de mercado deles, e voltam a travar assim que alguém os leva.
-          Em case battles o bot só retira do banco, sem injetar — no piso o saldo para em zero.
+          VE acompanha o catálogo. A margem agora é preço contra esse VE. O banco usa a
+          margem alvo — não a margem agora.
+          {sharedLedger ? ' Caixas no mesmo pool compartilham o banco.' : ''}
         </ThemeText>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <ThemeText tone="label" className="text-xs uppercase">
-              Valor esperado (VE)
+              VE
             </ThemeText>
             <ThemeText tone="primary" className="mt-1 text-lg font-semibold">
               {formatSkinsPrice(totalEV, currency)}
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
-              {valueMode === 'with_tax' ? 'Com taxa de categoria' : 'Preço base'}
+              {valueMode === 'with_tax' ? 'Com taxa' : 'Preço base'}
             </ThemeText>
           </div>
           <div>
@@ -169,7 +173,7 @@ export function CaseEconomicsPanel({
           </div>
           <div>
             <ThemeText tone="label" className="text-xs uppercase">
-              Margem
+              Margem agora
             </ThemeText>
             <ThemeText
               tone="primary"
@@ -177,13 +181,16 @@ export function CaseEconomicsPanel({
                 negativeMargin ? 'text-red-600 dark:text-red-400' : ''
               }`}
             >
-              {config.targetMarginPercent}%
+              {currentMarginPercent != null
+                ? `${currentMarginPercent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
+                : '—'}
             </ThemeText>
-            {negativeMargin ? (
-              <ThemeText tone="faint" className="text-xs text-red-600 dark:text-red-400">
-                Preço final abaixo do VE
-              </ThemeText>
-            ) : null}
+            <ThemeText
+              tone="faint"
+              className={`text-xs ${negativeMargin ? 'text-red-600 dark:text-red-400' : ''}`}
+            >
+              {negativeMargin ? 'Preço abaixo do VE' : `alvo ${config.targetMarginPercent}%`}
+            </ThemeText>
           </div>
           <div>
             <ThemeText tone="label" className="text-xs uppercase">
@@ -210,6 +217,7 @@ export function CaseEconomicsPanel({
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
               +{formatSkinsPrice(bankInjection, currency)} por abertura
+              {ledgerHint ? ` · ${ledgerHint}` : ''}
             </ThemeText>
           </div>
           <div>

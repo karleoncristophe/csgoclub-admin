@@ -62,6 +62,7 @@ import {
 } from '@/utils/caseEconomics'
 import { caseEditorInitialValues, caseEditorSchema } from '@/validators/caseEditorSchema'
 import { useAdminPreferences } from '@/theme/AdminPreferencesContext'
+import { useIsSandboxDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 
 const PRICING_FIELDS = [
   'targetMarginPercent',
@@ -71,7 +72,15 @@ const PRICING_FIELDS = [
   'price',
 ] as const
 
-function SummaryChip({ label, value }: { label: string; value: string }) {
+function SummaryChip({
+  label,
+  value,
+  hint,
+}: {
+  label: string
+  value: string
+  hint?: string
+}) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 dark:border-zinc-800 dark:bg-zinc-900">
       <ThemeText as="span" tone="faint" className="block text-[10px] uppercase tracking-wide">
@@ -80,6 +89,11 @@ function SummaryChip({ label, value }: { label: string; value: string }) {
       <ThemeText as="span" tone="primary" className="block text-sm font-semibold">
         {value}
       </ThemeText>
+      {hint ? (
+        <ThemeText as="span" tone="faint" className="mt-0.5 block text-[10px] leading-snug">
+          {hint}
+        </ThemeText>
+      ) : null}
     </div>
   )
 }
@@ -111,6 +125,7 @@ export default function CaseEditorPage() {
   const [validationAttempt, setValidationAttempt] = useState(0)
   const errorBannerRef = useRef<HTMLDivElement>(null)
   const { skinsCurrency: defaultSkinsCurrency } = useAdminPreferences()
+  const isSandbox = useIsSandboxDataEnvironment()
 
   const initialValues = useMemo<CaseFormState>(
     () =>
@@ -206,21 +221,35 @@ export default function CaseEditorPage() {
 
   const economicsItems = useMemo(
     () =>
-      values.items.map((item) => ({
-        basePrice: item.basePrice,
-        priceWithTax: item.priceWithTax,
-        price: item.price,
-        probability: item.probability,
-        probabilityTolerance: item.probabilityTolerance,
-        enabled: item.enabled,
-        skinName: item.skinName,
-      })),
+      values.items.map((item) => {
+        const operational =
+          item.useFixedValue === true
+            ? item.price
+            : (item.flexiblePrice ?? item.price)
+        return {
+          basePrice: item.useFixedValue === true ? item.basePrice : operational,
+          priceWithTax:
+            item.useFixedValue === true ? item.priceWithTax : operational,
+          price: operational,
+          probability: item.probability,
+          probabilityTolerance: item.probabilityTolerance,
+          enabled: item.enabled,
+          skinName: item.skinName,
+        }
+      }),
     [values.items],
   )
 
   const economyLedger = useMemo(
-    () => existingCase?.economyLedger ?? EMPTY_CASE_ECONOMY_LEDGER,
-    [existingCase?.economyLedger],
+    () =>
+      (isSandbox
+        ? existingCase?.testEconomyLedger
+        : existingCase?.economyLedger) ?? EMPTY_CASE_ECONOMY_LEDGER,
+    [
+      existingCase?.economyLedger,
+      existingCase?.testEconomyLedger,
+      isSandbox,
+    ],
   )
 
   const totalEV = useMemo(
@@ -572,15 +601,22 @@ export default function CaseEditorPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           <SummaryChip label="Itens" value={String(values.items.length)} />
           <SummaryChip label="Soma chances" value={`${probabilitySum.toFixed(2)}%`} />
-          <SummaryChip label="VE total" value={formatSkinsPrice(totalEV, currency)} />
+          <SummaryChip label="VE" value={formatSkinsPrice(totalEV, currency)} />
           <SummaryChip
-            label="Margem atual sobre VE"
-            value={totalEV > 0 ? `${(((values.price ?? 0) - totalEV) / totalEV * 100).toFixed(2)}%` : 'Indefinida (VE zero)'}
+            label="Margem agora"
+            value={
+              totalEV > 0
+                ? `${(((values.price ?? 0) - totalEV) / totalEV * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
+                : '—'
+            }
+            hint={
+              totalEV > 0 &&
+              Math.abs((((values.price ?? 0) - totalEV) / totalEV) * 100 - values.targetMarginPercent) > 0.05
+                ? `alvo ${values.targetMarginPercent}%`
+                : undefined
+            }
           />
-          <SummaryChip
-            label="Preço final"
-            value={formatSkinsPrice(values.price ?? 0, currency)}
-          />
+          <SummaryChip label="Preço" value={formatSkinsPrice(values.price ?? 0, currency)} />
         </div>
       </div>
 
@@ -601,6 +637,11 @@ export default function CaseEditorPage() {
         itemsError={itemsError}
         probabilityTargetPercent={values.probabilityTargetPercent}
         catalogAlerts={existingCase?.itemValueAlerts}
+        bankLedgerHint={
+          isSandbox
+            ? 'Elegibilidade usa o banco Influencer (visão Dev).'
+            : 'Elegibilidade usa o banco de Produção.'
+        }
         onItemsChange={handleItemsChange}
         headerAction={
           <>
@@ -637,14 +678,13 @@ export default function CaseEditorPage() {
           embedded
           formik={formik}
           currency={currency}
-          totalEV={totalEV}
         />
       </CollapsibleSection>
 
       <CollapsibleSection
         variant="plain"
         title="Resumo econômico"
-        description="VE, banco virtual, pool elegível e margem do editor em tempo real."
+        description="VE, banco e margem agora."
         summary={
           <ThemeText as="span" tone="faint" className="text-xs">
             VE {formatSkinsPrice(totalEV, currency)}
@@ -660,6 +700,11 @@ export default function CaseEditorPage() {
           finalPrice={values.price ?? 0}
           ledger={economyLedger}
           sharedLedger={(values.sharedCaseIds?.length ?? 0) > 0}
+          ledgerHint={
+            isSandbox
+              ? 'Saldo do banco Influencer (visão Dev).'
+              : 'Saldo do banco de Produção.'
+          }
         />
       </CollapsibleSection>
 

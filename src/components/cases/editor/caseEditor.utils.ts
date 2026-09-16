@@ -144,15 +144,19 @@ function fixedValueFieldForCurrency(currency: SkinsCurrency) {
   return 'fixedValueBrl' as const
 }
 
-/** Mesma regra do switch “Fixar valor”: trava no valor já salvo da moeda, ou no catálogo atual. */
+/** Valor operacional da moeda da caixa: catálogo vivo, ou o preço já aplicado. */
+export function operationalCaseDropValue(item: CaseDropItem): number {
+  return item.flexiblePrice ?? item.price
+}
+
+/** Trava no valor operacional atual (catálogo vivo), não no snapshot antigo. */
 export function lockCaseDropItemToCurrentValue(
   item: CaseDropItem,
   currency: SkinsCurrency,
   valueMode: CaseValueMode,
 ): CaseDropItem {
   const field = fixedValueFieldForCurrency(currency)
-  const itemValue = item.price
-  const lockedValue = item[field] ?? itemValue
+  const lockedValue = operationalCaseDropValue(item)
   return {
     ...item,
     useFixedValue: true,
@@ -160,7 +164,7 @@ export function lockCaseDropItemToCurrentValue(
     ...(valueMode === 'base'
       ? { basePrice: lockedValue }
       : { priceWithTax: lockedValue }),
-    ...(item[field] == null ? { [field]: itemValue } : {}),
+    [field]: lockedValue,
   }
 }
 

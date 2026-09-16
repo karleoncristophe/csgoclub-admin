@@ -350,6 +350,9 @@ export default function UserCaseOpenDetailPage() {
                       {formatMoney(data.itemValue, data.currency)} ={' '}
                       <strong>{formatMoney(data.bankBalanceAfter ?? 0, data.currency)}</strong>
                     </ThemeText>
+                    <ThemeText as="p" tone="faint" className="mt-1 text-xs">
+                      O + é a injeção (preço ÷ 1+margem), não o débito da carteira.
+                    </ThemeText>
                   </div>
                 </div>
               </div>

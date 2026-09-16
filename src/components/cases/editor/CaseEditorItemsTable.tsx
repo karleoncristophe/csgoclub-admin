@@ -34,6 +34,7 @@ import {
 import {
   formatNumberFieldValue,
   lockCaseDropItemToCurrentValue,
+  operationalCaseDropValue,
   selectNumberInputOnFocus,
   updateCaseDropItem,
 } from './caseEditor.utils'
@@ -53,6 +54,8 @@ type CaseEditorItemsTableProps = {
   headerAction?: ReactNode
   probabilityTargetPercent?: number
   catalogAlerts?: CatalogValueAlert[]
+  /** Qual ledger o banco da tabela está usando (Produção vs Influencer). */
+  bankLedgerHint?: string
 }
 
 type CaseItemSortKey = 'value' | 'drop' | 'bank' | 've'
@@ -62,6 +65,19 @@ const FIXED_VALUE_INPUTS = [
   { currency: SkinsCurrency.USD, field: 'fixedValueUsd', label: 'USD' },
   { currency: SkinsCurrency.EUR, field: 'fixedValueEur', label: 'EUR' },
 ] as const
+
+function itemForEconomics(
+  item: CaseDropItem,
+  valueMode: CaseValueMode,
+): CaseDropItem {
+  if (item.useFixedValue === true) return item
+  const live = operationalCaseDropValue(item)
+  return {
+    ...item,
+    price: live,
+    ...(valueMode === 'base' ? { basePrice: live } : { priceWithTax: live }),
+  }
+}
 
 export function CaseEditorItemsTable({
   items,
@@ -75,6 +91,7 @@ export function CaseEditorItemsTable({
   headerAction,
   probabilityTargetPercent = DEFAULT_PROBABILITY_TARGET,
   catalogAlerts = [],
+  bankLedgerHint,
 }: CaseEditorItemsTableProps) {
   const bankInjection = computeBankInjection(openPrice, targetMarginPercent)
   const bankAvailable = roundPrice((ledger.bankBalance ?? 0) + bankInjection)
@@ -99,12 +116,13 @@ export function CaseEditorItemsTable({
   const displayedItems = useMemo(
     () =>
       sortByNumericColumn(items, sort, (item, key) => {
-        const itemValue = resolveItemEconomicsValue(item, valueMode)
+        const economicsItem = itemForEconomics(item, valueMode)
+        const itemValue = resolveItemEconomicsValue(economicsItem, valueMode)
         if (key === 'value') return itemValue
         if (key === 'drop') return item.probability
         if (key === 've') return roundPrice(itemValue * (item.probability / 100))
         const eligibility = evaluateDropEligibility({
-          item,
+          item: economicsItem,
           openPrice,
           bankBalance: bankAvailable,
           valueMode,
@@ -166,6 +184,7 @@ export function CaseEditorItemsTable({
           <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
             Configure o drop % de cada item. Itens acima do preço da abertura só ficam
             elegíveis quando o banco virtual acumula o valor de mercado deles.
+            {bankLedgerHint ? ` ${bankLedgerHint}` : ''}
           </ThemeText>
         </div>
         {headerAction ? (
@@ -260,16 +279,12 @@ export function CaseEditorItemsTable({
             </thead>
             <tbody className={listTableAlt.tbody}>
               {displayedItems.map((item) => {
-                const itemValue = resolveItemEconomicsValue(item, valueMode)
-                const activeFixedValueField =
-                  currency === SkinsCurrency.USD
-                    ? 'fixedValueUsd'
-                    : currency === SkinsCurrency.EUR
-                      ? 'fixedValueEur'
-                      : 'fixedValueBrl'
+                const economicsItem = itemForEconomics(item, valueMode)
+                const liveValue = operationalCaseDropValue(item)
+                const itemValue = resolveItemEconomicsValue(economicsItem, valueMode)
                 const veItem = roundPrice(itemValue * (item.probability / 100))
                 const eligibility = evaluateDropEligibility({
-                  item,
+                  item: economicsItem,
                   openPrice,
                   bankBalance: bankAvailable,
                   valueMode,
@@ -367,21 +382,14 @@ export function CaseEditorItemsTable({
                             name={`fixed-${item.skinName}`}
                             checked={item.useFixedValue === true}
                             bare
-                            onChange={(checked) =>
+                            onChange={(checked) => {
+                              if (checked) {
+                                lockItem(item.skinName)
+                                return
+                              }
                               updateItem(item.skinName, {
-                                useFixedValue: checked,
-                                ...(checked
-                                  ? {
-                                      price: item[activeFixedValueField] ?? itemValue,
-                                      ...(valueMode === 'base'
-                                        ? { basePrice: item[activeFixedValueField] ?? itemValue }
-                                        : { priceWithTax: item[activeFixedValueField] ?? itemValue }),
-                                    }
-                                  : {}),
-                                ...(checked && item[activeFixedValueField] == null
-                                  ? { [activeFixedValueField]: itemValue }
-                                  : {}),
-                                ...(!checked && item.flexiblePrice != null
+                                useFixedValue: false,
+                                ...(item.flexiblePrice != null
                                   ? {
                                       price: item.flexiblePrice,
                                       ...(valueMode === 'base'
@@ -390,7 +398,7 @@ export function CaseEditorItemsTable({
                                     }
                                   : {}),
                               })
-                            }
+                            }}
                           />
                         </div>
                         <div className="grid flex-1 grid-cols-3 gap-2">
@@ -409,8 +417,12 @@ export function CaseEditorItemsTable({
                                   min={0.01}
                                   step="0.01"
                                   value={formatNumberFieldValue(
-                                    item[input.field] ??
-                                      (isActiveCurrency ? itemValue : undefined),
+                                    item.useFixedValue === true
+                                      ? (item[input.field] ??
+                                        (isActiveCurrency ? itemValue : undefined))
+                                      : isActiveCurrency
+                                        ? liveValue
+                                        : undefined,
                                   )}
                                   disabled={item.useFixedValue !== true}
                                   onChange={(event) => {
@@ -442,7 +454,7 @@ export function CaseEditorItemsTable({
                       <ThemeText tone="faint" className="mt-0.5 block text-[10px]">
                         {item.useFixedValue
                           ? `Valor operacional em ${currency}; demais moedas ficam salvas para a troca de moeda.`
-                          : 'Acompanha o catálogo'}
+                          : `Acompanha o catálogo (${formatSkinsPrice(liveValue, currency)}). Snapshot antigo não entra no VE.`}
                       </ThemeText>
                     </td>
                     <td className="px-3 py-3">

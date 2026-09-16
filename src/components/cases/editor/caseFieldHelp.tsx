@@ -196,12 +196,18 @@ export const CASE_FIELD_HELP = {
   },
   targetMarginPercent: {
     title: 'Margem alvo (%)',
-    description: 'Lucro que você quer ter em cima do VE — usado para sugerir o preço.',
+    description:
+      'Meta da caixa: sugere o preço e define quanto cada abertura coloca no banco.',
     details: (
       <>
-        <p>Preço sugerido = <strong>VE × (1 + margem)</strong>. Com VE $0,15 e margem 30% → sugerido = $0,195.</p>
-        <HelpSection title="Não bloqueia drops">
-          <p>Isso só ajuda a calcular preço. Quem bloqueia item caro é a <strong>margem mín.</strong> de cada linha.</p>
+        <p>
+          Não é a margem agora. A margem agora oscila com o catálogo (preço travado vs VE).
+        </p>
+        <HelpSection title="Para que serve">
+          <p>
+            Preço sugerido = VE × (1 + alvo). Injeção no banco = preço ÷ (1 + alvo). Quem
+            libera item caro é o saldo do banco, não este percentual.
+          </p>
         </HelpSection>
       </>
     ),

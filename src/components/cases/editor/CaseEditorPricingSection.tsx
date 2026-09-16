@@ -4,7 +4,7 @@ import { EditorSectionShell } from '@/components/cases/editor/EditorSectionShell
 import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import { Input } from '@/components/ui/Input'
 import { ThemeText } from '@/components/ui/ThemeText'
-import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
+import { SkinsCurrency } from '@/constants/skinsCurrency'
 import type { CaseFormState } from './caseEditor.types'
 import {
   fieldError,
@@ -15,7 +15,6 @@ import {
 type CaseEditorPricingSectionProps = {
   formik: FormikProps<CaseFormState>
   currency: SkinsCurrency
-  totalEV: number
   /** Renderiza sem o card externo e sem título (uso dentro de accordion) */
   embedded?: boolean
 }
@@ -23,7 +22,6 @@ type CaseEditorPricingSectionProps = {
 export function CaseEditorPricingSection({
   formik,
   currency,
-  totalEV,
   embedded = false,
 }: CaseEditorPricingSectionProps) {
   const { values, setFieldValue, handleBlur, touched, errors } = formik
@@ -36,9 +34,8 @@ export function CaseEditorPricingSection({
         </ThemeText>
       )}
       <ThemeText as="p" tone="secondary" className="mb-4 text-sm">
-        O preço permanece fixo. O VE atual ({formatSkinsPrice(totalEV, currency)})
-        acompanha as skins e recalcula a margem automaticamente pela fórmula
-        ((preço − VE) ÷ VE) × 100.
+        O preço fica travado. A margem agora sobe ou desce com o catálogo. A margem alvo
+        ({values.targetMarginPercent}%) só sugere o preço e define quanto entra no banco.
       </ThemeText>
       <div className="mb-4 grid gap-4 md:grid-cols-3">
         <CurrencyInput

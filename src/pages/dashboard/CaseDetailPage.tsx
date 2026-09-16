@@ -31,6 +31,13 @@ import {
 } from '@/redux/store/api/cases/api.cases'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
+function formatPercent(value: number) {
+  return `${value.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}%`
+}
+
 const DAILY_WINDOW_DAYS = 30
 
 function formatDateTime(value?: string) {
@@ -206,10 +213,14 @@ export default function CaseDetailPage() {
     )
   }
 
-  const { case: lootCase, bank, financials, items } = data
+  const { case: lootCase, bank, financials, items, ledger } = data
   const currency = lootCase.currency
   const money = (value: number) => formatSkinsPrice(value, currency)
   const blockedCount = Math.max(0, bank.enabledItemsCount - bank.eligibleItemsCount)
+  const battleRoundsInBank = Math.max(
+    0,
+    (ledger?.totalRealOpens ?? 0) - financials.totalOpens,
+  )
   const itemsPaidOut = items.reduce((sum, item) => sum + item.totalPaidOut, 0)
   const itemsTimesWon = items.reduce((sum, item) => sum + item.timesWon, 0)
 
@@ -286,7 +297,7 @@ export default function CaseDetailPage() {
         <div className="mt-5 grid gap-3 border-t border-zinc-100 pt-5 sm:grid-cols-3 dark:border-zinc-800">
           <div>
             <ThemeText tone="faint" className="text-xs">
-              Preço da abertura
+              Preço
             </ThemeText>
             <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
               {money(lootCase.price)}
@@ -299,27 +310,43 @@ export default function CaseDetailPage() {
           </div>
           <div>
             <ThemeText tone="faint" className="text-xs">
-              Valor esperado (VE)
+              VE
             </ThemeText>
             <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
               {money(lootCase.expectedValue)}
             </ThemeText>
-            <ThemeText tone="faint" className="text-xs">
-              Soma do valor × chance de cada item
-            </ThemeText>
           </div>
           <div>
             <ThemeText tone="faint" className="text-xs">
-              Margem atual sobre o VE
+              Margem agora
             </ThemeText>
-            <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
-              {lootCase.realMarginPercent.toFixed(2)}%
+            <ThemeText
+              tone={lootCase.expectedValueAlert ? 'danger' : 'primary'}
+              className="mt-1 text-lg font-semibold tabular-nums"
+            >
+              {formatPercent(lootCase.realMarginPercent)}
             </ThemeText>
-            <ThemeText tone="faint" className="text-xs">
-              (Preço fixo − VE atual) ÷ VE atual × 100. Referência: {lootCase.targetMarginPercent}%.
-            </ThemeText>
+            {Math.abs(lootCase.realMarginPercent - lootCase.targetMarginPercent) > 0.05 ? (
+              <ThemeText tone="faint" className="text-xs">
+                Alvo {formatPercent(lootCase.targetMarginPercent)}
+              </ThemeText>
+            ) : null}
           </div>
         </div>
+        {lootCase.expectedValueAlert ? (
+          <div className="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/30">
+            <ThemeText tone="primary" className="text-sm font-medium">
+              Margem agora {formatPercent(lootCase.realMarginPercent)} · alvo{' '}
+              {formatPercent(lootCase.targetMarginPercent)}
+            </ThemeText>
+            <ThemeText tone="secondary" className="mt-1 text-xs leading-relaxed">
+              O catálogo andou e o preço ficou travado.
+              {lootCase.suggestedPrice > 0
+                ? ` Para voltar ao alvo, o preço seria ${money(lootCase.suggestedPrice)}.`
+                : ''}
+            </ThemeText>
+          </div>
+        ) : null}
       </Surface>
 
       <Surface variant="settingsPanel" className="!p-5">
@@ -340,9 +367,9 @@ export default function CaseDetailPage() {
             hint={`Média ${money(financials.averagePayoutPerOpen)} por abertura`}
           />
           <Metric
-            label="Sobrou (lucro)"
-            value={money(financials.profit)}
-            hint={`Resultado realizado sobre a receita: ${financials.marginPercent.toFixed(2)}% · margem atual sobre o VE: ${lootCase.realMarginPercent.toFixed(2)}%`}
+            label="Margem das aberturas"
+            value={formatPercent(financials.marginPercent)}
+            hint={`Lucro ${money(financials.profit)}`}
           />
         </div>
 
@@ -413,17 +440,31 @@ export default function CaseDetailPage() {
       <Surface variant="settingsPanel" className="!p-5">
         <SectionTitle className="mb-1">Banco virtual</SectionTitle>
         <ThemeText tone="secondary" className="mb-5 text-sm leading-relaxed">
-          Cada abertura coloca {money(bank.injectionPerOpen)} no banco (o VE da caixa).
-          Itens até o preço da abertura saem sempre. Itens mais caros só entram no
-          sorteio quando o saldo chega no valor deles — e esse valor sai do banco
-          quando alguém ganha.
+          Cada abertura ou rodada de batalha (jogador, não bot) adiciona{' '}
+          {money(bank.injectionPerOpen)} e tira o valor do prêmio.
         </ThemeText>
+        {battleRoundsInBank > 0 || bank.balance < 0 ? (
+          <div className="mb-5 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/30">
+            <ThemeText tone="primary" className="text-sm font-medium">
+              {battleRoundsInBank > 0
+                ? `${battleRoundsInBank.toLocaleString('pt-BR')} rodada${battleRoundsInBank === 1 ? '' : 's'} de batalha no banco desta visão`
+                : 'Saldo negativo'}
+            </ThemeText>
+            <ThemeText tone="secondary" className="mt-1 text-xs leading-relaxed">
+              Batalha mexe neste saldo e não aparece no Resultado acima (só abertura da
+              caixa). Bot não altera o banco.
+              {bank.balance < 0
+                ? ' Negativo = prêmio saiu maior que a injeção — comum quando o item mais barato já custa mais que o preço da caixa.'
+                : ''}
+            </ThemeText>
+          </div>
+        ) : null}
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric
             label="Saldo agora"
             value={money(bank.balance)}
-            hint={`+ ${money(bank.injectionPerOpen)} por abertura`}
+            hint={`+ ${money(bank.injectionPerOpen)} por abertura ou rodada`}
           />
           <Metric
             label="Itens liberados"

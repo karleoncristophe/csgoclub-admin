@@ -344,6 +344,8 @@ export const WALLET_TRANSACTION_TYPES = [
   'upgrade_debit',
   'swap_debit',
   'swap_change',
+  'swap_refund',
+  'swap_change_reversal',
   'battle_escrow_debit',
   'battle_escrow_refund',
   'battle_payout',

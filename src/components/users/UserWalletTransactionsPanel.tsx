@@ -44,6 +44,8 @@ const TYPE_LABELS: Record<WalletTransactionType, string> = {
   upgrade_debit: 'Upgrade (débito)',
   swap_debit: 'Swap (débito)',
   swap_change: 'Swap (troco)',
+  swap_refund: 'Swap (estorno Steam)',
+  swap_change_reversal: 'Swap (estorno do troco)',
   battle_escrow_debit: 'Battle (escrow)',
   battle_escrow_refund: 'Battle (estorno)',
   battle_payout: 'Battle (prêmio)',
@@ -68,6 +70,7 @@ const ROLLOVER_HINTS: Partial<Record<WalletTransactionType, string>> = {
   inventory_convert: 'preso se houver rollover',
   battle_payout: 'preso se houver rollover',
   swap_change: 'preso se houver rollover',
+  swap_refund: 'preso se houver rollover',
   swap_debit: 'só saldo liberado · não abate rollover',
   admin_balance_adjust: 'quita rollover (master) ou ajuste manual',
 }
@@ -81,7 +84,7 @@ const TAB_TYPES: Record<Exclude<LedgerTab, 'all'>, WalletTransactionType[]> = {
     'battle_escrow_debit',
     'arena_entry_debit',
   ],
-  swap: ['swap_debit', 'swap_change'],
+  swap: ['swap_debit', 'swap_change', 'swap_refund', 'swap_change_reversal'],
   deposit: ['deposit'],
 }
 

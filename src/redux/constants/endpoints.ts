@@ -36,6 +36,11 @@ export const WEAPON_CATEGORIES = {
   BY_ID: (id: string) => `/weapon-categories/${id}`,
 } as const
 
+export const SWAP_TAXES = {
+  ROOT: '/admin/swap-taxes',
+  BY_ID: (id: string) => `/admin/swap-taxes/${id}`,
+} as const
+
 export const USERS = {
   SETTLE_ROLLOVER: (id: string) => `/admin/users/${id}/wallet/settle-rollover`,
   WALLET_TRANSACTIONS: (id: string) => `/admin/users/${id}/wallet-transactions`,

@@ -16,6 +16,10 @@ import {
   useUpdateWeaponCategoryMutation,
   type WeaponCategory,
 } from '@/redux/store/api/weapon-categories/api.weapon-categories'
+import {
+  useGetSwapTaxesQuery,
+  useUpdateSwapTaxMutation,
+} from '@/redux/store/api/swap-taxes/api.swap-taxes'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { FALLBACK_WEAPON_CATEGORY, WEAPON_TYPE_OPTIONS } from '@/utils/skinWeaponType'
 
@@ -42,8 +46,11 @@ function normalizeCategoryName(name: string) {
 export default function WeaponCategoriesPage() {
   const { confirm } = useConfirm()
   const { data = [], isLoading, isError, error } = useGetWeaponCategoriesQuery()
+  const { data: swapTaxes = [], isError: swapTaxesError, error: swapTaxesLoadError } =
+    useGetSwapTaxesQuery()
   const [createCategory, createState] = useCreateWeaponCategoryMutation()
   const [updateCategory, updateState] = useUpdateWeaponCategoryMutation()
+  const [updateSwapTax, updateSwapTaxState] = useUpdateSwapTaxMutation()
   const [deleteCategory, deleteState] = useDeleteWeaponCategoryMutation()
 
   const [createName, setCreateName] = useState('')
@@ -55,6 +62,11 @@ export default function WeaponCategoriesPage() {
   const [editTax, setEditTax] = useState('0')
   const [editSwapTax, setEditSwapTax] = useState('0')
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const swapTaxById = useMemo(
+    () => new Map(swapTaxes.map((item) => [item._id, item.swapTaxPercent])),
+    [swapTaxes],
+  )
 
   const existingNames = useMemo(
     () => new Set(data.map((item) => item.name.trim().toLowerCase())),
@@ -77,13 +89,14 @@ export default function WeaponCategoriesPage() {
     setEditingId(category._id)
     setEditName(category.name)
     setEditTax(String(category.taxPercent))
-    setEditSwapTax(String(category.swapTaxPercent ?? 0))
+    setEditSwapTax(String(swapTaxById.get(category._id) ?? 0))
   }
 
   const cancelEdit = () => {
     setEditingId(null)
     setEditName('')
     setEditTax('0')
+    setEditSwapTax('0')
   }
 
   const resetCreateForm = () => {
@@ -107,9 +120,12 @@ export default function WeaponCategoriesPage() {
     if (!createNameNormalized || createNameTaken) return
 
     try {
-      await createCategory({
+      const created = await createCategory({
         name: createNameNormalized,
         taxPercent: clampTax(Number(createTax)),
+      }).unwrap()
+      await updateSwapTax({
+        id: created._id,
         swapTaxPercent: clampTax(Number(createSwapTax)),
       }).unwrap()
       setCreateModalOpen(false)
@@ -125,8 +141,13 @@ export default function WeaponCategoriesPage() {
         id,
         name: normalizeCategoryName(editName),
         taxPercent: clampTax(Number(editTax)),
-        swapTaxPercent: clampTax(Number(editSwapTax)),
       }).unwrap()
+      if (!swapTaxesError) {
+        await updateSwapTax({
+          id,
+          swapTaxPercent: clampTax(Number(editSwapTax)),
+        }).unwrap()
+      }
       cancelEdit()
     } catch {
       // error handled by mutation state
@@ -166,7 +187,7 @@ export default function WeaponCategoriesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageTitle subtitle="Taxas por tipo de arma (porcentagem sobre o preço base do catálogo).">
+        <PageTitle subtitle="Taxa do catálogo vale para caixas, skins e upgrade. Taxa do Swap é independente — alterar uma não muda a outra.">
           Categorias
         </PageTitle>
         <Button type="button" className="gap-2" onClick={openCreateModal}>
@@ -183,6 +204,10 @@ export default function WeaponCategoriesPage() {
 
       {isError ? (
         <p className={surfaceClass('errorBanner')}>{getErrorMessage(error)}</p>
+      ) : null}
+
+      {swapTaxesError ? (
+        <p className={surfaceClass('errorBanner')}>{getErrorMessage(swapTaxesLoadError)}</p>
       ) : null}
 
       {!isLoading && !isError ? (
@@ -240,14 +265,27 @@ export default function WeaponCategoriesPage() {
                         )}
                       </td>
                       <td className={listTable.td}>
-                        {isEditing ? <Input label="Taxa exclusiva Swap (%)" name={`swap-tax-${category._id}`} type="number" min={0} max={1000} step="0.01" value={editSwapTax} onChange={(event) => setEditSwapTax(event.target.value)} /> : `${category.swapTaxPercent ?? 0}%`}
+                        {isEditing ? (
+                          <Input
+                            label="Taxa exclusiva Swap (%)"
+                            name={`swap-tax-${category._id}`}
+                            type="number"
+                            min={0}
+                            max={1000}
+                            step="0.01"
+                            value={editSwapTax}
+                            onChange={(event) => setEditSwapTax(event.target.value)}
+                          />
+                        ) : (
+                          `${swapTaxById.get(category._id) ?? 0}%`
+                        )}
                       </td>
                       <td className={listTable.td}>
                         {isEditing ? (
                           <div className="flex flex-wrap gap-2">
                             <Button
                               size="sm"
-                              isLoading={updateState.isLoading}
+                              isLoading={updateState.isLoading || updateSwapTaxState.isLoading}
                               onClick={() => handleSaveEdit(category._id)}
                             >
                               Salvar
@@ -292,6 +330,12 @@ export default function WeaponCategoriesPage() {
         </p>
       ) : null}
 
+      {updateSwapTaxState.isError ? (
+        <p className={surfaceClass('errorBanner')}>
+          {getErrorMessage(updateSwapTaxState.error)}
+        </p>
+      ) : null}
+
       {deleteState.isError ? (
         <p className={surfaceClass('errorBanner')}>
           {getErrorMessage(deleteState.error)}
@@ -313,13 +357,13 @@ export default function WeaponCategoriesPage() {
               type="button"
               variant="secondary"
               onClick={closeCreateModal}
-              disabled={createState.isLoading}
+              disabled={createState.isLoading || updateSwapTaxState.isLoading}
             >
               Cancelar
             </Button>
             <Button
               type="button"
-              isLoading={createState.isLoading}
+              isLoading={createState.isLoading || updateSwapTaxState.isLoading}
               disabled={!createNameNormalized || createNameTaken}
               onClick={() => void handleCreate()}
             >
@@ -363,8 +407,24 @@ export default function WeaponCategoriesPage() {
               {getErrorMessage(createState.error)}
             </p>
           ) : null}
-          <Input label="Taxa exclusiva Swap (%)" name="createSwapTax" type="number" min={0} max={1000} step="0.01" value={createSwapTax} onChange={(event) => setCreateSwapTax(event.target.value)} />
-          <ThemeText as="p" tone="secondary" className="text-xs">Taxa do catálogo: skins não fixadas em caixas no modo com taxa. Taxa Swap: aplicada somente à cotação de troca.</ThemeText>
+          {updateSwapTaxState.isError ? (
+            <p className={surfaceClass('errorBanner')}>
+              {getErrorMessage(updateSwapTaxState.error)}
+            </p>
+          ) : null}
+          <Input
+            label="Taxa exclusiva Swap (%)"
+            name="createSwapTax"
+            type="number"
+            min={0}
+            max={1000}
+            step="0.01"
+            value={createSwapTax}
+            onChange={(event) => setCreateSwapTax(event.target.value)}
+          />
+          <ThemeText as="p" tone="secondary" className="text-xs">
+            Taxa do catálogo: skins, caixas e upgrade. Taxa Swap: só a troca, via API própria.
+          </ThemeText>
         </div>
       </Modal>
     </div>

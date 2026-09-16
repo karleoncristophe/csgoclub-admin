@@ -5,7 +5,6 @@ import { skinsApi } from '@/redux/store/api/skins/api.skins'
 import { casesApi } from '@/redux/store/api/cases/api.cases'
 
 export type WeaponCategory = {
-  swapTaxPercent?: number
   _id: string
   name: string
   taxPercent: number
@@ -14,13 +13,11 @@ export type WeaponCategory = {
 }
 
 export type CreateWeaponCategoryPayload = {
-  swapTaxPercent?: number
   name: string
   taxPercent: number
 }
 
 export type UpdateWeaponCategoryPayload = {
-  swapTaxPercent?: number
   id: string
   name?: string
   taxPercent?: number

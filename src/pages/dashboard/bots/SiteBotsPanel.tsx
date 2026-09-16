@@ -419,18 +419,6 @@ export function SiteBotsPanel() {
 
   return (
     <div className="space-y-4">
-      <ThemeText as="p" tone="secondary" className="max-w-3xl text-xs">
-        Mesmo pool para livedrop, top drop e battle. Livedrop não cria User,
-        não abre caixa de verdade e não mexe em saldo, banco, elegível nem
-        contagem. Clique no ticker leva para a caixa — bot não tem perfil.
-        Quando uma caixa já tem 5 itens no top drop, o gerador para de
-        preencher aquela caixa. Na battle o bot entra na vaga com o saldo
-        interno da lista — começa em 1.000.000 e recarrega quando acaba.
-        O botão adiciona mais 100 bots no pool (não completa a lista).
-        “Fotos para quem não tem” manda o lote numa request; o servidor sobe
-        cada imagem no storage e associa ao bot.
-      </ThemeText>
-
       <ThemeText as="p" tone="faint" className="text-xs">
         Livedrop {status?.enabled === false ? 'pausado' : 'ativo'}
         {status?.nextAt

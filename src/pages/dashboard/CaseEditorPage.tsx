@@ -591,23 +591,6 @@ export default function CaseEditorPage() {
         onValueModeChange={handleValueModeChange}
       />
 
-      {!!existingCase?.itemValueAlerts?.length && (
-        <Surface variant="settingsPanel" className="space-y-3 !p-4">
-          <ThemeText as="h2" tone="primary" className="font-semibold">Variações do catálogo acima de 10%</ThemeText>
-          <ThemeText as="p" tone="secondary" className="text-sm">Comparação com os valores de referência salvos na moeda original da caixa. Skins fixadas não alteram o VE enquanto a fixação estiver ativa.</ThemeText>
-          {existingCase.itemValueAlerts.map((alert) => (
-            <div key={alert.skinName} className="border-b border-current/10 py-2 text-sm">
-              <ThemeText tone="primary" className="font-medium">{alert.skinName}</ThemeText>
-              <ThemeText tone="secondary">
-                {formatSkinsPrice(alert.fixedValue, existingCase.currency)} → {formatSkinsPrice(alert.flexibleValue, existingCase.currency)}
-                {' · '}{alert.variationPercent > 0 ? 'Aumentou' : 'Diminuiu'} {formatSkinsPrice(Math.abs(alert.flexibleValue - alert.fixedValue), existingCase.currency)} ({Math.abs(alert.variationPercent).toFixed(2)}%)
-                {' · '}{values.items.find((item) => item.skinName === alert.skinName)?.useFixedValue ? 'Preço fixado' : 'Acompanha o catálogo'}
-              </ThemeText>
-            </div>
-          ))}
-        </Surface>
-      )}
-
       <CaseEditorItemsTable
         items={values.items}
         currency={currency}
@@ -617,6 +600,7 @@ export default function CaseEditorPage() {
         ledger={economyLedger}
         itemsError={itemsError}
         probabilityTargetPercent={values.probabilityTargetPercent}
+        catalogAlerts={existingCase?.itemValueAlerts}
         onItemsChange={handleItemsChange}
         headerAction={
           <>

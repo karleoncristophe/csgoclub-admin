@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Testes reais — caixas e Upgrade</title>
+  <style>
+    :root {
+      --bg: #0f1216;
+      --card: #171b21;
+      --line: #2a313b;
+      --text: #e8edf4;
+      --muted: #9aa6b4;
+      --ok: #3dd68c;
+      --warn: #f5c14a;
+      --bad: #ff6b6b;
+      --accent: #6ea8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 32px 20px 64px; }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    h2 { font-size: 20px; margin: 36px 0 12px; }
+    p.lead, .meta { color: var(--muted); max-width: 72ch; }
+    .meta { font-size: 13px; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 24px 0; }
+    .kpi, .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .kpi b { display: block; font-size: 22px; margin-top: 4px; }
+    .kpi span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .skin { display: flex; gap: 8px; align-items: center; }
+    .skin img { width: 36px; height: 36px; object-fit: contain; background: #111; border-radius: 6px; }
+    .note { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
+    code { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Testes reais — caixas e Upgrade</h1>
+  <p class="lead">Pedido da reunião de 14/09: 100 mil simulações de Upgrade em 1%, 10%, 25% e 50% com o gerador real, e conferência das fórmulas das caixas com skins do catálogo. Nada foi gravado no banco.</p>
+  <p class="meta">Gerado em 15/09/2026, 16:05:44 · câmbio SkinsBack USD→BRL 5.150000 · 24.489 skins no pricelist · duração 1.557s</p>
+
+  <div class="kpis">
+    <div class="kpi"><span>Upgrade exato</span><b>100.000 × 4</b></div>
+    <div class="kpi"><span>Pares reais de skins</span><b>4</b></div>
+    <div class="kpi"><span>Caixas ativas simuladas</span><b>8</b></div>
+    <div class="kpi"><span>Aberturas por caixa</span><b>10.000</b></div>
+  </div>
+
+  <h2>1. Upgrade — 100 mil sorteios nas % pedidas</h2>
+  <p class="lead">Motor: <code>rollUpgradeFairTicket</code> + <code>crypto.randomInt</code>, pool 100.000 tickets. Chance 1% = 1.000 tickets vencedores (0–999).</p>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Chance proposta</th>
+          <th>Tickets win</th>
+          <th>Vitórias</th>
+          <th>Derrotas</th>
+          <th>Frequência</th>
+          <th>Desvio</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+              <td>1%</td>
+              <td>1.000 (0–999)</td>
+              <td>1.020</td>
+              <td>98.980</td>
+              <td>1,020%</td>
+              <td class="ok">+0,020%</td>
+            </tr><tr>
+              <td>10%</td>
+              <td>10.000 (0–9999)</td>
+              <td>9.819</td>
+              <td>90.181</td>
+              <td>9,819%</td>
+              <td class="ok">-0,181%</td>
+            </tr><tr>
+              <td>25%</td>
+              <td>25.000 (0–24999)</td>
+              <td>24.877</td>
+              <td>75.123</td>
+              <td>24,877%</td>
+              <td class="ok">-0,123%</td>
+            </tr><tr>
+              <td>50%</td>
+              <td>50.000 (0–49999)</td>
+              <td>49.762</td>
+              <td>50.238</td>
+              <td>49,762%</td>
+              <td class="warn">-0,238%</td>
+            </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>2. Upgrade com skins reais do catálogo</h2>
+  <p class="lead">Stake: <strong>StatTrak™ PP-Bizon | Osiris (Field-Tested)</strong> (R$ 9,99, com taxa). Alvo = skin mais próxima da fórmula inversa chance = (stake / alvo) × 71. Resultado financeiro = stake − payout do alvo, sem gravar jogada.</p>
+  <div class="card" style="margin-bottom:12px">
+        <table>
+          <tbody>
+            <tr><th>Chance pedida</th><td>1%</td></tr>
+            <tr><th>Stake</th><td class="skin"><span>StatTrak™ PP-Bizon | Osiris (Field-Tested) · R$ 9,99</span></td></tr>
+            <tr><th>Alvo ideal</th><td>R$ 709,29</td></tr>
+            <tr><th>Alvo real</th><td class="skin"><span>Sticker | Flipsid3 Tactics (Foil) | Katowice 2015 · R$ 709,72</span></td></tr>
+            <tr><th>Chance real da API</th><td>0,9994%</td></tr>
+            <tr><th>100 mil sorteios</th><td>973 vitórias · 0,973% · desvio <span class="ok">-0,026%</span></td></tr>
+            <tr><th>Casa esperada / jogada</th><td>R$ 2,8971 (29,00% do stake)</td></tr>
+            <tr><th>Casa realizada nas 100 mil</th><td>R$ 308.442,44 · R$ 3,0844 por jogada</td></tr>
+          </tbody>
+        </table>
+      </div><div class="card" style="margin-bottom:12px">
+        <table>
+          <tbody>
+            <tr><th>Chance pedida</th><td>10%</td></tr>
+            <tr><th>Stake</th><td class="skin"><span>StatTrak™ PP-Bizon | Osiris (Field-Tested) · R$ 9,99</span></td></tr>
+            <tr><th>Alvo ideal</th><td>R$ 70,929</td></tr>
+            <tr><th>Alvo real</th><td class="skin"><span>SCAR-20 | Splash Jam (Battle-Scarred) · R$ 70,92</span></td></tr>
+            <tr><th>Chance real da API</th><td>10,0013%</td></tr>
+            <tr><th>100 mil sorteios</th><td>9.959 vitórias · 9,959% · desvio <span class="ok">-0,042%</span></td></tr>
+            <tr><th>Casa esperada / jogada</th><td>R$ 2,8971 (29,00% do stake)</td></tr>
+            <tr><th>Casa realizada nas 100 mil</th><td>R$ 292.707,72 · R$ 2,9271 por jogada</td></tr>
+          </tbody>
+        </table>
+      </div><div class="card" style="margin-bottom:12px">
+        <table>
+          <tbody>
+            <tr><th>Chance pedida</th><td>25%</td></tr>
+            <tr><th>Stake</th><td class="skin"><span>StatTrak™ PP-Bizon | Osiris (Field-Tested) · R$ 9,99</span></td></tr>
+            <tr><th>Alvo ideal</th><td>R$ 28,3716</td></tr>
+            <tr><th>Alvo real</th><td class="skin"><span>Sticker | seized | Boston 2018 · R$ 28,38</span></td></tr>
+            <tr><th>Chance real da API</th><td>24,9926%</td></tr>
+            <tr><th>100 mil sorteios</th><td>24.993 vitórias · 24,993% · desvio <span class="ok">+0,000%</span></td></tr>
+            <tr><th>Casa esperada / jogada</th><td>R$ 2,8971 (29,00% do stake)</td></tr>
+            <tr><th>Casa realizada nas 100 mil</th><td>R$ 289.698,66 · R$ 2,897 por jogada</td></tr>
+          </tbody>
+        </table>
+      </div><div class="card" style="margin-bottom:12px">
+        <table>
+          <tbody>
+            <tr><th>Chance pedida</th><td>50%</td></tr>
+            <tr><th>Stake</th><td class="skin"><span>StatTrak™ PP-Bizon | Osiris (Field-Tested) · R$ 9,99</span></td></tr>
+            <tr><th>Alvo ideal</th><td>R$ 14,1858</td></tr>
+            <tr><th>Alvo real</th><td class="skin"><span>Music Kit | Daniel Sadowski, Total Domination · R$ 14,21</span></td></tr>
+            <tr><th>Chance real da API</th><td>49,9148%</td></tr>
+            <tr><th>100 mil sorteios</th><td>49.871 vitórias · 49,871% · desvio <span class="ok">-0,044%</span></td></tr>
+            <tr><th>Casa esperada / jogada</th><td>R$ 2,8971 (29,00% do stake)</td></tr>
+            <tr><th>Casa realizada nas 100 mil</th><td>R$ 290.333,09 · R$ 2,9033 por jogada</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+  <h2>3. Fórmulas das caixas com skins reais</h2>
+  <p class="lead">Mesma <code>resolveCasePricing</code> do backend. Os valores teóricos do relatório (10, 0,01, 100, 999) foram substituídos pela skin mais próxima no catálogo vivo.</p>
+  <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 8px;font-size:16px">Item ~10 com chance 100% (outro desativado)</h3>
+        <p class="note">Preço final = VE × 1,20. Skin real no lugar do 10,00 teórico.</p>
+        <table>
+          <thead><tr><th></th><th>Teórico (doc)</th><th>Com skin real</th></tr></thead>
+          <tbody>
+            <tr><th>VE</th><td>R$ 10,00</td><td>R$ 9,99</td></tr>
+            <tr><th>Preço final</th><td>R$ 12,00</td><td>R$ 11,99</td></tr>
+            <tr><th>Margem sobre VE</th><td>20,0000%</td><td>20,0200% (+0,02% vs teórico)</td></tr>
+          </tbody>
+        </table>
+        <p class="note">Skins: StatTrak™ PP-Bizon | Osiris (Field-Tested) · R$ 9,99 (Other, taxa 0%)</p>
+      </div><div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 8px;font-size:16px">Itens ~0,01 (60%) + ~0,02 (40%)</h3>
+        <p class="note">Mesma fórmula do spec. VE não arredonda antes da margem.</p>
+        <table>
+          <thead><tr><th></th><th>Teórico (doc)</th><th>Com skin real</th></tr></thead>
+          <tbody>
+            <tr><th>VE</th><td>R$ 0,014</td><td>R$ 0,484</td></tr>
+            <tr><th>Preço final</th><td>R$ 0,02</td><td>R$ 0,02</td></tr>
+            <tr><th>Margem sobre VE</th><td>42,8571%</td><td>-95,8678% (-138,72% vs teórico)</td></tr>
+          </tbody>
+        </table>
+        <p class="note">Skins: SCAR-20 | Arctic Camo Panels (Minimal Wear) · R$ 0,46 (Sniper, taxa 0%) · SCAR-20 | Carbon Fiber (Minimal Wear) · R$ 0,52 (Sniper, taxa 0%)</p>
+      </div><div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 8px;font-size:16px">Catálogo ~100 + taxa da categoria (doc: 25% → VE 125, preço 150)</h3>
+        <p class="note">Taxa aplicada no teste: 25% (cenário da reunião). Taxa real da categoria Other: 0%.</p>
+        <table>
+          <thead><tr><th></th><th>Teórico (doc)</th><th>Com skin real</th></tr></thead>
+          <tbody>
+            <tr><th>VE</th><td>R$ 125,00</td><td>R$ 124,95</td></tr>
+            <tr><th>Preço final</th><td>R$ 150,00</td><td>R$ 149,94</td></tr>
+            <tr><th>Margem sobre VE</th><td>20,0000%</td><td>20,0000% (+0,00% vs teórico)</td></tr>
+          </tbody>
+        </table>
+        <p class="note">Skins: StatTrak™ Nova | Bloomstick (Battle-Scarred) · R$ 99,96 (Other, taxa 0%)</p>
+      </div><div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 8px;font-size:16px">Catálogo sobe (~999) e o preço da caixa permanece 117</h3>
+        <p class="note">Preço fixo da caixa não acompanha o catálogo — margem negativa é esperada.</p>
+        <table>
+          <thead><tr><th></th><th>Teórico (doc)</th><th>Com skin real</th></tr></thead>
+          <tbody>
+            <tr><th>VE</th><td>R$ 999,00</td><td>R$ 999,20</td></tr>
+            <tr><th>Preço final</th><td>R$ 117,00</td><td>R$ 117,00</td></tr>
+            <tr><th>Margem sobre VE</th><td>-88,2883%</td><td>-88,2906% (-0,00% vs teórico)</td></tr>
+          </tbody>
+        </table>
+        <p class="note">Skins: ★ Stiletto Knife | Blue Steel (Battle-Scarred) · R$ 999,20 (Knife, taxa 0%)</p>
+      </div>
+
+  <h2>4. Caixas ativas do banco — dry-run do drop engine</h2>
+  <p class="lead">Cópia do ledger em memória. 10.000 aberturas por caixa com <code>CaseDropEngineService.resolveDrop</code>. Preço dos itens: valor fixo se travado, senão catálogo vivo com taxa. Nenhum <code>case_opens</code> gravado.</p>
+  <div class="card" style="margin-bottom:12px">
+              <h3 style="margin:0 0 8px;font-size:16px">Case Preset Dev <code>case-preset-dev</code></h3>
+              <table>
+                <tbody>
+                  <tr><th>Itens / preço / VE</th><td>6 · R$ 1,03 · R$ 0,5097</td></tr>
+                  <tr><th>Margem de design (preço − VE) / VE</th><td>102,09% · alvo 30,00%</td></tr>
+                  <tr><th>Banco inicial → final</th><td>R$ 1,41 → R$ 3.117,03</td></tr>
+                  <tr><th>Receita / payout / resultado</th><td>R$ 10.300,00 · R$ 4.784,38 · <span class="ok">R$ 5.515,62</span></td></tr>
+                  <tr><th>Margem realizada sobre receita</th><td class="ok">53,55%</td></tr>
+                  <tr><th>Rerolls / fallback</th><td>2 / 0</td></tr>
+                </tbody>
+              </table>
+              <table>
+                <thead><tr><th>Drop mais frequente</th><th>Vezes</th><th>Share</th><th>Payout</th></tr></thead>
+                <tbody>
+                  <tr><td>Zeus x27 | Swamp DDPAT</td><td>9.947</td><td>99,47%</td><td>R$ 99,47</td></tr><tr><td>Desert Eagle | Kumicho Dragon (Field-Tested)</td><td>35</td><td>0,35%</td><td>R$ 2.826,25</td></tr><tr><td>Charm | Quick Silver</td><td>9</td><td>0,09%</td><td>R$ 1.064,70</td></tr><tr><td>M4A1-S | Party Animal (Field-Tested)</td><td>7</td><td>0,07%</td><td>R$ 253,82</td></tr><tr><td>Glock-18 | Fully Tuned (Well-Worn)</td><td>1</td><td>0,01%</td><td>R$ 248,08</td></tr><tr><td>SSG 08 | Turbo Peek (Factory New)</td><td>1</td><td>0,01%</td><td>R$ 292,06</td></tr>
+                </tbody>
+              </table>
+            </div><div class="card" style="margin-bottom:12px">
+              <h3 style="margin:0 0 8px;font-size:16px">Case Preset Dev 2 <code>case-preset-dev-2</code></h3>
+              <table>
+                <tbody>
+                  <tr><th>Itens / preço / VE</th><td>6 · R$ 1,08 · R$ 0,5097</td></tr>
+                  <tr><th>Margem de design (preço − VE) / VE</th><td>111,90% · alvo 37,00%</td></tr>
+                  <tr><th>Banco inicial → final</th><td>R$ 4,84 → R$ 3.256,92</td></tr>
+                  <tr><th>Receita / payout / resultado</th><td>R$ 10.800,00 · R$ 4.647,92 · <span class="ok">R$ 6.152,08</span></td></tr>
+                  <tr><th>Margem realizada sobre receita</th><td class="ok">56,96%</td></tr>
+                  <tr><th>Rerolls / fallback</th><td>0 / 0</td></tr>
+                </tbody>
+              </table>
+              <table>
+                <thead><tr><th>Drop mais frequente</th><th>Vezes</th><th>Share</th><th>Payout</th></tr></thead>
+                <tbody>
+                  <tr><td>Zeus x27 | Swamp DDPAT</td><td>9.949</td><td>99,49%</td><td>R$ 99,49</td></tr><tr><td>Desert Eagle | Kumicho Dragon (Field-Tested)</td><td>43</td><td>0,43%</td><td>R$ 3.472,25</td></tr><tr><td>Charm | Quick Silver</td><td>7</td><td>0,07%</td><td>R$ 828,10</td></tr><tr><td>Glock-18 | Fully Tuned (Well-Worn)</td><td>1</td><td>0,01%</td><td>R$ 248,08</td></tr>
+                </tbody>
+              </table>
+            </div><div class="card" style="margin-bottom:12px">
+              <h3 style="margin:0 0 8px;font-size:16px">Case Preset Dev 2 (cópia) <code>case-preset-dev-2-copia</code></h3>
+              <table>
+                <tbody>
+                  <tr><th>Itens / preço / VE</th><td>6 · R$ 1,08 · R$ 0,5097</td></tr>
+                  <tr><th>Margem de design (preço − VE) / VE</th><td>111,90% · alvo 37,00%</td></tr>
+                  <tr><th>Banco inicial → final</th><td>R$ 6,44 → R$ 1.446,14</td></tr>
+                  <tr><th>Receita / payout / resultado</th><td>R$ 10.800,00 · R$ 6.460,30 · <span class="ok">R$ 4.339,70</span></td></tr>
+                  <tr><th>Margem realizada sobre receita</th><td class="ok">40,18%</td></tr>
+                  <tr><th>Rerolls / fallback</th><td>0 / 0</td></tr>
+                </tbody>
+              </table>
+              <table>
+                <thead><tr><th>Drop mais frequente</th><th>Vezes</th><th>Share</th><th>Payout</th></tr></thead>
+                <tbody>
+                  <tr><td>Zeus x27 | Swamp DDPAT</td><td>9.943</td><td>99,43%</td><td>R$ 99,43</td></tr><tr><td>Desert Eagle | Kumicho Dragon (Field-Tested)</td><td>39</td><td>0,39%</td><td>R$ 3.149,25</td></tr><tr><td>Charm | Quick Silver</td><td>10</td><td>0,10%</td><td>R$ 1.183,00</td></tr><tr><td>Glock-18 | Fully Tuned (Well-Worn)</td><td>7</td><td>0,07%</td><td>R$ 1.736,56</td></tr><tr><td>SSG 08 | Turbo Peek (Factory New)</td><td>1</td><td>0,01%</td><td>R$ 292,06</td></tr>
+                </tbody>
+              </table>
+            </div><div class="card" style="margin-bottom:12px">
+              <h3 style="margin:0 0 8px;font-size:16px">Caixa Demo Influencer <code>caixa-demo-influencer</code></h3>
+              <table>
+                <tbody>
+                  <tr><th>Itens / preço / VE</th><td>9 · R$ 27.145,11 · R$ 19.944,0519</td></tr>
+                  <tr><th>Margem de design (preço − VE) / VE</th><td>36,11% · alvo 30,00%</td></tr>
+                  <tr><th>Banco inicial → final</th><td>R$ 12.233,52 → R$ 7.698.708,42</td></tr>
+                  <tr><th>Receita / payout / resultado</th><td>R$ 271.451.100,00 · R$ 201.122.025,10 · <span class="ok">R$ 70.329.074,90</span></td></tr>
+                  <tr><th>Margem realizada sobre receita</th><td class="ok">25,91%</td></tr>
+                  <tr><th>Rerolls / fallback</th><td>2 / 0</td></tr>
+                </tbody>
+              </table>
+              <table>
+                <thead><tr><th>Drop mais frequente</th><th>Vezes</th><th>Share</th><th>Payout</th></tr></thead>
+                <tbody>
+                  <tr><td>StatTrak™ M4A4 | Howl (Factory New)</td><td>2.733</td><td>27,33%</td><td>R$ 201.061.507,98</td></tr><tr><td>Glock-18 | Moonrise (Field-Tested)</td><td>2.298</td><td>22,98%</td><td>R$ 9.467,76</td></tr><tr><td>AK-47 | Safari Mesh (Field-Tested)</td><td>2.043</td><td>20,43%</td><td>R$ 2.002,14</td></tr><tr><td>M4A4 | Poly Mag (Field-Tested)</td><td>1.460</td><td>14,60%</td><td>R$ 1.883,40</td></tr><tr><td>AWP | Capillary (Field-Tested)</td><td>991</td><td>9,91%</td><td>R$ 3.062,19</td></tr><tr><td>Desert Eagle | Corinthian (Field-Tested)</td><td>392</td><td>3,92%</td><td>R$ 787,92</td></tr><tr><td>Dual Berettas | Cobra Strike (Factory New)</td><td>67</td><td>0,67%</td><td>R$ 34.805,16</td></tr><tr><td>MP9 | Capillary (Field-Tested)</td><td>11</td><td>0,11%</td><td>R$ 19,80</td></tr>
+                </tbody>
+              </table>
+            </div><div class="card" style="margin-bottom:12px">
+              <h3 style="margin:0 0 8px;font-size:16px">Case Preset Dev 3 <code>case-preset-dev-3</code></h3>
+              <table>
+                <tbody>
+                  <tr><th>Itens / preço / VE</th><td>6 · R$ 45,05 · R$ 2,2643</td></tr>
+                  <tr><th>Margem de design (preço − VE) / VE</th><td>1.889,58% · alvo 30,00%</td></tr>
+                  <tr><th>Banco inicial → final</th><td>-R$ 4,46 → R$ 323.842,79</td></tr>
+                  <tr><th>Receita / payout / resultado</th><td>R$ 450.500,00 · R$ 22.652,75 · <span class="ok">R$ 427.847,25</span></td></tr>
+                  <tr><th>Margem realizada sobre receita</th><td class="ok">94,97%</td></tr>
+                  <tr><th>Rerolls / fallback</th><td>0 / 0</td></tr>
+                </tbody>
+              </table>
+              <table>
+                <thead><tr><th>Drop mais frequente</th><th>Vezes</th><th>Share</th><th>Payout</th></tr></thead>
+                <tbody>
+                  <tr><td>MP9 | Capillary (Field-Tested)</td><td>3.144</td><td>31,44%</td><td>R$ 5.659,20</td></tr><tr><td>Glock-18 | Moonrise (Field-Tested)</td><td>2.518</td><td>25,18%</td><td>R$ 10.374,16</td></tr><tr><td>AK-47 | Safari Mesh (Field-Tested)</td><td>2.021</td><td>20,21%</td><td>R$ 1.980,58</td></tr><tr><td>M4A4 | Poly Mag (Field-Tested)</td><td>1.212</td><td>12,12%</td><td>R$ 1.563,48</td></tr><tr><td>AWP | Capillary (Field-Tested)</td><td>791</td><td>7,91%</td><td>R$ 2.444,19</td></tr><tr><td>Desert Eagle | Corinthian (Field-Tested)</td><td>314</td><td>3,14%</td><td>R$ 631,14</td></tr>
+                </tbody>
+              </table>
+            </div><div class="card" style="margin-bottom:12px">
+              <h3 style="margin:0 0 8px;font-size:16px">Low Go <code>low-go</code></h3>
+              <table>
+                <tbody>
+                  <tr><th>Itens / preço / VE</th><td>6 · R$ 1,03 · R$ 1,1752</td></tr>
+                  <tr><th>Margem de design (preço − VE) / VE</th><td>-12,36% · alvo 30,00%</td></tr>
+                  <tr><th>Banco inicial → final</th><td>R$ 1,27 → R$ 26,80</td></tr>
+                  <tr><th>Receita / payout / resultado</th><td>R$ 10.300,00 · R$ 7.874,47 · <span class="ok">R$ 2.425,53</span></td></tr>
+                  <tr><th>Margem realizada sobre receita</th><td class="ok">23,55%</td></tr>
+                  <tr><th>Rerolls / fallback</th><td>67 / 0</td></tr>
+                </tbody>
+              </table>
+              <table>
+                <thead><tr><th>Drop mais frequente</th><th>Vezes</th><th>Share</th><th>Payout</th></tr></thead>
+                <tbody>
+                  <tr><td>Zeus x27 | Swamp DDPAT (Minimal Wear)</td><td>9.967</td><td>99,67%</td><td>R$ 6.677,89</td></tr><tr><td>M4A1-S | Party Animal (Field-Tested)</td><td>33</td><td>0,33%</td><td>R$ 1.196,58</td></tr>
+                </tbody>
+              </table>
+            </div><div class="card" style="margin-bottom:12px">
+              <h3 style="margin:0 0 8px;font-size:16px">JAPASKINS <code>japaskins</code></h3>
+              <table>
+                <tbody>
+                  <tr><th>Itens / preço / VE</th><td>6 · R$ 0,46 · R$ 1,5607</td></tr>
+                  <tr><th>Margem de design (preço − VE) / VE</th><td>-70,53% · alvo 30,00%</td></tr>
+                  <tr><th>Banco inicial → final</th><td>-R$ 0,76 → -R$ 9.400,76</td></tr>
+                  <tr><th>Receita / payout / resultado</th><td>R$ 4.600,00 · R$ 12.900,00 · <span class="bad">-R$ 8.300,00</span></td></tr>
+                  <tr><th>Margem realizada sobre receita</th><td class="bad">-180,43%</td></tr>
+                  <tr><th>Rerolls / fallback</th><td>10.000 / 10.000</td></tr>
+                </tbody>
+              </table>
+              <table>
+                <thead><tr><th>Drop mais frequente</th><th>Vezes</th><th>Share</th><th>Payout</th></tr></thead>
+                <tbody>
+                  <tr><td>AUG | Commando Company (Field-Tested)</td><td>10.000</td><td>100,00%</td><td>R$ 12.900,00</td></tr>
+                </tbody>
+              </table>
+            </div><div class="card" style="margin-bottom:12px">
+              <h3 style="margin:0 0 8px;font-size:16px">Abis Box <code>abis-box</code></h3>
+              <table>
+                <tbody>
+                  <tr><th>Itens / preço / VE</th><td>28 · R$ 3,28 · R$ 2,6277</td></tr>
+                  <tr><th>Margem de design (preço − VE) / VE</th><td>24,82% · alvo 30,00%</td></tr>
+                  <tr><th>Banco inicial → final</th><td>-R$ 0,76 → R$ 11,39</td></tr>
+                  <tr><th>Receita / payout / resultado</th><td>R$ 32.800,00 · R$ 25.187,85 · <span class="ok">R$ 7.612,15</span></td></tr>
+                  <tr><th>Margem realizada sobre receita</th><td class="ok">23,21%</td></tr>
+                  <tr><th>Rerolls / fallback</th><td>33 / 0</td></tr>
+                </tbody>
+              </table>
+              <table>
+                <thead><tr><th>Drop mais frequente</th><th>Vezes</th><th>Share</th><th>Payout</th></tr></thead>
+                <tbody>
+                  <tr><td>Tec-9 | Red Quartz (Field-Tested)</td><td>1.470</td><td>14,70%</td><td>R$ 1.896,30</td></tr><tr><td>Charm | Disco MAC</td><td>1.363</td><td>13,63%</td><td>R$ 3.094,01</td></tr><tr><td>MAC-10 | Sakkaku (Battle-Scarred)</td><td>1.360</td><td>13,60%</td><td>R$ 2.312,00</td></tr><tr><td>M4A1-S | Nitro (Well-Worn)</td><td>1.342</td><td>13,42%</td><td>R$ 3.113,44</td></tr><tr><td>Desert Eagle | Serpent Strike (Field-Tested)</td><td>1.156</td><td>11,56%</td><td>R$ 2.554,76</td></tr><tr><td>Charm | Bomb Tag</td><td>1.067</td><td>10,67%</td><td>R$ 2.752,86</td></tr><tr><td>P250 | Inferno (Field-Tested)</td><td>890</td><td>8,90%</td><td>R$ 2.616,60</td></tr><tr><td>AK-47 | Uncharted (Field-Tested)</td><td>483</td><td>4,83%</td><td>R$ 1.366,89</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+  <h2>Como ler</h2>
+  <p class="lead">A margem de design (preço − VE) / VE não é a margem sobre receita. 20% sobre VE ≈ 16,7% sobre receita; 30% sobre VE ≈ 23,08% sobre receita. Upgrade com fator 71 espera ~29% de resultado da casa sobre o stake, se a chance for exatamente a da fórmula.</p>
+  <p class="meta">Fonte de preço: POST skinsback.com/api.php method=market_pricelist + currencies, convertidos como GET /skinsback/catalog. Taxas: collection weapon_categories. Caixas: collection cases (leitura). Script: scripts/real-upgrade-case-audit.ts</p>
+</main>
+</body>
+</html>

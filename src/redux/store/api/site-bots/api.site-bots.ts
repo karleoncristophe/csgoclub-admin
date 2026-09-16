@@ -76,6 +76,23 @@ export const siteBotsApi = createApi({
       }),
       invalidatesTags: ['SiteBots'],
     }),
+    assignSiteBotAvatars: builder.mutation<
+      {
+        updated: number
+        attempted: number
+        leftoverFiles: number
+        leftoverBots: number
+        errors: string[]
+      },
+      FormData
+    >({
+      query: (body) => ({
+        url: SITE_BOTS.AVATARS,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['SiteBots'],
+    }),
   }),
 })
 
@@ -87,4 +104,5 @@ export const {
   useUpdateSiteBotMutation,
   useDeleteSiteBotMutation,
   useBulkDeleteSiteBotsMutation,
+  useAssignSiteBotAvatarsMutation,
 } = siteBotsApi

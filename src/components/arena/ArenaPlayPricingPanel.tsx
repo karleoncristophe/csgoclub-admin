@@ -25,9 +25,9 @@ export function ArenaPlayPricingPanel() {
   const { data, isLoading, isError, error } = useGetArenaPlayPricingQuery()
   const { data: history } = useGetArenaPlayPricingHistoryQuery({ limit: 6 })
   const [savePricing, saveState] = useUpdateArenaPlayPricingMutation()
-  const [listPriceBrl, setListPriceBrl] = useState(50)
-  const [listPriceUsd, setListPriceUsd] = useState(10)
-  const [listPriceEur, setListPriceEur] = useState(10)
+  const [listPriceBrl, setListPriceBrl] = useState(9.9)
+  const [listPriceUsd, setListPriceUsd] = useState(1.98)
+  const [listPriceEur, setListPriceEur] = useState(1.98)
   const [discountPercent, setDiscountPercent] = useState(0)
   const [formError, setFormError] = useState<string | null>(null)
 

@@ -12,6 +12,10 @@ export const ME = {
   PROFILE: '/admin/me',
 } as const
 
+export const GAMEPLAY = {
+  RESET: '/admin/gameplay/reset',
+} as const
+
 export const ADMIN_ACCOUNTS = {
   ROOT: '/admin/accounts',
   BY_ID: (id: string) => `/admin/accounts/${id}`,
@@ -59,6 +63,7 @@ export const SITE_BOTS = {
   STATUS: '/admin/site-bots/status',
   GENERATE: '/admin/site-bots/generate',
   BULK_DELETE: '/admin/site-bots/bulk-delete',
+  AVATARS: '/admin/site-bots/avatars',
   BY_ID: (id: string) => `/admin/site-bots/${id}`,
 } as const
 

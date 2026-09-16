@@ -225,7 +225,7 @@ export default function SwapDetailPage() {
                 <SectionTitle>Skin que entrou</SectionTitle>
                 <ThemeText as="p" tone="secondary" className="text-sm leading-relaxed">
                   Este era o alvo na dash. O valor abaixo é o preço com taxa no momento do swap —
-                  o que a skin custou para fechar a troca.
+                  o que a skin custou para fechar a troca. O envio vai direto para a Steam.
                 </ThemeText>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <ValueTile
@@ -238,8 +238,11 @@ export default function SwapDetailPage() {
                     value={data.receivedItem?.id ? data.receivedItem.id.slice(-8) : '—'}
                     hint={
                       data.receivedItem
-                        ? data.receivedItem.name ?? 'No inventário do site'
-                        : 'Ainda não creditado'
+                        ? data.receivedItem.status === 'pending_withdraw' ||
+                          data.receivedItem.status === 'withdrawn'
+                          ? 'Envio direto para a Steam'
+                          : data.receivedItem.name ?? 'Registro do envio'
+                        : 'Ainda não enviado'
                     }
                   />
                 </div>

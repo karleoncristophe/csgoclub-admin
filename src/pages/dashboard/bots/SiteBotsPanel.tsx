@@ -1,5 +1,5 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { Plus, Sparkles, Trash2 } from 'lucide-react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ImagePlus, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/Checkbox'
 import {
   CaseImageUploader,
@@ -12,11 +12,12 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { listTable } from '@/components/ui/listTable'
-import { deleteUploadFile, uploadSingleFile } from '@/lib/upload'
+import { deleteUploadFile } from '@/lib/upload'
 import {
   useCreateSiteBotMutation,
   useDeleteSiteBotMutation,
   useBulkDeleteSiteBotsMutation,
+  useAssignSiteBotAvatarsMutation,
   useGenerateSiteBotsMutation,
   useGetSiteBotsQuery,
   useGetSiteBotsStatusQuery,
@@ -207,6 +208,8 @@ export function SiteBotsPanel() {
   const [deleteBot] = useDeleteSiteBotMutation()
   const [bulkDelete, { isLoading: deletingMany }] =
     useBulkDeleteSiteBotsMutation()
+  const [assignAvatars, { isLoading: assigningAvatars }] =
+    useAssignSiteBotAvatarsMutation()
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [name, setName] = useState('')
@@ -217,39 +220,73 @@ export function SiteBotsPanel() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [batchProgress, setBatchProgress] = useState('')
   const [batchUploading, setBatchUploading] = useState(false)
+  const missingAvatarInputRef = useRef<HTMLInputElement>(null)
+  const selectedAvatarInputRef = useRef<HTMLInputElement>(null)
 
-  async function uploadSelectedAvatars(files: File[]) {
-    const targets = bots.filter((bot) => selectedIds.includes(bot._id))
+  const botsWithoutAvatar = useMemo(
+    () => bots.filter((bot) => !bot.avatarUrl?.trim()),
+    [bots],
+  )
+
+  async function uploadAvatarsToBots(
+    targets: AdminSiteBot[],
+    files: File[],
+    title: string,
+    mode: 'missing' | 'selected',
+  ) {
     if (!files.length || batchUploading) return
-    if (files.length !== targets.length || files.length > 100) {
-      setPageError('Selecione um arquivo por bot selecionado, no máximo 100. A associação segue a ordem da listagem.')
+    if (targets.length === 0) {
+      setPageError('Nenhum bot para receber foto nesta ação.')
       return
     }
-    if (files.some((file) => !['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024)) {
+    if (
+      files.some(
+        (file) =>
+          !['image/png', 'image/jpeg', 'image/webp'].includes(file.type) ||
+          file.size > 10 * 1024 * 1024,
+      )
+    ) {
       setPageError('Use PNG, JPEG ou WebP, com até 10 MB por arquivo.')
       return
     }
+    if (files.length > 100) {
+      setPageError('Envie no máximo 100 fotos por lote.')
+      return
+    }
+    const assignCount = Math.min(files.length, targets.length)
+    const leftoverFiles = files.length - assignCount
+    const leftoverBots = targets.length - assignCount
     const approved = await confirm({
-      title: 'Atualizar avatares selecionados',
-      description: targets.map((bot, i) => `${bot.name} ← ${files[i].name}`).join('\n'),
-      confirmLabel: 'Enviar avatares',
+      title,
+      description: [
+        `${assignCount} foto(s) para ${assignCount} bot(s), na ordem da listagem.`,
+        leftoverFiles > 0 ? `${leftoverFiles} arquivo(s) a mais serão ignorados.` : '',
+        leftoverBots > 0 ? `${leftoverBots} bot(s) ainda ficam sem foto.` : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+      confirmLabel: 'Enviar fotos',
     })
     if (!approved) return
     setBatchUploading(true)
     setPageError(null)
-    const errors: string[] = []
+    setBatchProgress(`Enviando ${assignCount} foto(s) no lote…`)
     try {
-      for (let i = 0; i < files.length; i++) {
-        setBatchProgress(`Enviando ${i + 1}/${files.length}: ${targets[i].name}`)
-        try {
-          const uploaded = await uploadSingleFile(files[i], 'bots')
-          await updateBot({ id: targets[i]._id, body: { avatarUrl: uploaded.url } }).unwrap()
-        } catch (error) {
-          errors.push(`${targets[i].name}: ${getErrorMessage(error)}`)
-        }
+      const form = new FormData()
+      form.set('mode', mode)
+      if (mode === 'selected') {
+        form.set('ids', targets.map((bot) => bot._id).join(','))
       }
-      setBatchProgress(`Concluído: ${files.length - errors.length}/${files.length} avatares atualizados.`)
-      if (errors.length) setPageError(errors.join(' · '))
+      for (const file of files.slice(0, assignCount)) {
+        form.append('files', file)
+      }
+      const result = await assignAvatars(form).unwrap()
+      setBatchProgress(
+        `Concluído: ${result.updated}/${result.attempted} avatares atualizados.`,
+      )
+      if (result.errors.length) setPageError(result.errors.join(' · '))
+    } catch (error) {
+      setPageError(getErrorMessage(error))
     } finally {
       setBatchUploading(false)
     }
@@ -390,6 +427,8 @@ export function SiteBotsPanel() {
         preencher aquela caixa. Na battle o bot entra na vaga com o saldo
         interno da lista — começa em 1.000.000 e recarrega quando acaba.
         O botão adiciona mais 100 bots no pool (não completa a lista).
+        “Fotos para quem não tem” manda o lote numa request; o servidor sobe
+        cada imagem no storage e associa ao bot.
       </ThemeText>
 
       <ThemeText as="p" tone="faint" className="text-xs">
@@ -408,21 +447,68 @@ export function SiteBotsPanel() {
       ) : null}
 
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <label className="text-sm">
-          Avatares dos selecionados (ordem da listagem)
-          <input
-            type="file"
-            multiple
-            accept="image/png,image/jpeg,image/webp"
-            disabled={batchUploading || selectedOnPage.length === 0}
-            onChange={(event) => {
-              const files = Array.from(event.target.files ?? [])
-              event.target.value = ''
-              void uploadSelectedAvatars(files)
-            }}
-          />
-        </label>
-        <span role="status" aria-live="polite" className="text-sm">{batchProgress}</span>
+        <input
+          ref={missingAvatarInputRef}
+          type="file"
+          multiple
+          accept="image/png,image/jpeg,image/webp"
+          className="sr-only"
+          disabled={batchUploading || botsWithoutAvatar.length === 0}
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? [])
+            event.target.value = ''
+            void uploadAvatarsToBots(
+              botsWithoutAvatar,
+              files,
+              'Fotos para bots sem imagem',
+              'missing',
+            )
+          }}
+        />
+        <input
+          ref={selectedAvatarInputRef}
+          type="file"
+          multiple
+          accept="image/png,image/jpeg,image/webp"
+          className="sr-only"
+          disabled={batchUploading || selectedOnPage.length === 0}
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? [])
+            event.target.value = ''
+            void uploadAvatarsToBots(
+              bots.filter((bot) => selectedIds.includes(bot._id)),
+              files,
+              'Atualizar avatares selecionados',
+              'selected',
+            )
+          }}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          className="gap-2"
+          disabled={batchUploading || botsWithoutAvatar.length === 0}
+          isLoading={batchUploading || assigningAvatars}
+          onClick={() => missingAvatarInputRef.current?.click()}
+        >
+          <ImagePlus className="h-4 w-4" />
+          Fotos para quem não tem ({botsWithoutAvatar.length})
+        </Button>
+        {selectedOnPage.length > 0 ? (
+          <Button
+            type="button"
+            variant="secondary"
+            className="gap-2"
+            disabled={batchUploading}
+            onClick={() => selectedAvatarInputRef.current?.click()}
+          >
+            <ImagePlus className="h-4 w-4" />
+            Fotos nos selecionados ({selectedOnPage.length})
+          </Button>
+        ) : null}
+        <span role="status" aria-live="polite" className="text-sm">
+          {batchProgress}
+        </span>
         {selectedOnPage.length > 0 ? (
           <Button
             type="button"

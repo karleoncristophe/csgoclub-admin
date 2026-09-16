@@ -1,31 +1,93 @@
-import { Factory, FlaskConical } from 'lucide-react'
+import { useState } from 'react'
+import { Factory, FlaskConical, RotateCcw } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
-import { caseOpensApi } from '@/redux/store/api/case-opens/api.case-opens'
+import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { arenaApi } from '@/redux/store/api/arena/api.arena'
+import { battlesAdminApi } from '@/redux/store/api/battles/api.battles'
+import { caseOpensApi } from '@/redux/store/api/case-opens/api.case-opens'
+import { casesApi } from '@/redux/store/api/cases/api.cases'
+import { useResetGameplayMutation } from '@/redux/store/api/gameplay/api.gameplay'
 import { metricsApi } from '@/redux/store/api/metrics/api.metrics'
+import { swapsApi } from '@/redux/store/api/swaps/api.swaps'
+import { tradesApi } from '@/redux/store/api/trades/api.trades'
+import { upgradesAdminApi } from '@/redux/store/api/upgrades/api.upgrades'
 import { usersApi } from '@/redux/store/api/users/api.users'
 import { setPlatformDataEnvironment } from '@/redux/store/slices/platformDataEnvironmentSlice'
 import type { RootState } from '@/redux/store/store'
+import { getErrorMessage } from '@/utils/getErrorMessage'
 import type { PlatformDataEnvironment } from '@/utils/platformDataEnvironmentStorage'
 
 type PlatformDataEnvironmentToggleProps = {
   variant?: 'default' | 'sidebar'
+  showReset?: boolean
+}
+
+function resetGameplayCaches(dispatch: ReturnType<typeof useDispatch>) {
+  dispatch(metricsApi.util.resetApiState())
+  dispatch(caseOpensApi.util.resetApiState())
+  dispatch(arenaApi.util.resetApiState())
+  dispatch(usersApi.util.resetApiState())
+  dispatch(swapsApi.util.resetApiState())
+  dispatch(tradesApi.util.resetApiState())
+  dispatch(battlesAdminApi.util.resetApiState())
+  dispatch(upgradesAdminApi.util.resetApiState())
+  dispatch(casesApi.util.resetApiState())
 }
 
 export function PlatformDataEnvironmentToggle({
   variant = 'default',
+  showReset = variant === 'sidebar',
 }: PlatformDataEnvironmentToggleProps) {
   const dispatch = useDispatch()
+  const { confirm } = useConfirm()
   const value = useSelector((state: RootState) => state.platformDataEnvironment.value)
+  const role = useSelector((state: RootState) => state.me.role)
   const isSandbox = value === 'SANDBOX'
+  const isMaster = role === 'MASTER'
+  const canReset = isSandbox || isMaster
+  const [resetGameplay, resetState] = useResetGameplayMutation()
+  const [resetError, setResetError] = useState<string | null>(null)
+  const [resetSummary, setResetSummary] = useState<string | null>(null)
 
   const setEnvironment = (next: PlatformDataEnvironment) => {
     if (next === value) return
     dispatch(setPlatformDataEnvironment(next))
-    dispatch(metricsApi.util.resetApiState())
-    dispatch(caseOpensApi.util.resetApiState())
-    dispatch(arenaApi.util.resetApiState())
-    dispatch(usersApi.util.resetApiState())
+    resetGameplayCaches(dispatch)
+    setResetError(null)
+    setResetSummary(null)
+  }
+
+  const handleReset = async () => {
+    if (!canReset) return
+    setResetError(null)
+    setResetSummary(null)
+
+    const scopeLabel = isSandbox ? 'Influencer' : 'Produção'
+    const confirmed = await confirm({
+      title: `Resetar testes ${scopeLabel}`,
+      description: isSandbox
+        ? 'Apaga inventário, aberturas, elegibilidade, upgrade, swap, battles e arena dos influencers. Zera o banco de teste. Não remove caixas, categorias, vitrines, banners, cupons, depósitos nem contas.'
+        : 'Apaga inventário, aberturas, elegibilidade, upgrade, swap, battles e arena dos usuários normais. Zera o banco de produção. Não remove caixas, categorias, vitrines, banners, cupons, depósitos nem contas.',
+      subjectLabel: 'Ambiente',
+      subjectName: scopeLabel,
+      confirmLabel: 'Resetar tudo',
+      confirmVariant: 'danger',
+      warning: isSandbox
+        ? 'Os bancos de produção e de influencer são independentes. Este reset não mexe no user normal.'
+        : 'Ação irreversível na visão de Produção. Só o MASTER pode executar.',
+    })
+    if (!confirmed) return
+
+    try {
+      const result = await resetGameplay().unwrap()
+      resetGameplayCaches(dispatch)
+      const { deleted, usersAffected } = result
+      setResetSummary(
+        `${usersAffected} usuários · ${deleted.caseOpens} aberturas · ${deleted.inventoryItems} itens · ${deleted.swaps} swaps · ${deleted.upgradePlays} upgrades`,
+      )
+    } catch (err) {
+      setResetError(getErrorMessage(err))
+    }
   }
 
   const shellClass =
@@ -86,6 +148,28 @@ export function PlatformDataEnvironmentToggle({
           <span className="truncate">Influencer</span>
         </button>
       </div>
+
+      {showReset && canReset ? (
+        <div className={variant === 'sidebar' ? 'mt-2.5' : 'mt-1 px-1 pb-1'}>
+          <button
+            type="button"
+            onClick={() => void handleReset()}
+            disabled={resetState.isLoading}
+            className="flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium text-danger transition-colors hover:bg-danger-soft disabled:opacity-60"
+          >
+            <RotateCcw className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            {resetState.isLoading
+              ? 'Limpando…'
+              : `Resetar testes ${isSandbox ? 'Influencer' : 'Produção'}`}
+          </button>
+          {resetError ? (
+            <p className="mt-1.5 text-[11px] leading-snug text-danger">{resetError}</p>
+          ) : null}
+          {resetSummary ? (
+            <p className="mt-1.5 text-[11px] leading-snug text-muted">{resetSummary}</p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

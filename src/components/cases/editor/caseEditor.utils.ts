@@ -1,7 +1,9 @@
 import type { CaseDropItem, CaseDropItemPayload, LootCase } from '@/redux/store/api/cases/api.cases'
+import { SkinsCurrency } from '@/constants/skinsCurrency'
 import {
   DEFAULT_ITEM_PROBABILITY_TOLERANCE,
   roundPrice,
+  type CaseValueMode,
 } from '@/utils/caseEconomics'
 import type { CaseFormState } from './caseEditor.types'
 
@@ -133,6 +135,32 @@ export function touchAllCaseFormFields(
       priceWithTax: true,
       price: true,
     })),
+  }
+}
+
+function fixedValueFieldForCurrency(currency: SkinsCurrency) {
+  if (currency === SkinsCurrency.USD) return 'fixedValueUsd' as const
+  if (currency === SkinsCurrency.EUR) return 'fixedValueEur' as const
+  return 'fixedValueBrl' as const
+}
+
+/** Mesma regra do switch “Fixar valor”: trava no valor já salvo da moeda, ou no catálogo atual. */
+export function lockCaseDropItemToCurrentValue(
+  item: CaseDropItem,
+  currency: SkinsCurrency,
+  valueMode: CaseValueMode,
+): CaseDropItem {
+  const field = fixedValueFieldForCurrency(currency)
+  const itemValue = item.price
+  const lockedValue = item[field] ?? itemValue
+  return {
+    ...item,
+    useFixedValue: true,
+    price: lockedValue,
+    ...(valueMode === 'base'
+      ? { basePrice: lockedValue }
+      : { priceWithTax: lockedValue }),
+    ...(item[field] == null ? { [field]: itemValue } : {}),
   }
 }
 

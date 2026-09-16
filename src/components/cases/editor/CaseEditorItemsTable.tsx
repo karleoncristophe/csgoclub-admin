@@ -1,8 +1,9 @@
 import { useMemo, type ReactNode } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Lock, Trash2 } from 'lucide-react'
 import { BankProgressBar } from '@/components/cases/BankProgressBar'
 import { caseFieldProps } from '@/components/cases/editor/caseFieldHelp'
 import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
+import { Button } from '@/components/ui/Button'
 import { FieldLabelWithHelp } from '@/components/ui/FieldLabelWithHelp'
 import {
   ProbabilityRemainderHint,
@@ -14,7 +15,7 @@ import { ThemeText } from '@/components/ui/ThemeText'
 import { Switch } from '@/components/ui/Switch'
 import { listTableAlt } from '@/components/ui/listTable'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
-import type { CaseDropItem } from '@/redux/store/api/cases/api.cases'
+import type { CaseDropItem, LootCase } from '@/redux/store/api/cases/api.cases'
 import {
   computeBankInjection,
   computeOpensToUnlockItem,
@@ -32,9 +33,12 @@ import {
 } from '@/utils/probabilityRemainder'
 import {
   formatNumberFieldValue,
+  lockCaseDropItemToCurrentValue,
   selectNumberInputOnFocus,
   updateCaseDropItem,
 } from './caseEditor.utils'
+
+type CatalogValueAlert = NonNullable<LootCase['itemValueAlerts']>[number]
 
 type CaseEditorItemsTableProps = {
   items: CaseDropItem[]
@@ -48,6 +52,7 @@ type CaseEditorItemsTableProps = {
   /** Botões exibidos no cabeçalho do card (adicionar skins, presets) */
   headerAction?: ReactNode
   probabilityTargetPercent?: number
+  catalogAlerts?: CatalogValueAlert[]
 }
 
 type CaseItemSortKey = 'value' | 'drop' | 'bank' | 've'
@@ -69,6 +74,7 @@ export function CaseEditorItemsTable({
   onItemsChange,
   headerAction,
   probabilityTargetPercent = DEFAULT_PROBABILITY_TARGET,
+  catalogAlerts = [],
 }: CaseEditorItemsTableProps) {
   const bankInjection = computeBankInjection(openPrice, targetMarginPercent)
   const bankAvailable = roundPrice((ledger.bankBalance ?? 0) + bankInjection)
@@ -77,6 +83,19 @@ export function CaseEditorItemsTable({
     () => suggestProbabilityRemainder(items, probabilityTargetPercent),
     [items, probabilityTargetPercent],
   )
+  const catalogAlertsByName = useMemo(() => {
+    const map = new Map<string, CatalogValueAlert>()
+    for (const alert of catalogAlerts) {
+      map.set(alert.skinName, alert)
+    }
+    return map
+  }, [catalogAlerts])
+  const unlockedAlertNames = useMemo(() => {
+    const itemsByName = new Map(items.map((item) => [item.skinName, item]))
+    return catalogAlerts
+      .filter((alert) => itemsByName.get(alert.skinName)?.useFixedValue !== true)
+      .map((alert) => alert.skinName)
+  }, [catalogAlerts, items])
   const displayedItems = useMemo(
     () =>
       sortByNumericColumn(items, sort, (item, key) => {
@@ -115,6 +134,28 @@ export function CaseEditorItemsTable({
     })
   }
 
+  const lockItem = (skinName: string) => {
+    onItemsChange(
+      items.map((item) =>
+        item.skinName === skinName
+          ? lockCaseDropItemToCurrentValue(item, currency, valueMode)
+          : item,
+      ),
+    )
+  }
+
+  const lockAllAlertedItems = () => {
+    if (unlockedAlertNames.length === 0) return
+    const unlocked = new Set(unlockedAlertNames)
+    onItemsChange(
+      items.map((item) =>
+        unlocked.has(item.skinName)
+          ? lockCaseDropItemToCurrentValue(item, currency, valueMode)
+          : item,
+      ),
+    )
+  }
+
   return (
     <Surface variant="card" className="border-b border-separator !pb-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -137,6 +178,29 @@ export function CaseEditorItemsTable({
         error={itemsError}
         onApply={applyRemainderSuggestion}
       />
+
+      {unlockedAlertNames.length > 0 ? (
+        <Surface
+          variant="cardInset"
+          className="mb-4 flex flex-wrap items-center justify-between gap-3"
+        >
+          <div className="min-w-0">
+            <ThemeText as="p" tone="primary" className="text-sm font-medium">
+              {unlockedAlertNames.length === 1
+                ? '1 skin com variação acima de 10% no catálogo'
+                : `${unlockedAlertNames.length} skins com variação acima de 10% no catálogo`}
+            </ThemeText>
+            <ThemeText as="p" tone="secondary" className="mt-0.5 text-xs">
+              Linhas marcadas abaixo. Fixar trava o valor operacional; o preço da caixa
+              não muda.
+            </ThemeText>
+          </div>
+          <Button type="button" size="sm" variant="secondary" onClick={lockAllAlertedItems}>
+            <Lock className="h-3.5 w-3.5" aria-hidden />
+            Fixar todas
+          </Button>
+        </Surface>
+      ) : null}
 
       {items.length === 0 ? (
         <ThemeText tone="secondary" className="text-sm">
@@ -216,12 +280,21 @@ export function CaseEditorItemsTable({
                   targetMarginPercent,
                 })
                 const rowMuted = item.enabled === false
+                const catalogAlert = catalogAlertsByName.get(item.skinName)
+                const catalogUnlocked = Boolean(
+                  catalogAlert && item.useFixedValue !== true,
+                )
+                const catalogRose = (catalogAlert?.variationPercent ?? 0) > 0
 
                 return (
                   <tr
                     key={item.skinName}
                     className={`${listTableAlt.tr} ${
                       rowMuted ? 'opacity-50' : ''
+                    } ${
+                      catalogUnlocked
+                        ? 'bg-red-50/90 dark:bg-red-950/25'
+                        : ''
                     }`}
                   >
                     <td className="px-3 py-3">
@@ -244,9 +317,46 @@ export function CaseEditorItemsTable({
                             className="h-10 w-12 object-contain"
                           />
                         ) : null}
-                        <ThemeText tone="primary" className="max-w-[200px] text-xs font-medium">
-                          {item.skinName}
-                        </ThemeText>
+                        <div className="min-w-0">
+                          <ThemeText tone="primary" className="max-w-[220px] text-xs font-medium">
+                            {item.skinName}
+                          </ThemeText>
+                          {catalogAlert ? (
+                            <>
+                              <ThemeText
+                                as="p"
+                                className={`mt-1 text-[11px] font-medium ${
+                                  catalogRose
+                                    ? 'text-rose-600 dark:text-rose-400'
+                                    : 'text-emerald-600 dark:text-emerald-400'
+                                }`}
+                              >
+                                Catálogo {catalogRose ? '+' : ''}
+                                {catalogAlert.variationPercent.toFixed(2)}%
+                                {' · '}
+                                {formatSkinsPrice(catalogAlert.fixedValue, currency)}
+                                {' → '}
+                                {formatSkinsPrice(catalogAlert.flexibleValue, currency)}
+                              </ThemeText>
+                              {catalogUnlocked ? (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="secondary"
+                                  className="mt-1.5"
+                                  onClick={() => lockItem(item.skinName)}
+                                >
+                                  <Lock className="h-3.5 w-3.5" aria-hidden />
+                                  Fixar
+                                </Button>
+                              ) : (
+                                <ThemeText tone="faint" className="mt-0.5 block text-[10px]">
+                                  Preço fixado
+                                </ThemeText>
+                              )}
+                            </>
+                          ) : null}
+                        </div>
                       </div>
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap font-medium">

@@ -16,6 +16,7 @@ import {
   useChartVariant,
 } from '@/components/charts/AnalyticsCharts'
 import { BankProgressBar } from '@/components/cases/BankProgressBar'
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { TextBadge } from '@/components/StatusPill'
 import { Surface } from '@/components/ui/Surface'
@@ -115,6 +116,37 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+function Step({
+  number,
+  title,
+  value,
+  detail,
+}: {
+  number: number
+  title: string
+  value: string
+  detail: string
+}) {
+  return (
+    <div className="flex gap-3 rounded-xl border border-border bg-surface-secondary p-3">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
+        {number}
+      </span>
+      <div className="min-w-0">
+        <ThemeText as="p" tone="secondary" className="text-xs">
+          {title}
+        </ThemeText>
+        <ThemeText as="p" tone="primary" className="mt-0.5 text-base font-semibold tabular-nums">
+          {value}
+        </ThemeText>
+        <ThemeText as="p" tone="faint" className="mt-1 text-xs leading-relaxed">
+          {detail}
+        </ThemeText>
+      </div>
+    </div>
+  )
+}
+
 function EligibilityCell({
   item,
   currency,
@@ -141,7 +173,7 @@ function EligibilityCell({
         </span>
         <BankProgressBar ratio={1} />
         <ThemeText tone="faint" className="text-xs">
-          Cabe no preço da abertura
+          Custa até o preço da caixa
         </ThemeText>
       </div>
     )
@@ -165,7 +197,7 @@ function EligibilityCell({
       )}
       <BankProgressBar ratio={ratio} />
       <ThemeText tone="secondary" className="text-xs tabular-nums">
-        Precisa {formatSkinsPrice(item.requiredBankBalance, currency)}
+        Banco precisa ter {formatSkinsPrice(item.requiredBankBalance, currency)}
       </ThemeText>
       {!item.eligible ? (
         <ThemeText tone="faint" className="text-xs">
@@ -227,6 +259,8 @@ export default function CaseDetailPage() {
     financials.averageVariableMarginPerOpen ??
     (financials.totalOpens > 0 ? variableMarginValue / financials.totalOpens : 0)
   const blockedCount = Math.max(0, bank.enabledItemsCount - bank.eligibleItemsCount)
+  const marginGapPercent =
+    Math.round((lootCase.realMarginPercent - lootCase.targetMarginPercent) * 100) / 100
   const battleRoundsInBank = Math.max(
     0,
     (ledger?.totalRealOpens ?? 0) - financials.totalOpens,
@@ -304,10 +338,10 @@ export default function CaseDetailPage() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 border-t border-zinc-100 pt-5 sm:grid-cols-3 dark:border-zinc-800">
+        <div className="mt-5 grid gap-3 border-t border-zinc-100 pt-5 sm:grid-cols-2 xl:grid-cols-4 dark:border-zinc-800">
           <div>
             <ThemeText tone="faint" className="text-xs">
-              Preço
+              Preço da caixa
             </ThemeText>
             <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
               {money(lootCase.price)}
@@ -320,234 +354,156 @@ export default function CaseDetailPage() {
           </div>
           <div>
             <ThemeText tone="faint" className="text-xs">
-              VE das skins
+              Fica com a casa, por abertura
             </ThemeText>
             <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
-              {money(lootCase.expectedValue)}
+              {money(fixedMarginPerOpen)}
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
-              Σ preço × chance, ao vivo · injeção no banco {money(bank.injectionPerOpen)}
+              Garantido, não depende da skin que sai
             </ThemeText>
           </div>
           <div>
             <ThemeText tone="faint" className="text-xs">
-              Margem agora
+              Vai para o banco, por abertura
+            </ThemeText>
+            <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
+              {money(bank.injectionPerOpen)}
+            </ThemeText>
+            <ThemeText tone="faint" className="text-xs">
+              É daqui que saem os prêmios
+            </ThemeText>
+          </div>
+          <div>
+            <ThemeText tone="faint" className="text-xs">
+              Margem agora × alvo
             </ThemeText>
             <ThemeText
               tone={lootCase.expectedValueAlert ? 'danger' : 'primary'}
               className="mt-1 text-lg font-semibold tabular-nums"
             >
-              {formatPercent(lootCase.realMarginPercent)}
-            </ThemeText>
-            {Math.abs(lootCase.realMarginPercent - lootCase.targetMarginPercent) > 0.05 ? (
-              <ThemeText tone="faint" className="text-xs">
-                Alvo {formatPercent(lootCase.targetMarginPercent)}
+              {formatPercent(lootCase.realMarginPercent)}{' '}
+              <ThemeText as="span" tone="faint" className="text-sm font-normal">
+                × {formatPercent(lootCase.targetMarginPercent)}
               </ThemeText>
-            ) : null}
-          </div>
-        </div>
-        {lootCase.expectedValueAlert ? (
-          <div className="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/30">
-            <ThemeText tone="primary" className="text-sm font-medium">
-              Margem agora {formatPercent(lootCase.realMarginPercent)} · alvo{' '}
-              {formatPercent(lootCase.targetMarginPercent)}
             </ThemeText>
-            <ThemeText tone="secondary" className="mt-1 text-xs leading-relaxed">
-              O catálogo andou e o preço ficou travado.
-              {lootCase.suggestedPrice > 0
-                ? ` Para voltar ao alvo, o preço seria ${money(lootCase.suggestedPrice)}.`
+            <ThemeText tone="faint" className="text-xs">
+              {marginGapPercent === 0
+                ? 'No alvo'
+                : marginGapPercent > 0
+                  ? `${formatPercent(marginGapPercent)} acima · skins ficaram mais baratas`
+                  : `${formatPercent(Math.abs(marginGapPercent))} abaixo · skins ficaram mais caras`}
+              {marginGapPercent !== 0 && lootCase.suggestedPrice > 0
+                ? ` · no alvo o preço seria ${money(lootCase.suggestedPrice)}`
                 : ''}
             </ThemeText>
-          </div>
-        ) : null}
-      </Surface>
-
-      <Surface variant="settingsPanel" className="!p-5">
-        <SectionTitle className="mb-1">Resultado</SectionTitle>
-        <ThemeText tone="secondary" className="mb-5 text-sm leading-relaxed">
-          Quanto entrou nas aberturas, quanto saiu em prêmios e o que sobrou.
-        </ThemeText>
-
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric
-            label="Entrou (faturamento)"
-            value={money(financials.totalRevenue)}
-            hint={`${financials.totalOpens.toLocaleString('pt-BR')} abertura${financials.totalOpens === 1 ? '' : 's'}`}
-          />
-          <Metric
-            label="Saiu (prêmios)"
-            value={money(financials.totalPayout)}
-            hint={`Média ${money(financials.averagePayoutPerOpen)} por abertura`}
-          />
-          <Metric
-            label="Margem variável (Σ VE − item)"
-            value={money(variableMarginValue)}
-            hint={`Média ${money(averageVariableMarginPerOpen)} por abertura · é o que move o banco`}
-          />
-          <Metric
-            label="Ganho fixo por clique"
-            value={money(fixedMarginPerOpen)}
-            hint={`Preço − injeção no banco · acumulado ${money(fixedMarginValue)}`}
-          />
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950/40">
-          <ThemeText tone="primary" className="text-sm font-medium tabular-nums">
-            {money(fixedMarginValue)} fixo + {money(variableMarginValue)} variável ={' '}
-            {money(financials.profit)}
-          </ThemeText>
-          <ThemeText tone="faint" className="mt-1 text-xs">
-            Cada abertura: preço − VE vira ganho fixo; VE − item entregue vira margem
-            variável (positiva em item barato, negativa em item caro). A soma das duas é
-            faturamento − prêmios.
-          </ThemeText>
-        </div>
-
-        <div className="mt-5 grid gap-6 border-t border-zinc-100 pt-5 lg:grid-cols-2 dark:border-zinc-800">
-          <div>
-            <ThemeText tone="overline" className="mb-1">
-              Destino dos prêmios
-            </ThemeText>
-            <InfoRow
-              label="Guardados no inventário"
-              value={financials.keptCount.toLocaleString('pt-BR')}
-            />
-            <InfoRow
-              label="Convertidos em saldo"
-              value={financials.convertedCount.toLocaleString('pt-BR')}
-            />
-            <InfoRow
-              label="Aguardando decisão"
-              value={financials.pendingCount.toLocaleString('pt-BR')}
-            />
-            <InfoRow
-              label="Soma"
-              value={(
-                financials.keptCount +
-                financials.convertedCount +
-                financials.pendingCount
-              ).toLocaleString('pt-BR')}
-            />
-          </div>
-          <div>
-            <ThemeText tone="overline" className="mb-1">
-              Como o drop saiu
-            </ThemeText>
-            <InfoRow
-              label="Direto (já liberado)"
-              value={financials.directCount.toLocaleString('pt-BR')}
-            />
-            <InfoRow
-              label="Re-sorteio (banco travou)"
-              value={financials.rerollCount.toLocaleString('pt-BR')}
-            />
-            <InfoRow
-              label="Fallback (nada liberado)"
-              value={financials.fallbackCount.toLocaleString('pt-BR')}
-            />
-            <InfoRow
-              label="Soma"
-              value={(
-                financials.directCount +
-                financials.rerollCount +
-                financials.fallbackCount
-              ).toLocaleString('pt-BR')}
-            />
           </div>
         </div>
       </Surface>
 
       <Surface variant="settingsPanel" className="!p-5">
-        <SectionTitle className="mb-1">Banco virtual</SectionTitle>
+        <SectionTitle className="mb-1">Banco da caixa</SectionTitle>
         <ThemeText tone="secondary" className="mb-5 text-sm leading-relaxed">
-          Cada abertura ou rodada de batalha (jogador; bot e influencer não) adiciona{' '}
-          {money(bank.injectionPerOpen)} e tira o valor do prêmio. Essa injeção é
-          preço ÷ (1 + alvo de {formatPercent(lootCase.targetMarginPercent)}), não
-          o VE das skins ({money(lootCase.expectedValue)}) — os dois só coincidem
-          quando a margem real bate o alvo. Bot e influencer não injetam; quando
-          perdem, só o prêmio deles sai deste banco.
+          É o saldo que decide quais skins podem sair. Skin que custa até o preço da
+          caixa sai sempre. Skin mais cara só sai quando o banco tem o valor inteiro dela.
         </ThemeText>
-        {battleRoundsInBank > 0 || bank.balance < 0 ? (
-          <div className="mb-5 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/30">
-            <ThemeText tone="primary" className="text-sm font-medium">
-              {battleRoundsInBank > 0
-                ? `${battleRoundsInBank.toLocaleString('pt-BR')} rodada${battleRoundsInBank === 1 ? '' : 's'} de batalha no banco desta visão`
-                : 'Saldo negativo'}
-            </ThemeText>
-            <ThemeText tone="secondary" className="mt-1 text-xs leading-relaxed">
-              Batalha mexe neste saldo e não aparece no Resultado acima (só abertura da
-              caixa). Bot e influencer não injetam; se perdem, o prêmio deles é debitado daqui.
-              {bank.balance < 0
-                ? ' Negativo = prêmio saiu maior que a injeção — comum quando o item mais barato já custa mais que o preço da caixa.'
-                : ''}
-            </ThemeText>
-          </div>
-        ) : null}
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric
             label="Saldo agora"
             value={money(bank.balance)}
-            hint={`+ ${money(bank.injectionPerOpen)} por abertura ou rodada (preço ÷ 1+alvo)`}
+            hint={`Sobe ${money(bank.injectionPerOpen)} a cada abertura, desce o valor da skin que saiu`}
           />
           <Metric
-            label="Itens liberados"
-            value={`${bank.eligibleItemsCount}/${bank.enabledItemsCount}`}
+            label="Skins liberadas"
+            value={`${bank.eligibleItemsCount} de ${bank.enabledItemsCount}`}
             hint={
               blockedCount > 0
-                ? `${blockedCount} ainda precisam de saldo`
-                : 'Todos liberados neste momento'
+                ? `${blockedCount} travada${blockedCount === 1 ? '' : 's'} esperando saldo`
+                : 'Todas podem sair agora'
             }
           />
           <Metric
-            label="Próximo item"
+            label="Próxima a liberar"
             value={
               bank.nextUnlock
-                ? money(bank.nextUnlock.bankShortfall)
-                : 'Nada travado'
+                ? bank.nextUnlock.skinName
+                : 'Nenhuma travada'
             }
             hint={
               bank.nextUnlock
-                ? `Falta esse valor para liberar ${bank.nextUnlock.skinName} · ${formatOpens(bank.nextUnlock.opensToUnlock)}`
-                : 'Nenhum item esperando saldo'
+                ? `Falta ${money(bank.nextUnlock.bankShortfall)} · ${formatOpens(bank.nextUnlock.opensToUnlock)}`
+                : 'Todas as skins já cabem no saldo'
             }
           />
           <Metric
-            label="Para liberar tudo"
+            label="Para liberar a mais cara"
             value={
               bank.shortfallForFullPool > 0
                 ? money(bank.shortfallForFullPool)
-                : 'Pronto'
+                : 'Já liberada'
             }
             hint={
               bank.shortfallForFullPool > 0
                 ? `Saldo precisa chegar a ${money(bank.targetForFullPool)} · ${formatOpens(bank.opensToFullPool)}`
-                : `Saldo já cobre o item mais caro (${money(bank.targetForFullPool)})`
+                : `Saldo cobre o item mais caro (${money(bank.targetForFullPool)})`
             }
           />
         </div>
-      </Surface>
 
-      <Surface variant="settingsPanel" className="!p-5">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <SectionTitle>Últimos 30 dias</SectionTitle>
-            <ThemeText tone="secondary" className="mt-1 text-sm">
-              Faturamento do dia versus prêmios entregues.
+        {battleRoundsInBank > 0 || bank.balance < 0 ? (
+          <div className="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/30">
+            <ThemeText tone="primary" className="text-sm font-medium">
+              {battleRoundsInBank > 0
+                ? `${battleRoundsInBank.toLocaleString('pt-BR')} rodada${battleRoundsInBank === 1 ? '' : 's'} de batalha também mexeram neste saldo`
+                : 'Saldo negativo'}
+            </ThemeText>
+            <ThemeText tone="secondary" className="mt-1 text-xs leading-relaxed">
+              {battleRoundsInBank > 0
+                ? 'Rodadas de batalha entram e saem do banco igual a uma abertura, mas não contam em "Resultado das aberturas".'
+                : ''}
+              {bank.balance < 0
+                ? ' Saiu mais em prêmio do que entrou — acontece quando a skin mais barata já custa mais que o preço da caixa.'
+                : ''}
             </ThemeText>
           </div>
-          <ChartTypeSelector value={chart.variant} onChange={chart.onChange} />
+        ) : null}
+
+        <div className="mt-5 border-t border-zinc-100 pt-5 dark:border-zinc-800">
+          <ThemeText tone="overline" className="mb-3">
+            O que acontece em uma abertura
+          </ThemeText>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <Step
+              number={1}
+              title="Jogador paga"
+              value={money(lootCase.price)}
+              detail={`${money(fixedMarginPerOpen)} fica com a casa e ${money(bank.injectionPerOpen)} entra no banco.`}
+            />
+            <Step
+              number={2}
+              title="Banco na hora do sorteio"
+              value={money(bank.balance + bank.injectionPerOpen)}
+              detail="Saldo atual + o que acabou de entrar. Skins até esse valor podem sair."
+            />
+            <Step
+              number={3}
+              title="Sorteia pela chance"
+              value={`${bank.eligibleItemsCount} de ${bank.enabledItemsCount} podem sair`}
+              detail={`Skin até ${money(lootCase.price)} sai sempre. Mais cara só se o banco cobre o valor inteiro. Se cair numa travada, sorteia de novo entre as liberadas.`}
+            />
+            <Step
+              number={4}
+              title="Sai o valor da skin"
+              value="do banco"
+              detail="Skin barata deixa o banco maior. Skin cara derruba o saldo e trava as caras de novo até acumular."
+            />
+          </div>
+          <ThemeText tone="faint" className="mt-3 text-xs leading-relaxed">
+            Bot e influencer nas batalhas não colocam nada no banco. Quando perdem, o valor da
+            skin deles sai do banco e vai para o vencedor.
+          </ThemeText>
         </div>
-        <DualSeriesMetricsChart
-          data={dailySeries}
-          seriesGranularity="day"
-          variant={chart.variant}
-          keys={['revenue', 'payout']}
-          names={['Faturamento', 'Prêmios']}
-          colors={['#059669', '#6366f1']}
-          gradientIds={['cs2CaseRevenue', 'cs2CasePayout']}
-          formatValue={money}
-        />
       </Surface>
 
       <Surface variant="settingsPanel" className="!p-5">
@@ -555,7 +511,7 @@ export default function CaseDetailPage() {
           <div>
             <SectionTitle>Itens da caixa</SectionTitle>
             <ThemeText tone="secondary" className="mt-1 text-sm">
-              Do mais barato ao mais caro — a ordem em que o banco libera.
+              Da mais barata à mais cara. A coluna "Pode sair?" mostra o que o banco libera agora.
             </ThemeText>
           </div>
           <div className="text-right">
@@ -576,7 +532,7 @@ export default function CaseDetailPage() {
                 <th className={listTable.th}>Chance</th>
                 <th className={listTable.th}>Saiu</th>
                 <th className={listTable.th}>Pago</th>
-                <th className={listTable.th}>Banco</th>
+                <th className={listTable.th}>Pode sair?</th>
               </tr>
             </thead>
             <tbody className={listTable.tbody}>
@@ -678,8 +634,130 @@ export default function CaseDetailPage() {
         </div>
       </Surface>
 
-      <Surface variant="settingsPanel" className="!p-5">
-        <SectionTitle className="mb-3">Configuração</SectionTitle>
+      <CollapsibleSection
+        variant="card"
+        title="Resultado das aberturas"
+        description="Quanto entrou, quanto saiu em prêmios e como o lucro se divide."
+        summary={
+          <ThemeText as="span" tone="faint" className="text-xs tabular-nums">
+            {money(financials.totalRevenue)} entrou · {money(financials.totalPayout)} saiu ·{' '}
+            {money(financials.profit)} lucro
+          </ThemeText>
+        }
+      >
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Metric
+            label="Entrou"
+            value={money(financials.totalRevenue)}
+            hint={`${financials.totalOpens.toLocaleString('pt-BR')} abertura${financials.totalOpens === 1 ? '' : 's'}`}
+          />
+          <Metric
+            label="Saiu em prêmios"
+            value={money(financials.totalPayout)}
+            hint={`Média ${money(financials.averagePayoutPerOpen)} por abertura`}
+          />
+          <Metric
+            label="Ficou com a casa"
+            value={money(fixedMarginValue)}
+            hint={`${money(fixedMarginPerOpen)} por abertura, garantido`}
+          />
+          <Metric
+            label="Banco: entrou − saiu"
+            value={money(variableMarginValue)}
+            hint={`Média ${money(averageVariableMarginPerOpen)} por abertura. Positivo = mais skin barata saiu; negativo = saiu skin cara.`}
+          />
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950/40">
+          <ThemeText tone="primary" className="text-sm font-medium tabular-nums">
+            {money(fixedMarginValue)} da casa + {money(variableMarginValue)} do banco ={' '}
+            {money(financials.profit)} de lucro
+          </ThemeText>
+          <ThemeText tone="faint" className="mt-1 text-xs">
+            Lucro = entrou − saiu em prêmios. A parte da casa é fixa por abertura; a parte
+            do banco varia com as skins que saíram.
+          </ThemeText>
+        </div>
+
+        <div className="mt-5 grid gap-6 border-t border-zinc-100 pt-5 lg:grid-cols-3 dark:border-zinc-800">
+          <div>
+            <ThemeText tone="overline" className="mb-1">
+              Valor real das skins
+            </ThemeText>
+            <InfoRow label="VE das skins agora" value={money(lootCase.expectedValue)} />
+            <InfoRow label="Vai para o banco" value={money(bank.injectionPerOpen)} />
+            <ThemeText tone="faint" className="mt-2 text-xs leading-relaxed">
+              VE = soma de preço × chance com o catálogo de agora. O banco recebe o preço
+              menos a margem alvo; os dois só coincidem quando a margem bate o alvo.
+            </ThemeText>
+          </div>
+          <div>
+            <ThemeText tone="overline" className="mb-1">
+              Destino dos prêmios
+            </ThemeText>
+            <InfoRow
+              label="Guardados no inventário"
+              value={financials.keptCount.toLocaleString('pt-BR')}
+            />
+            <InfoRow
+              label="Convertidos em saldo"
+              value={financials.convertedCount.toLocaleString('pt-BR')}
+            />
+            <InfoRow
+              label="Aguardando decisão"
+              value={financials.pendingCount.toLocaleString('pt-BR')}
+            />
+          </div>
+          <div>
+            <ThemeText tone="overline" className="mb-1">
+              Como o drop saiu
+            </ThemeText>
+            <InfoRow
+              label="Direto (skin já liberada)"
+              value={financials.directCount.toLocaleString('pt-BR')}
+            />
+            <InfoRow
+              label="Re-sorteio (caiu numa travada)"
+              value={financials.rerollCount.toLocaleString('pt-BR')}
+            />
+            <InfoRow
+              label="Fallback (nenhuma liberada)"
+              value={financials.fallbackCount.toLocaleString('pt-BR')}
+            />
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        variant="card"
+        title="Últimos 30 dias"
+        description="Faturamento do dia versus prêmios entregues."
+      >
+        <div className="mb-4 flex justify-end">
+          <ChartTypeSelector value={chart.variant} onChange={chart.onChange} />
+        </div>
+        <DualSeriesMetricsChart
+          data={dailySeries}
+          seriesGranularity="day"
+          variant={chart.variant}
+          keys={['revenue', 'payout']}
+          names={['Faturamento', 'Prêmios']}
+          colors={['#059669', '#6366f1']}
+          gradientIds={['cs2CaseRevenue', 'cs2CasePayout']}
+          formatValue={money}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        variant="card"
+        title="Configuração"
+        description="Preço, desconto, chances e datas."
+        summary={
+          <ThemeText as="span" tone="faint" className="text-xs">
+            {lootCase.enabledItemsCount} itens ativos de {lootCase.itemsCount}
+          </ThemeText>
+        }
+      >
         <div className="grid gap-x-8 sm:grid-cols-2">
           <div>
             <InfoRow label="Preço de tabela" value={money(lootCase.listPrice)} />
@@ -709,7 +787,7 @@ export default function CaseDetailPage() {
             />
           </div>
         </div>
-      </Surface>
+      </CollapsibleSection>
     </div>
   )
 }

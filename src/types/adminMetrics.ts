@@ -36,6 +36,14 @@ export type AdminDashboardEconomyCurrency = {
   /** Prêmio que clientes ganharam em battles contra bots. */
   clientPrizeWon: number
   clientWinCount: number
+  /** Skins enviadas via trade link no período. */
+  skinWithdrawCount: number
+  /** Custo real: preço SkinsBack na hora da compra (valor de agora). */
+  skinWithdrawCost: number
+  /** Valor no drop das mesmas skins (o que a caixa já contou). */
+  skinWithdrawDropValue: number
+  /** Custo real − valor no drop. Positivo = casa pagou a mais. */
+  skinWithdrawDelta: number
 }
 
 export type AdminDashboardMetricsSeriesRow = {

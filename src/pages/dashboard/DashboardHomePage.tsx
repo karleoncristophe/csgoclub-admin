@@ -378,6 +378,30 @@ export default function DashboardHomePage() {
                   hint="Aberturas que compõem a margem variável e o ganho fixo"
                 />
               </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <MetricTile
+                  label="Skins enviadas (trade link)"
+                  value={economy?.skinWithdrawCost}
+                  format="currencyAmount"
+                  currency={currency}
+                  hint={
+                    economy
+                      ? `${economy.skinWithdrawCount.toLocaleString('pt-BR')} skin${economy.skinWithdrawCount === 1 ? '' : 's'} · custo real pelo valor de agora na SkinsBack`
+                      : 'Custo real pelo valor de agora na SkinsBack'
+                  }
+                />
+                <MetricTile
+                  label="Diferença vs valor no drop"
+                  value={economy?.skinWithdrawDelta}
+                  format="currencyAmount"
+                  currency={currency}
+                  hint={
+                    economy
+                      ? `Caixa contou ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(economy.skinWithdrawDropValue)} · positivo = casa pagou a mais no envio`
+                      : 'Custo real − valor no drop'
+                  }
+                />
+              </div>
               {!isSandbox ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   <MetricTile

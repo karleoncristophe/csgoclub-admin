@@ -29,6 +29,7 @@ export const SKINSBACK = {
   CATALOG_EXPORT_FILE: (jobId: string) =>
     `/skinsback/catalog/export/${jobId}/file`,
   BALANCE: '/skinsback/balance',
+  RATES: '/skinsback/rates',
 } as const
 
 export const WEAPON_CATEGORIES = {
@@ -68,6 +69,7 @@ export const SITE_BOTS = {
   STATUS: '/admin/site-bots/status',
   GENERATE: '/admin/site-bots/generate',
   BULK_DELETE: '/admin/site-bots/bulk-delete',
+  BULK_IMPORT_NAMES: '/admin/site-bots/bulk-import-names',
   AVATARS: '/admin/site-bots/avatars',
   BY_ID: (id: string) => `/admin/site-bots/${id}`,
 } as const
@@ -123,6 +125,7 @@ export const AI_ASSISTANT = {
 
 export const BATTLES_ADMIN = {
   ROOT: '/admin/battles',
+  BOT_METRICS: '/admin/battles/bot-metrics',
   BY_ID: (id: string) => `/admin/battles/${id}`,
   CANCEL: (id: string) => `/admin/battles/${id}/cancel`,
   BOTS: '/admin/battles/bots',
@@ -143,10 +146,6 @@ export const ARENA = {
 
 export const UPGRADES_ADMIN = {
   ROOT: '/admin/upgrades',
-} as const
-
-export const CAMBIO = {
-  SETTINGS: '/admin/cambio/settings',
 } as const
 
 export const PAYMENT = {

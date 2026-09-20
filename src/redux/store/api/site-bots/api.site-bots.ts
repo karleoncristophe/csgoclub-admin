@@ -19,6 +19,19 @@ export type SiteBotsStatus = {
   nextAt: string | null
 }
 
+export type SiteBotNameImportStatus =
+  | 'created'
+  | 'invalid'
+  | 'duplicate_in_request'
+  | 'already_exists'
+
+export type SiteBotNameImportResult = {
+  requested: number
+  created: number
+  skipped: number
+  results: Array<{ index: number; name: string; status: SiteBotNameImportStatus }>
+}
+
 export const siteBotsApi = createApi({
   reducerPath: 'siteBotsApi',
   baseQuery: baseQueryWithReauth,
@@ -76,6 +89,17 @@ export const siteBotsApi = createApi({
       }),
       invalidatesTags: ['SiteBots'],
     }),
+    bulkImportSiteBotNames: builder.mutation<
+      SiteBotNameImportResult,
+      { names: string[] }
+    >({
+      query: (body) => ({
+        url: SITE_BOTS.BULK_IMPORT_NAMES,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['SiteBots'],
+    }),
     assignSiteBotAvatars: builder.mutation<
       {
         updated: number
@@ -104,5 +128,6 @@ export const {
   useUpdateSiteBotMutation,
   useDeleteSiteBotMutation,
   useBulkDeleteSiteBotsMutation,
+  useBulkImportSiteBotNamesMutation,
   useAssignSiteBotAvatarsMutation,
 } = siteBotsApi

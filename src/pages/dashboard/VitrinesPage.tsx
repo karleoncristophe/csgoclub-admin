@@ -6,6 +6,7 @@ import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { IconButton } from '@/components/ui/IconButton'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { Select } from '@/components/ui/Select'
 import { VitrineCasePicker } from '@/components/vitrines/VitrineCasePicker'
 import { Surface, surfaceClass } from '@/components/ui/Surface'
 import { TextBadge } from '@/components/StatusPill'
@@ -18,9 +19,12 @@ import {
   useDeleteCaseVitrineMutation,
   useGetCaseVitrinesQuery,
   useUpdateCaseVitrineMutation,
+  CASE_VITRINE_SORT_MODE_LABELS,
+  CASE_VITRINE_SORT_MODES,
   VITRINE_LOCALE_LABELS,
   VITRINE_LOCALES,
   type CaseVitrine,
+  type CaseVitrineSortMode,
   type VitrineLocale,
   type VitrineLocaleTextMap,
 } from '@/redux/store/api/case-vitrines/api.case-vitrines'
@@ -86,6 +90,7 @@ export default function VitrinesPage() {
   const [createNameI18n, setCreateNameI18n] = useState(emptyLocaleMap)
   const [createDescriptionI18n, setCreateDescriptionI18n] = useState(emptyLocaleMap)
   const [createSortOrder, setCreateSortOrder] = useState('0')
+  const [createCaseSortMode, setCreateCaseSortMode] = useState<CaseVitrineSortMode>('manual')
   const [createActive, setCreateActive] = useState(true)
   const [createCaseIds, setCreateCaseIds] = useState<string[]>([])
   const [createModalOpen, setCreateModalOpen] = useState(false)
@@ -94,6 +99,7 @@ export default function VitrinesPage() {
   const [editNameI18n, setEditNameI18n] = useState(emptyLocaleMap)
   const [editDescriptionI18n, setEditDescriptionI18n] = useState(emptyLocaleMap)
   const [editSortOrder, setEditSortOrder] = useState('0')
+  const [editCaseSortMode, setEditCaseSortMode] = useState<CaseVitrineSortMode>('manual')
   const [editActive, setEditActive] = useState(true)
   const [editIsHero, setEditIsHero] = useState(false)
   const [editCaseIds, setEditCaseIds] = useState<string[]>([])
@@ -129,6 +135,7 @@ export default function VitrinesPage() {
     setCreateNameI18n(emptyLocaleMap())
     setCreateDescriptionI18n(emptyLocaleMap())
     setCreateSortOrder('0')
+    setCreateCaseSortMode('manual')
     setCreateActive(true)
     setCreateCaseIds([])
   }
@@ -149,6 +156,7 @@ export default function VitrinesPage() {
     setEditNameI18n(preloadNameI18n(vitrine))
     setEditDescriptionI18n(preloadDescriptionI18n(vitrine))
     setEditSortOrder(String(vitrine.sortOrder))
+    setEditCaseSortMode(vitrine.caseSortMode ?? 'manual')
     setEditActive(vitrine.active)
     setEditIsHero(Boolean(vitrine.isHero))
     setEditCaseIds(resolveVitrineCaseIds(vitrine, cases))
@@ -159,6 +167,7 @@ export default function VitrinesPage() {
     setEditNameI18n(emptyLocaleMap())
     setEditDescriptionI18n(emptyLocaleMap())
     setEditSortOrder('0')
+    setEditCaseSortMode('manual')
     setEditActive(true)
     setEditIsHero(false)
     setEditCaseIds([])
@@ -178,6 +187,7 @@ export default function VitrinesPage() {
         nameI18n,
         descriptionI18n,
         sortOrder: Number(createSortOrder) || 0,
+        caseSortMode: createCaseSortMode,
         active: createActive,
         caseIds: createCaseIds,
       }).unwrap()
@@ -204,6 +214,7 @@ export default function VitrinesPage() {
         nameI18n,
         descriptionI18n,
         sortOrder: Number(editSortOrder) || 0,
+        caseSortMode: editCaseSortMode,
         active: editActive,
         caseIds: editCaseIds,
       }).unwrap()
@@ -377,6 +388,21 @@ export default function VitrinesPage() {
                                 value={editSortOrder}
                                 onChange={(e) => setEditSortOrder(e.target.value)}
                               />
+                              <Select
+                                label="Ordenar caixas por"
+                                name="editCaseSortMode"
+                                value={editCaseSortMode}
+                                onChange={(e) =>
+                                  setEditCaseSortMode(e.target.value as CaseVitrineSortMode)
+                                }
+                                hint="Como as caixas desta vitrine aparecem no site"
+                              >
+                                {CASE_VITRINE_SORT_MODES.map((mode) => (
+                                  <option key={mode} value={mode}>
+                                    {CASE_VITRINE_SORT_MODE_LABELS[mode]}
+                                  </option>
+                                ))}
+                              </Select>
                               <div className="flex items-end pb-1">
                                 <Checkbox
                                   label="Ativa no site"
@@ -566,6 +592,19 @@ export default function VitrinesPage() {
               value={createSortOrder}
               onChange={(e) => setCreateSortOrder(e.target.value)}
             />
+            <Select
+              label="Ordenar caixas por"
+              name="createCaseSortMode"
+              value={createCaseSortMode}
+              onChange={(e) => setCreateCaseSortMode(e.target.value as CaseVitrineSortMode)}
+              hint="Como as caixas desta vitrine aparecem no site"
+            >
+              {CASE_VITRINE_SORT_MODES.map((mode) => (
+                <option key={mode} value={mode}>
+                  {CASE_VITRINE_SORT_MODE_LABELS[mode]}
+                </option>
+              ))}
+            </Select>
             <div className="flex items-end pb-1">
               <Checkbox
                 label="Ativa no site"

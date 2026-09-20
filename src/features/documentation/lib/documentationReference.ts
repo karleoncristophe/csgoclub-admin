@@ -296,18 +296,13 @@ export const BATTLE_FORMAT_ENUMS: DocumentationEnumGroup = {
 }
 
 export const CAMBIO_PROVIDER_ENUMS: DocumentationEnumGroup = {
-  title: 'Cadeia de câmbio',
-  description: 'Ordem de tentativa das cotações (todas em base USD):',
+  title: 'Fonte de câmbio',
+  description: 'Todas as cotações são em base USD e vêm de uma única fonte:',
   entries: [
     {
       code: 'SkinsBack',
-      label: 'Principal (sempre primeiro)',
-      hint: 'Mesma cotação do catálogo — casa e jogador não se desalinham.',
-    },
-    {
-      code: 'AwesomeAPI / Frankfurter',
-      label: 'Reserva',
-      hint: 'Só entram se a SkinsBack falhar. A reserva ativa é a marcada em Câmbio.',
+      label: 'Única fonte',
+      hint: 'Mesma cotação do catálogo de skins — admin, site e carteira sempre batem.',
     },
   ],
 }

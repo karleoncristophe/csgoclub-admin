@@ -46,15 +46,23 @@ function MetricTile({
   currency = 'USD',
 }: {
   label: string
-  value: number
+  value?: number
   hint?: string
-  format?: 'count' | 'currency'
+  format?: 'count' | 'currency' | 'currencyAmount'
   currency?: AdminDashboardCurrency
 }) {
   const display =
-    format === 'currency'
-      ? formatCentsMoney(value, currency)
-      : value.toLocaleString('pt-BR')
+    typeof value !== 'number'
+      ? 'Sem dados'
+      : format === 'currency'
+        ? formatCentsMoney(value, currency)
+        : format === 'currencyAmount'
+          ? new Intl.NumberFormat('pt-BR', {
+              style: 'currency',
+              currency,
+              minimumFractionDigits: 2,
+            }).format(value)
+        : value.toLocaleString('pt-BR')
 
   return (
     <Surface variant="metricTile">
@@ -136,6 +144,7 @@ export default function DashboardHomePage() {
   })
 
   const liveOnlineCount = onlineMetrics?.onlineCount ?? metrics?.onlineCount
+  const economy = metrics?.economy?.find((row) => row.currency === currency)
 
   const bucketLabel =
     metrics?.seriesGranularity === 'month' ? 'mês' : 'dia'
@@ -323,11 +332,11 @@ export default function DashboardHomePage() {
                   hint={`Valor dos itens sorteados na mesma moeda (${currency})`}
                 />
                 <MetricTile
-                  label="Margem bruta"
-                  value={metrics.totals[moneyKeys.margin]}
-                  format="currency"
+                  label="Margem variável (Σ VE − item)"
+                  value={economy?.variableMarginValue}
+                  format="currencyAmount"
                   currency={currency}
-                  hint="Faturamento − valor dos drops, na carteira selecionada"
+                  hint="Soma, abertura a abertura, da injeção no banco (preço ÷ 1+alvo) menos o item entregue. Positiva em item barato, negativa em item caro."
                 />
                 <MetricTile
                   label={isSandbox ? 'Volume de bônus' : 'Volume depositado'}
@@ -344,6 +353,57 @@ export default function DashboardHomePage() {
                   }
                 />
               </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <MetricTile
+                  label="Ganho fixo por clique"
+                  value={economy?.averageFixedMarginPerOpen}
+                  format="currencyAmount"
+                  currency={currency}
+                  hint={
+                    economy
+                      ? `Preço − injeção no banco (preço ÷ 1+alvo), média do período · acumulado ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(economy.fixedMarginValue)}`
+                      : 'Preço − injeção no banco (preço ÷ 1+alvo), média do período'
+                  }
+                />
+                <MetricTile
+                  label="Banco virtual agregado"
+                  value={economy?.virtualBankBalance}
+                  format="currencyAmount"
+                  currency={currency}
+                  hint={`Saldo atual somado dos bancos das caixas em ${currency} (não depende do período)`}
+                />
+                <MetricTile
+                  label="Aberturas no cálculo"
+                  value={economy?.totalOpens}
+                  hint="Aberturas que compõem a margem variável e o ganho fixo"
+                />
+              </div>
+              {!isSandbox ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <MetricTile
+                    label="Prêmio perdido pelos bots (battles)"
+                    value={economy?.botPrizeLost}
+                    format="currencyAmount"
+                    currency={currency}
+                    hint={
+                      economy
+                        ? `${economy.botLossCount.toLocaleString('pt-BR')} battle${economy.botLossCount === 1 ? '' : 's'} · debitado do banco da caixa`
+                        : 'Debitado do banco da caixa quando o bot perde'
+                    }
+                  />
+                  <MetricTile
+                    label="Prêmio ganho pelos clientes (battles)"
+                    value={economy?.clientPrizeWon}
+                    format="currencyAmount"
+                    currency={currency}
+                    hint={
+                      economy
+                        ? `${economy.clientWinCount.toLocaleString('pt-BR')} battle${economy.clientWinCount === 1 ? '' : 's'} vencida${economy.clientWinCount === 1 ? '' : 's'} contra bot · vai para o inventário`
+                        : 'Skins que foram para o inventário do cliente'
+                    }
+                  />
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-10">

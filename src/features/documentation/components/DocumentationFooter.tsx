@@ -79,10 +79,10 @@ export function DocumentationFooter() {
             Swap
           </Button>
         </Link>
-        <Link to="/dashboard/cambio">
+        <Link to="/dashboard/payment-providers">
           <Button type="button" size="sm" variant="secondary" className="gap-2">
             <ArrowLeftRight className="h-4 w-4" aria-hidden />
-            Câmbio
+            APIs de pagamento
           </Button>
         </Link>
         <Link to="/dashboard/battles">

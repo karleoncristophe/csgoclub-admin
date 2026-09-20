@@ -88,6 +88,14 @@ export type GetSkinsCatalogParams = {
   offset?: number
 }
 
+/** Cotação SkinsBack em base USD — única fonte de câmbio da plataforma. */
+export type SkinsbackRates = {
+  base: 'USD'
+  brl: number
+  eur: number
+  source: 'skinsback'
+}
+
 export const skinsApi = createApi({
   reducerPath: 'skinsApi',
   baseQuery: baseQueryWithReauth,
@@ -119,6 +127,11 @@ export const skinsApi = createApi({
         },
       }),
       providesTags: ['SkinsCatalog'],
+    }),
+    getSkinsbackRates: builder.query<SkinsbackRates, void>({
+      query: () => ({ url: SKINSBACK.RATES, method: 'GET' }),
+      // Mesmo TTL curto do backend: a cotação muda pouco, mas queremos a atual.
+      keepUnusedDataFor: 120,
     }),
     getSkinsCatalogItem: builder.query<SkinsCatalogItemDetail, GetSkinsCatalogItemParams>({
       query: ({ name, currency }) => ({
@@ -173,6 +186,7 @@ export const {
   useLazyGetSkinsCatalogQuery,
   useGetSkinsCatalogItemQuery,
   useLazyGetSkinsCatalogItemQuery,
+  useGetSkinsbackRatesQuery,
   useStartSkinsCatalogExportMutation,
   useLazyGetSkinsCatalogExportJobQuery,
   useDownloadSkinsCatalogExportMutation,

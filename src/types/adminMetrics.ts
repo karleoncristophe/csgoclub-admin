@@ -19,6 +19,25 @@ export type AdminDashboardMetricsMoneyFields = {
   depositsVolumeCents: number
 }
 
+/** Economia das caixas e battles com bot em uma moeda nativa (valores em unidades, não centavos). */
+export type AdminDashboardEconomyCurrency = {
+  currency: AdminDashboardCurrency
+  totalOpens: number
+  /** Σ (VE injetado − item entregue) no período: é o que move o banco virtual. */
+  variableMarginValue: number
+  /** Σ (preço pago − VE injetado) no período: ganho fixo garantido. */
+  fixedMarginValue: number
+  averageFixedMarginPerOpen: number
+  /** Saldo atual somado dos bancos virtuais nesta moeda (não depende do período). */
+  virtualBankBalance: number
+  /** Prêmio que bots perderam em battles (debitado do banco das caixas). */
+  botPrizeLost: number
+  botLossCount: number
+  /** Prêmio que clientes ganharam em battles contra bots. */
+  clientPrizeWon: number
+  clientWinCount: number
+}
+
 export type AdminDashboardMetricsSeriesRow = {
   date: string
   usersCreated: number
@@ -41,6 +60,8 @@ export type AdminDashboardMetricsResponse = {
   onlineCount: number
   totals: AdminDashboardMetricsTotals
   series: AdminDashboardMetricsSeriesRow[]
+  /** Economia das caixas e battles com bot, por moeda nativa. */
+  economy?: AdminDashboardEconomyCurrency[]
 }
 
 export type AdminOnlineMetricsResponse = {

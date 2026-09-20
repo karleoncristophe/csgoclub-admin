@@ -216,6 +216,16 @@ export default function CaseDetailPage() {
   const { case: lootCase, bank, financials, items, ledger } = data
   const currency = lootCase.currency
   const money = (value: number) => formatSkinsPrice(value, currency)
+  // Backends antigos não mandam a separação fixa/variável: reconstrói pelo banco.
+  const fixedMarginPerOpen =
+    financials.fixedMarginPerOpen ?? Math.max(0, lootCase.price - bank.injectionPerOpen)
+  const fixedMarginValue =
+    financials.fixedMarginValue ?? fixedMarginPerOpen * financials.totalOpens
+  const variableMarginValue =
+    financials.variableMarginValue ?? financials.profit - fixedMarginValue
+  const averageVariableMarginPerOpen =
+    financials.averageVariableMarginPerOpen ??
+    (financials.totalOpens > 0 ? variableMarginValue / financials.totalOpens : 0)
   const blockedCount = Math.max(0, bank.enabledItemsCount - bank.eligibleItemsCount)
   const battleRoundsInBank = Math.max(
     0,
@@ -310,10 +320,13 @@ export default function CaseDetailPage() {
           </div>
           <div>
             <ThemeText tone="faint" className="text-xs">
-              VE
+              VE das skins
             </ThemeText>
             <ThemeText tone="primary" className="mt-1 text-lg font-semibold tabular-nums">
               {money(lootCase.expectedValue)}
+            </ThemeText>
+            <ThemeText tone="faint" className="text-xs">
+              Σ preço × chance, ao vivo · injeção no banco {money(bank.injectionPerOpen)}
             </ThemeText>
           </div>
           <div>
@@ -355,7 +368,7 @@ export default function CaseDetailPage() {
           Quanto entrou nas aberturas, quanto saiu em prêmios e o que sobrou.
         </ThemeText>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric
             label="Entrou (faturamento)"
             value={money(financials.totalRevenue)}
@@ -367,19 +380,26 @@ export default function CaseDetailPage() {
             hint={`Média ${money(financials.averagePayoutPerOpen)} por abertura`}
           />
           <Metric
-            label="Margem das aberturas"
-            value={formatPercent(financials.marginPercent)}
-            hint={`Lucro ${money(financials.profit)}`}
+            label="Margem variável (Σ VE − item)"
+            value={money(variableMarginValue)}
+            hint={`Média ${money(averageVariableMarginPerOpen)} por abertura · é o que move o banco`}
+          />
+          <Metric
+            label="Ganho fixo por clique"
+            value={money(fixedMarginPerOpen)}
+            hint={`Preço − injeção no banco · acumulado ${money(fixedMarginValue)}`}
           />
         </div>
 
         <div className="mt-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950/40">
           <ThemeText tone="primary" className="text-sm font-medium tabular-nums">
-            {money(financials.totalRevenue)} − {money(financials.totalPayout)} ={' '}
+            {money(fixedMarginValue)} fixo + {money(variableMarginValue)} variável ={' '}
             {money(financials.profit)}
           </ThemeText>
           <ThemeText tone="faint" className="mt-1 text-xs">
-            Faturamento − prêmios pagos = lucro
+            Cada abertura: preço − VE vira ganho fixo; VE − item entregue vira margem
+            variável (positiva em item barato, negativa em item caro). A soma das duas é
+            faturamento − prêmios.
           </ThemeText>
         </div>
 
@@ -440,8 +460,12 @@ export default function CaseDetailPage() {
       <Surface variant="settingsPanel" className="!p-5">
         <SectionTitle className="mb-1">Banco virtual</SectionTitle>
         <ThemeText tone="secondary" className="mb-5 text-sm leading-relaxed">
-          Cada abertura ou rodada de batalha (jogador, não bot) adiciona{' '}
-          {money(bank.injectionPerOpen)} e tira o valor do prêmio.
+          Cada abertura ou rodada de batalha (jogador; bot e influencer não) adiciona{' '}
+          {money(bank.injectionPerOpen)} e tira o valor do prêmio. Essa injeção é
+          preço ÷ (1 + alvo de {formatPercent(lootCase.targetMarginPercent)}), não
+          o VE das skins ({money(lootCase.expectedValue)}) — os dois só coincidem
+          quando a margem real bate o alvo. Bot e influencer não injetam; quando
+          perdem, só o prêmio deles sai deste banco.
         </ThemeText>
         {battleRoundsInBank > 0 || bank.balance < 0 ? (
           <div className="mb-5 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/30">
@@ -452,7 +476,7 @@ export default function CaseDetailPage() {
             </ThemeText>
             <ThemeText tone="secondary" className="mt-1 text-xs leading-relaxed">
               Batalha mexe neste saldo e não aparece no Resultado acima (só abertura da
-              caixa). Bot não altera o banco.
+              caixa). Bot e influencer não injetam; se perdem, o prêmio deles é debitado daqui.
               {bank.balance < 0
                 ? ' Negativo = prêmio saiu maior que a injeção — comum quando o item mais barato já custa mais que o preço da caixa.'
                 : ''}
@@ -464,7 +488,7 @@ export default function CaseDetailPage() {
           <Metric
             label="Saldo agora"
             value={money(bank.balance)}
-            hint={`+ ${money(bank.injectionPerOpen)} por abertura ou rodada`}
+            hint={`+ ${money(bank.injectionPerOpen)} por abertura ou rodada (preço ÷ 1+alvo)`}
           />
           <Metric
             label="Itens liberados"

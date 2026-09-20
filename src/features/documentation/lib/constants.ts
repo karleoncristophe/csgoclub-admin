@@ -421,7 +421,7 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'cambio-pagamentos',
     question: 'Como funciona o câmbio da plataforma?',
     answer:
-      'Todas as cotações são em base USD. Converter BRL→EUR (ou qualquer par) passa pelo pivô dólar.\n\nA SkinsBack é sempre tentada primeiro (alinha com o catálogo). Se falhar, entra a API de reserva que você marcou em Câmbio: AwesomeAPI ou Frankfurter.\n\nA cotação não segue o Google — cada provedor tem a própria tabela. Isso não é bug.',
+      'Todas as cotações são em base USD. Converter BRL→EUR (ou qualquer par) passa pelo pivô dólar.\n\nA única fonte é a SkinsBack — a mesma cotação do catálogo de skins. Não há API de reserva nem configuração de câmbio no admin; se a SkinsBack estiver fora, a conversão falha em vez de usar outra tabela.\n\nA cotação pode diferir do Google: é a tabela da SkinsBack, que é quem a casa paga.',
     enumGroups: [CAMBIO_PROVIDER_ENUMS],
     tags: ['câmbio', 'FX', 'skinsback', 'cotação', 'USD'],
   },
@@ -434,7 +434,7 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     bullets: [
       'Snapshot de valor da skin no drop também usa as taxas do momento.',
       'Arena congela a moeda na entrada — prêmio não faz FX cruzado depois.',
-      'Tela Câmbio: aba Câmbio (reserva) + aba APIs de pagamento.',
+      'Tela APIs de pagamento: chaves e cashback de Pix/cripto.',
     ],
     tags: ['câmbio', 'depósito', 'carteira', 'caixa', 'arena'],
   },
@@ -663,7 +663,7 @@ export const DOCUMENTATION_SUMMARY = [
     label: 'Câmbio e carteira',
     category: 'cambio-pagamentos' as const,
     value:
-      'FX via pivô USD (SkinsBack → reserva). Três carteiras; bônus gasta primeiro; só real saca',
+      'FX via pivô USD, só SkinsBack. Três carteiras; bônus gasta primeiro; só real saca',
     icon: Wallet,
   },
 ]

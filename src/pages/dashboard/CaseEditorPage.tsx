@@ -181,9 +181,15 @@ export default function CaseEditorPage() {
           discountPercent: values.discountPercent,
           listPrice: values.listPrice,
           price: values.price,
-          fixedPriceBrl: values.fixedPriceBrl || undefined,
-          fixedPriceUsd: values.fixedPriceUsd || undefined,
-          fixedPriceEur: values.fixedPriceEur || undefined,
+          // Só a moeda da caixa é fonte: o servidor recalcula as outras duas
+          // com a cotação SkinsBack e grava o snapshot (evita 57,70 → 5,22).
+          fixedPriceBrl:
+            values.currency === SkinsCurrency.BRL ? values.fixedPriceBrl || undefined : undefined,
+          fixedPriceUsd:
+            values.currency === SkinsCurrency.USD ? values.fixedPriceUsd || undefined : undefined,
+          fixedPriceEur:
+            values.currency === SkinsCurrency.EUR ? values.fixedPriceEur || undefined : undefined,
+          fixedPriceSourceCurrency: values.currency as SkinsCurrency,
           items: toCaseDropItemsPayload(values.items),
           sharedCaseIds: values.sharedCaseIds,
           vitrineId: values.vitrineId?.trim() ? values.vitrineId : null,
@@ -267,11 +273,11 @@ export default function CaseEditorPage() {
   )
 
   const fixedPrice =
-    values.currency === SkinsCurrency.USD
+    (values.currency === SkinsCurrency.USD
       ? values.fixedPriceUsd
       : values.currency === SkinsCurrency.EUR
         ? values.fixedPriceEur
-        : values.fixedPriceBrl
+        : values.fixedPriceBrl) ?? 0
 
   useEffect(() => {
     if (!(fixedPrice > 0)) return

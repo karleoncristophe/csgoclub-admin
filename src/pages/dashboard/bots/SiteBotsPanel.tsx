@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ImagePlus, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { ImagePlus, ListPlus, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/Checkbox'
 import {
   CaseImageUploader,
@@ -17,16 +17,56 @@ import {
   useCreateSiteBotMutation,
   useDeleteSiteBotMutation,
   useBulkDeleteSiteBotsMutation,
+  useBulkImportSiteBotNamesMutation,
   useAssignSiteBotAvatarsMutation,
   useGenerateSiteBotsMutation,
   useGetSiteBotsQuery,
   useGetSiteBotsStatusQuery,
   useUpdateSiteBotMutation,
   type AdminSiteBot,
+  type SiteBotNameImportResult,
 } from '@/redux/store/api/site-bots/api.site-bots'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { pickBotFallbackAvatar } from '@/lib/bot-avatar'
 import { formatBotBalance, uploadBotAvatar } from './botAvatar'
+
+const BULK_IMPORT_MAX_NAMES = 1000
+
+/** Aceita um nick por linha, vírgula ou ponto e vírgula; normaliza espaços. */
+export function parseBulkNicknames(raw: string): string[] {
+  return raw
+    .split(/[\n,;]+/)
+    .map((part) => part.normalize('NFKC').trim().replace(/\s+/g, ' '))
+    .filter((part) => part.length > 0)
+}
+
+type BulkImportPreviewRow = {
+  name: string
+  status: 'ok' | 'invalid' | 'duplicate_in_request' | 'already_exists'
+}
+
+export function previewBulkNicknames(
+  names: string[],
+  existingNames: Iterable<string>,
+): BulkImportPreviewRow[] {
+  const taken = new Set([...existingNames].map((n) => n.toLowerCase()))
+  const seen = new Set<string>()
+  return names.map((name) => {
+    const key = name.toLowerCase()
+    if (name.length < 2 || name.length > 32) return { name, status: 'invalid' }
+    if (seen.has(key)) return { name, status: 'duplicate_in_request' }
+    seen.add(key)
+    if (taken.has(key)) return { name, status: 'already_exists' }
+    return { name, status: 'ok' }
+  })
+}
+
+const BULK_STATUS_LABEL: Record<BulkImportPreviewRow['status'], string> = {
+  ok: 'Será criado',
+  invalid: 'Inválido (2–32 caracteres)',
+  duplicate_in_request: 'Repetido na lista',
+  already_exists: 'Já existe',
+}
 
 function formatShownAt(value?: string | null) {
   if (!value) return '—'
@@ -210,6 +250,8 @@ export function SiteBotsPanel() {
     useBulkDeleteSiteBotsMutation()
   const [assignAvatars, { isLoading: assigningAvatars }] =
     useAssignSiteBotAvatarsMutation()
+  const [bulkImportNames, { isLoading: importingNames }] =
+    useBulkImportSiteBotNamesMutation()
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [name, setName] = useState('')
@@ -220,6 +262,25 @@ export function SiteBotsPanel() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [batchProgress, setBatchProgress] = useState('')
   const [batchUploading, setBatchUploading] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
+  const [importRaw, setImportRaw] = useState('')
+  const [importError, setImportError] = useState<string | null>(null)
+  const [importResult, setImportResult] = useState<SiteBotNameImportResult | null>(null)
+
+  const importPreview = useMemo(
+    () =>
+      previewBulkNicknames(
+        parseBulkNicknames(importRaw),
+        bots.map((bot) => bot.nameKey || bot.name),
+      ),
+    [importRaw, bots],
+  )
+  const importPreviewCounts = useMemo(() => {
+    const counts = { ok: 0, invalid: 0, duplicate_in_request: 0, already_exists: 0 }
+    for (const row of importPreview) counts[row.status] += 1
+    return counts
+  }, [importPreview])
+  const importOverLimit = importPreview.length > BULK_IMPORT_MAX_NAMES
   const missingAvatarInputRef = useRef<HTMLInputElement>(null)
   const selectedAvatarInputRef = useRef<HTMLInputElement>(null)
 
@@ -358,6 +419,28 @@ export function SiteBotsPanel() {
     if (creating || uploadingAvatar) return
     setCreateModalOpen(false)
     resetCreateForm()
+  }
+
+  function closeImportModal() {
+    if (importingNames) return
+    setImportModalOpen(false)
+    setImportRaw('')
+    setImportError(null)
+    setImportResult(null)
+  }
+
+  async function handleBulkImportNames() {
+    const names = parseBulkNicknames(importRaw)
+    if (names.length === 0 || importOverLimit) return
+    setImportError(null)
+    setImportResult(null)
+    try {
+      const result = await bulkImportNames({ names }).unwrap()
+      setImportResult(result)
+      setImportRaw('')
+    } catch (error) {
+      setImportError(getErrorMessage(error))
+    }
   }
 
   async function handleGenerate() {
@@ -523,6 +606,19 @@ export function SiteBotsPanel() {
         </Button>
         <Button
           type="button"
+          variant="secondary"
+          className="gap-2"
+          onClick={() => {
+            setImportError(null)
+            setImportResult(null)
+            setImportModalOpen(true)
+          }}
+        >
+          <ListPlus className="h-4 w-4" />
+          Importar nicks em lote
+        </Button>
+        <Button
+          type="button"
           className="gap-2"
           onClick={() => {
             resetCreateForm()
@@ -634,6 +730,100 @@ export function SiteBotsPanel() {
           {createError ? (
             <ThemeText as="p" className="text-sm text-red-500">
               {createError}
+            </ThemeText>
+          ) : null}
+        </div>
+      </Modal>
+
+      <Modal
+        open={importModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeImportModal()
+          else setImportModalOpen(true)
+        }}
+        title="Importar nicks em lote"
+        description="Cole um nick por linha (ou separados por vírgula). Repetidos e já existentes são ignorados automaticamente."
+        size="lg"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeImportModal}
+              disabled={importingNames}
+            >
+              {importResult ? 'Fechar' : 'Cancelar'}
+            </Button>
+            <Button
+              type="button"
+              disabled={
+                importingNames || importPreviewCounts.ok === 0 || importOverLimit
+              }
+              isLoading={importingNames}
+              onClick={() => void handleBulkImportNames()}
+            >
+              <ListPlus className="mr-1 h-4 w-4" />
+              Importar {importPreviewCounts.ok > 0 ? `(${importPreviewCounts.ok})` : ''}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <textarea
+            aria-label="Nicks para importar"
+            value={importRaw}
+            onChange={(event) => setImportRaw(event.target.value)}
+            rows={10}
+            disabled={importingNames}
+            placeholder={'soUmTap\nheadshotBR\nnoScope_king'}
+            className="w-full rounded-field border border-field-border bg-field px-3 py-2 font-mono text-sm text-field-foreground shadow-none outline-none transition placeholder:text-field-placeholder focus:border-focus focus:ring-4 focus:ring-focus/15 disabled:cursor-not-allowed disabled:opacity-70"
+          />
+
+          {importPreview.length > 0 ? (
+            <div className="space-y-2">
+              <ThemeText as="p" tone="faint" className="text-xs">
+                {importPreview.length} nick(s) na lista · {importPreviewCounts.ok} serão criados ·{' '}
+                {importPreviewCounts.already_exists} já existem ·{' '}
+                {importPreviewCounts.duplicate_in_request} repetidos ·{' '}
+                {importPreviewCounts.invalid} inválidos
+              </ThemeText>
+              {importOverLimit ? (
+                <ThemeText as="p" className="text-sm text-red-500">
+                  Máximo de {BULK_IMPORT_MAX_NAMES} nicks por importação.
+                </ThemeText>
+              ) : null}
+              {importPreview.some((row) => row.status !== 'ok') ? (
+                <div className="max-h-48 overflow-auto rounded-field border border-field-border">
+                  <table className="w-full text-xs">
+                    <tbody>
+                      {importPreview
+                        .filter((row) => row.status !== 'ok')
+                        .slice(0, 200)
+                        .map((row, index) => (
+                          <tr key={`${row.name}-${index}`} className="border-b border-field-border last:border-0">
+                            <td className="px-2 py-1 font-mono">{row.name || '—'}</td>
+                            <td className="px-2 py-1 text-right text-muted">
+                              {BULK_STATUS_LABEL[row.status]}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {importResult ? (
+            <ThemeText as="p" className="text-sm">
+              Importação concluída: {importResult.created} criado(s), {importResult.skipped}{' '}
+              ignorado(s) de {importResult.requested}.
+            </ThemeText>
+          ) : null}
+
+          {importError ? (
+            <ThemeText as="p" className="text-sm text-red-500">
+              {importError}
             </ThemeText>
           ) : null}
         </div>

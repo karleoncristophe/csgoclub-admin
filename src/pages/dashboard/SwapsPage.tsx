@@ -161,8 +161,8 @@ export default function SwapsPage() {
           />
           <StatCard
             label="Custou na dash"
-            value={formatSwapMoney(summary.targetValueTotal, summaryCurrency)}
-            hint="Preço com taxa dos alvos"
+            value={formatSwapMoney(summary.targetCostUsdTotal ?? 0, 'USD')}
+            hint={`Pago à SkinsBack em dólar · ${formatSwapMoney(summary.targetValueTotal, summaryCurrency)} cobrado do jogador`}
             variant="amber"
           />
           <StatCard
@@ -289,7 +289,7 @@ export default function SwapsPage() {
                   <th className={listTable.th}>Jogador</th>
                   <th className={listTable.th}>Saiu da conta</th>
                   <th className={`${listTable.th} text-right`}>Montante</th>
-                  <th className={`${listTable.th} text-right`}>Custou na dash</th>
+                  <th className={`${listTable.th} text-right`}>Custou na dash (USD)</th>
                   <th className={`${listTable.th} text-right`}>Sobrou</th>
                   <th className={listTable.th}>Status</th>
                   <th className={`${listTable.th} text-right`}>Ação</th>
@@ -379,7 +379,11 @@ export default function SwapsPage() {
                       </td>
                       <td className={`${listTable.tdMuted} text-right tabular-nums`}>
                         <span className="block font-medium text-foreground">
-                          {formatSwapMoney(swap.targetValue, swap.currency)}
+                          {formatSwapMoney(swap.targetCostUsd, 'USD')}
+                          {swap.targetCostUsdRecorded === false ? '*' : ''}
+                        </span>
+                        <span className="block text-xs text-muted">
+                          {formatSwapMoney(swap.targetValue, swap.currency)} cobrado
                         </span>
                       </td>
                       <td className={`${listTable.tdMuted} text-right tabular-nums`}>

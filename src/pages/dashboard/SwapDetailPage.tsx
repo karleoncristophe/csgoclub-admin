@@ -119,8 +119,12 @@ export default function SwapDetailPage() {
             />
             <ValueTile
               label="Custou na dash"
-              value={formatSwapMoney(data.targetValue, currency)}
-              hint="Preço do alvo com taxa"
+              value={formatSwapMoney(data.targetCostUsd, 'USD')}
+              hint={
+                data.targetCostUsdRecorded === false
+                  ? `Estimado pela cotação atual · ${formatSwapMoney(data.targetValue, currency)} cobrado do jogador`
+                  : `Pago à SkinsBack em dólar · ${formatSwapMoney(data.targetValue, currency)} cobrado do jogador`
+              }
             />
             <ValueTile
               label="Sobrou"

@@ -15,6 +15,15 @@ export const VITRINE_LOCALE_LABELS: Record<VitrineLocale, string> = {
   'es-ES': 'Español',
 }
 
+export const CASE_VITRINE_SORT_MODES = ['manual', 'name', 'price_asc', 'price_desc'] as const
+export type CaseVitrineSortMode = (typeof CASE_VITRINE_SORT_MODES)[number]
+export const CASE_VITRINE_SORT_MODE_LABELS: Record<CaseVitrineSortMode, string> = {
+  manual: 'Ordem manual (arrastar)',
+  name: 'Nome (A → Z)',
+  price_asc: 'Preço: mais barato primeiro',
+  price_desc: 'Preço: mais caro primeiro',
+}
+
 export type CaseVitrine = {
   _id: string
   name: string
@@ -27,6 +36,7 @@ export type CaseVitrine = {
   isHero?: boolean
   heroCaseIds?: string[]
   caseIds?: string[]
+  caseSortMode?: CaseVitrineSortMode
   casesCount: number
   createdAt?: string
   updatedAt?: string
@@ -44,6 +54,7 @@ export type CreateCaseVitrinePayload = {
   sortOrder?: number
   active?: boolean
   caseIds?: string[]
+  caseSortMode?: CaseVitrineSortMode
 }
 
 export type UpdateCaseVitrinePayload = {
@@ -55,6 +66,7 @@ export type UpdateCaseVitrinePayload = {
   sortOrder?: number
   active?: boolean
   caseIds?: string[]
+  caseSortMode?: CaseVitrineSortMode
 }
 
 export const caseVitrinesApi = createApi({

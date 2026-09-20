@@ -68,8 +68,8 @@ const SettingsPage = lazy(
 const ThemeBuilderPage = lazy(
   () => import('@/pages/dashboard/theme/ThemeBuilderPage'),
 )
-const CambioPage = lazy(
-  () => import('@/pages/dashboard/CambioPage'),
+const PaymentProvidersPage = lazy(
+  () => import('@/pages/dashboard/PaymentProvidersPage'),
 )
 const PaymentDepositsPage = lazy(
   () => import('@/pages/dashboard/PaymentDepositsPage'),
@@ -186,7 +186,8 @@ function ProtectedRoutes() {
         <Route path="arena/:id" element={<ArenaCrateEditorPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="theme" element={<ThemeBuilderPage />} />
-        <Route path="cambio" element={<CambioPage />} />
+        <Route path="payment-providers" element={<PaymentProvidersPage />} />
+        <Route path="cambio" element={<Navigate replace to="/dashboard/payment-providers" />} />
         <Route path="deposits" element={<PaymentDepositsPage />} />
         <Route path="depositos" element={<Navigate replace to="/dashboard/deposits" />} />
         <Route path="documentation" element={<DocumentationPage />} />

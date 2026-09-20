@@ -71,7 +71,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
       { href: '/dashboard/swaps', label: 'Swap', Icon: Repeat2 },
       { href: '/dashboard/deposits', label: 'Depósitos', Icon: Wallet },
       { href: '/dashboard/coupons', label: 'Cupons', Icon: TicketPercent },
-      { href: '/dashboard/cambio', label: 'Câmbio', Icon: Banknote },
+      { href: '/dashboard/payment-providers', label: 'APIs de pagamento', Icon: Banknote },
     ],
   },
   {

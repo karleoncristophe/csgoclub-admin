@@ -149,7 +149,11 @@ export function operationalCaseDropValue(item: CaseDropItem): number {
   return item.flexiblePrice ?? item.price
 }
 
-/** Trava no valor operacional atual (catálogo vivo), não no snapshot antigo. */
+/**
+ * Trava no valor operacional atual (catálogo vivo), não no snapshot antigo.
+ * Só a moeda da caixa é fonte: as outras duas são zeradas aqui e recalculadas
+ * pelo servidor com a cotação SkinsBack, para admin e site nunca divergirem.
+ */
 export function lockCaseDropItemToCurrentValue(
   item: CaseDropItem,
   currency: SkinsCurrency,
@@ -164,6 +168,9 @@ export function lockCaseDropItemToCurrentValue(
     ...(valueMode === 'base'
       ? { basePrice: lockedValue }
       : { priceWithTax: lockedValue }),
+    fixedValueBrl: undefined,
+    fixedValueUsd: undefined,
+    fixedValueEur: undefined,
     [field]: lockedValue,
   }
 }

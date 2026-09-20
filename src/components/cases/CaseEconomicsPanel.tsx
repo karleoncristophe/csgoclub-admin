@@ -216,7 +216,7 @@ export function CaseEconomicsPanel({
               {formatSkinsPrice(bankBalance, currency)}
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
-              +{formatSkinsPrice(bankInjection, currency)} por abertura
+              +{formatSkinsPrice(bankInjection, currency)} por abertura (preço ÷ 1+alvo)
               {ledgerHint ? ` · ${ledgerHint}` : ''}
             </ThemeText>
           </div>

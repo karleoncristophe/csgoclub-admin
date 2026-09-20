@@ -16,6 +16,8 @@ import { Switch } from '@/components/ui/Switch'
 import { listTableAlt } from '@/components/ui/listTable'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import type { CaseDropItem, LootCase } from '@/redux/store/api/cases/api.cases'
+import { useGetSkinsbackRatesQuery } from '@/redux/store/api/skins/api.skins'
+import { previewItemValues } from '@/utils/skinsbackFx'
 import {
   computeBankInjection,
   computeOpensToUnlockItem,
@@ -66,6 +68,10 @@ const FIXED_VALUE_INPUTS = [
   { currency: SkinsCurrency.EUR, field: 'fixedValueEur', label: 'EUR' },
 ] as const
 
+function fixedValueFieldFor(currency: SkinsCurrency) {
+  return FIXED_VALUE_INPUTS.find((input) => input.currency === currency)!.field
+}
+
 function itemForEconomics(
   item: CaseDropItem,
   valueMode: CaseValueMode,
@@ -95,6 +101,7 @@ export function CaseEditorItemsTable({
 }: CaseEditorItemsTableProps) {
   const bankInjection = computeBankInjection(openPrice, targetMarginPercent)
   const bankAvailable = roundPrice((ledger.bankBalance ?? 0) + bankInjection)
+  const { data: fxRates } = useGetSkinsbackRatesQuery()
   const { sort, toggle } = useTableSort<CaseItemSortKey>()
   const remainderSuggestion = useMemo(
     () => suggestProbabilityRemainder(items, probabilityTargetPercent),
@@ -404,6 +411,16 @@ export function CaseEditorItemsTable({
                         <div className="grid flex-1 grid-cols-3 gap-2">
                           {FIXED_VALUE_INPUTS.map((input) => {
                             const isActiveCurrency = input.currency === currency
+                            const sourceValue =
+                              item.useFixedValue === true
+                                ? (item[fixedValueFieldFor(currency)] ?? itemValue)
+                                : liveValue
+                            const fxPreview = previewItemValues(
+                              item,
+                              sourceValue,
+                              currency,
+                              fxRates,
+                            )
                             return (
                               <label key={input.field} className="block min-w-0">
                                 <ThemeText
@@ -417,29 +434,29 @@ export function CaseEditorItemsTable({
                                   min={0.01}
                                   step="0.01"
                                   value={formatNumberFieldValue(
-                                    item.useFixedValue === true
-                                      ? (item[input.field] ??
-                                        (isActiveCurrency ? itemValue : undefined))
-                                      : isActiveCurrency
-                                        ? liveValue
-                                        : undefined,
+                                    isActiveCurrency
+                                      ? sourceValue
+                                      : fxPreview?.[input.currency],
                                   )}
-                                  disabled={item.useFixedValue !== true}
+                                  placeholder={isActiveCurrency ? undefined : '…'}
+                                  title={
+                                    isActiveCurrency
+                                      ? undefined
+                                      : `Convertido de ${currency} pela cotação SkinsBack atual; é o que será gravado ao salvar.`
+                                  }
+                                  disabled={item.useFixedValue !== true || !isActiveCurrency}
                                   onChange={(event) => {
+                                    if (!isActiveCurrency) return
                                     const parsedValue = Number(event.target.value)
                                     const value = Number.isFinite(parsedValue)
                                       ? Math.max(0, parsedValue)
                                       : 0
                                     updateItem(item.skinName, {
                                       [input.field]: value,
-                                      ...(isActiveCurrency
-                                        ? {
-                                            price: value,
-                                            ...(valueMode === 'base'
-                                              ? { basePrice: value }
-                                              : { priceWithTax: value }),
-                                          }
-                                        : {}),
+                                      price: value,
+                                      ...(valueMode === 'base'
+                                        ? { basePrice: value }
+                                        : { priceWithTax: value }),
                                     })
                                   }}
                                   onFocus={selectNumberInputOnFocus}
@@ -453,7 +470,7 @@ export function CaseEditorItemsTable({
                       </div>
                       <ThemeText tone="faint" className="mt-0.5 block text-[10px]">
                         {item.useFixedValue
-                          ? `Valor operacional em ${currency}; demais moedas ficam salvas para a troca de moeda.`
+                          ? `Fixo em ${currency}; USD/EUR/BRL convertidos pela cotação SkinsBack (a mesma que o site usa).`
                           : `Acompanha o catálogo (${formatSkinsPrice(liveValue, currency)}). Snapshot antigo não entra no VE.`}
                       </ThemeText>
                     </td>

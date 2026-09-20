@@ -60,6 +60,10 @@ export type AdminSwapListItem = {
   targetRarityColor?: string | null
   targetClassId?: string | null
   targetValue: number
+  /** Custo real do alvo na SkinsBack em USD (é o que a dash paga). */
+  targetCostUsd?: number | null
+  /** false quando o USD foi estimado pela cotação atual (swap antigo). */
+  targetCostUsdRecorded?: boolean
   sourceItemsTotal: number
   balanceUsed: number
   changeCredited: number
@@ -79,6 +83,8 @@ export type AdminSwapListSummary = {
   failedCount: number
   inProgressCount: number
   targetValueTotal: number
+  /** Somatório do custo real em USD pago à SkinsBack. */
+  targetCostUsdTotal?: number
   sourceItemsTotal: number
   balanceUsedTotal: number
   changeCreditedTotal: number

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Upgrade — 100 mil sorteios (fácil de ler)</title>
+  <style>
+    @page { size: A4; margin: 16mm 16mm 18mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 11.5pt;
+      line-height: 1.45;
+      color: #1a1a1a;
+      background: #fff;
+    }
+    h1 { font-size: 20pt; margin: 0 0 6px; letter-spacing: -0.02em; }
+    h2 { font-size: 13pt; margin: 22px 0 8px; }
+    p { margin: 0 0 10px; }
+    .kicker { color: #555; font-size: 10pt; margin-bottom: 4px; }
+    .box {
+      border: 1px solid #d8d8d8;
+      padding: 12px 14px;
+      margin: 12px 0 16px;
+    }
+    .box strong { display: block; margin-bottom: 4px; }
+    .ok { border-left: 4px solid #1f7a3a; }
+    .warn { border-left: 4px solid #b36b00; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 10pt; }
+    th, td { border: 1px solid #ccc; padding: 6px 7px; text-align: left; vertical-align: top; }
+    th { background: #f3f3f3; font-weight: 600; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    .menos { color: #1f7a3a; }
+    .mais { color: #9a3b2f; }
+    .muted { color: #555; font-size: 9.5pt; }
+    ul { margin: 6px 0 12px; padding-left: 18px; }
+    li { margin: 3px 0; }
+    .foot { color: #666; font-size: 9pt; margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <p class="kicker">CS2Club · Upgrade · 16/09/2026</p>
+  <h1>A casa pagou mais do que deveria?</h1>
+  <p><strong>Não.</strong> O sorteio está certo. Em 500 mil jogadas (100 mil em cada valor), o resultado ficou colado na odd combinada. Onde a casa “pagou um pouco a mais”, foi acaso — não viés do gerador.</p>
+
+  <div class="box ok">
+    <strong>Resposta em uma linha</strong>
+    No total, a casa ficou com cerca de R$ 3,34 milhões. O esperado era R$ 3,36 milhões. Diferença de ~R$ 24 mil em R$ 11,6 milhões apostados — menos de 0,3%. Isso é variação normal, não um erro.
+  </div>
+
+  <h2>Como a odd funciona</h2>
+  <p>No Upgrade, a chance de ganhar é:</p>
+  <p><strong>chance = (quanto você aposta ÷ valor da skin alvo) × 71</strong></p>
+  <p>O “71” já deixa 29% com a casa. Por isso, se a aposta for R$ 1, 10, 25, 30 ou 50 e o alvo for sempre <strong>R$ 71</strong>, a odd cai redonda:</p>
+  <ul>
+    <li>R$ 1 em um alvo de R$ 71 → <strong>1%</strong></li>
+    <li>R$ 10 → <strong>10%</strong></li>
+    <li>R$ 25 → <strong>25%</strong></li>
+    <li>R$ 30 → <strong>30%</strong></li>
+    <li>R$ 50 → <strong>50%</strong></li>
+  </ul>
+  <p>Em qualquer dessas faixas, a cada R$ 100 apostados a casa espera ficar com <strong>R$ 29</strong> e devolver R$ 71 em prêmios (na média, depois de muitas jogadas).</p>
+
+  <h2>O que foi testado</h2>
+  <p>100 mil sorteios reais do motor do Upgrade, em cada valor — 500 mil no total. Sem gravar no banco. Sem “simular no papel”: o mesmo gerador do jogo.</p>
+
+  <h2>Pediu vs saiu</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Aposta</th>
+        <th class="num">Odd</th>
+        <th class="num">Vitórias esperadas</th>
+        <th class="num">Vitórias que saíram</th>
+        <th class="num">Frequência</th>
+        <th>A casa pagou…</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>R$ 1,00</td>
+        <td class="num">1%</td>
+        <td class="num">1.000</td>
+        <td class="num">967</td>
+        <td class="num">0,967%</td>
+        <td class="menos">menos (33 vitórias a menos)</td>
+      </tr>
+      <tr>
+        <td>R$ 10,00</td>
+        <td class="num">10%</td>
+        <td class="num">10.000</td>
+        <td class="num">9.994</td>
+        <td class="num">9,994%</td>
+        <td class="menos">quase no meio (−6)</td>
+      </tr>
+      <tr>
+        <td>R$ 25,00</td>
+        <td class="num">25%</td>
+        <td class="num">25.000</td>
+        <td class="num">25.215</td>
+        <td class="num">25,215%</td>
+        <td class="mais">um pouco mais (+215)</td>
+      </tr>
+      <tr>
+        <td>R$ 30,00</td>
+        <td class="num">30%</td>
+        <td class="num">30.000</td>
+        <td class="num">30.060</td>
+        <td class="num">30,060%</td>
+        <td class="mais">quase no meio (+60)</td>
+      </tr>
+      <tr>
+        <td>R$ 50,00</td>
+        <td class="num">50%</td>
+        <td class="num">50.000</td>
+        <td class="num">50.101</td>
+        <td class="num">50,101%</td>
+        <td class="mais">quase no meio (+101)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Em dinheiro (valores exatos × R$ 71)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Aposta</th>
+        <th class="num">Total apostado</th>
+        <th class="num">Casa esperava</th>
+        <th class="num">Casa ficou com</th>
+        <th class="num">Diferença</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>R$ 1</td>
+        <td class="num">R$ 100.000</td>
+        <td class="num">R$ 29.000</td>
+        <td class="num">R$ 31.343</td>
+        <td class="menos">casa +R$ 2.343</td>
+      </tr>
+      <tr>
+        <td>R$ 10</td>
+        <td class="num">R$ 1.000.000</td>
+        <td class="num">R$ 290.000</td>
+        <td class="num">R$ 290.426</td>
+        <td class="menos">casa +R$ 426</td>
+      </tr>
+      <tr>
+        <td>R$ 25</td>
+        <td class="num">R$ 2.500.000</td>
+        <td class="num">R$ 725.000</td>
+        <td class="num">R$ 709.735</td>
+        <td class="mais">casa −R$ 15.265</td>
+      </tr>
+      <tr>
+        <td>R$ 30</td>
+        <td class="num">R$ 3.000.000</td>
+        <td class="num">R$ 870.000</td>
+        <td class="num">R$ 865.740</td>
+        <td class="mais">casa −R$ 4.260</td>
+      </tr>
+      <tr>
+        <td>R$ 50</td>
+        <td class="num">R$ 5.000.000</td>
+        <td class="num">R$ 1.450.000</td>
+        <td class="num">R$ 1.442.829</td>
+        <td class="mais">casa −R$ 7.171</td>
+      </tr>
+      <tr>
+        <th>Soma</th>
+        <th class="num">R$ 11.600.000</th>
+        <th class="num">R$ 3.364.000</th>
+        <th class="num">R$ 3.340.073</th>
+        <th class="mais">casa −R$ 23.927</th>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box warn">
+    <strong>Por que o 25% “pagou mais” e mesmo assim está ok</strong>
+    Em 100 mil jogadas a 25%, o normal é oscilar uns ±0,14%. Saiu 25,215% (+0,215%). Isso cabe no acaso. Se o gerador estivesse a favor do jogador, as cinco faixas sairiam todas acima. Aqui umas ficam um pouco abaixo e outras um pouco acima.
+  </div>
+
+  <h2>Skins reais do catálogo (mesma conta)</h2>
+  <p>Não existe skin de exatamente R$ 1,00 / R$ 71,00. Pegamos as mais próximas. A odd continua praticamente a mesma:</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Pedido</th>
+        <th>Skin apostada</th>
+        <th class="num">Aposta</th>
+        <th>Skin alvo</th>
+        <th class="num">Alvo</th>
+        <th class="num">Odd real</th>
+        <th class="num">Saiu em 100k</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>R$ 1 a 1%</td>
+        <td>AUG | Contractor (BS)</td>
+        <td class="num">R$ 0,98</td>
+        <td>Sticker | Luminosity Gaming | Cluj-Napoca 2015</td>
+        <td class="num">R$ 69,63</td>
+        <td class="num">0,999%</td>
+        <td class="num">0,994%</td>
+      </tr>
+      <tr>
+        <td>R$ 10 a 10%</td>
+        <td>StatTrak™ CZ75-Auto | Tigris (WW)</td>
+        <td class="num">R$ 9,99</td>
+        <td>SG 553 | Gator Mesh (FT)</td>
+        <td class="num">R$ 70,92</td>
+        <td class="num">10,001%</td>
+        <td class="num">10,122%</td>
+      </tr>
+      <tr>
+        <td>R$ 25 a 25%</td>
+        <td>P90 | Attack Vector (BS)</td>
+        <td class="num">R$ 24,98</td>
+        <td>SG 553 | Gator Mesh (FT)</td>
+        <td class="num">R$ 70,92</td>
+        <td class="num">25,008%</td>
+        <td class="num">25,158%</td>
+      </tr>
+      <tr>
+        <td>R$ 30 a 30%</td>
+        <td>Sticker | cajunb | Cluj-Napoca 2015</td>
+        <td class="num">R$ 30,02</td>
+        <td>AK-47 | Blue Laminate (MW)</td>
+        <td class="num">R$ 71,07</td>
+        <td class="num">29,990%</td>
+        <td class="num">29,886%</td>
+      </tr>
+      <tr>
+        <td>R$ 50 a 50%</td>
+        <td>StatTrak™ P90 | Nostalgia (MW)</td>
+        <td class="num">R$ 50,01</td>
+        <td>StatTrak™ P250 | Muertos (FT)</td>
+        <td class="num">R$ 71,02</td>
+        <td class="num">49,996%</td>
+        <td class="num">50,131%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>O que isso significa na prática</h2>
+  <ul>
+    <li>O gerador de Upgrade está alinhado com a odd que a tela mostra.</li>
+    <li>A margem da casa (~29% da aposta) vem do fator 71, não de “empurrar” o sorteio.</li>
+    <li>Em um dia, ou em 100 mil jogadas, pode sobrar ou faltar um pouco. No longo prazo, a conta fecha em 29%.</li>
+  </ul>
+
+  <p class="foot">Motor: computeUpgradeChancePercent + pool de 100 mil tickets. Sem gravação no banco. Relatório gerado a partir da execução de 16/09/2026.</p>
+</body>
+</html>

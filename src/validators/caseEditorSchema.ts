@@ -24,24 +24,11 @@ export const caseDropItemSchema = Yup.object({
     .min(MIN_CASE_ITEM_PRICE, 'Preço com taxa inválido')
     .required(),
   price: Yup.number().min(MIN_CASE_ITEM_PRICE).required(),
-  fixedValueBrl: Yup.number().when('useFixedValue', {
-    is: true,
-    then: (schema) =>
-      schema.min(MIN_CASE_ITEM_PRICE, 'Valor fixo em BRL inválido').required(),
-    otherwise: (schema) => schema.optional(),
-  }),
-  fixedValueUsd: Yup.number().when('useFixedValue', {
-    is: true,
-    then: (schema) =>
-      schema.min(MIN_CASE_ITEM_PRICE, 'Valor fixo em USD inválido').required(),
-    otherwise: (schema) => schema.optional(),
-  }),
-  fixedValueEur: Yup.number().when('useFixedValue', {
-    is: true,
-    then: (schema) =>
-      schema.min(MIN_CASE_ITEM_PRICE, 'Valor fixo em EUR inválido').required(),
-    otherwise: (schema) => schema.optional(),
-  }),
+  // Só a moeda da caixa é fonte do valor fixo (vai em `price`); as outras
+  // duas são recalculadas pelo servidor com a cotação SkinsBack.
+  fixedValueBrl: Yup.number().min(MIN_CASE_ITEM_PRICE).optional(),
+  fixedValueUsd: Yup.number().min(MIN_CASE_ITEM_PRICE).optional(),
+  fixedValueEur: Yup.number().min(MIN_CASE_ITEM_PRICE).optional(),
   useFixedValue: Yup.boolean().optional(),
   probability: Yup.number().min(0).max(100).required(),
   probabilityTolerance: Yup.number().min(0).max(5).required(),
@@ -72,9 +59,22 @@ export const caseEditorSchema = Yup.object({
     .max(100)
     .required('Informe a meta de probabilidade'),
   discountPercent: Yup.number().min(0).max(100).required('Informe o desconto'),
-  fixedPriceBrl: Yup.number().min(0.01, 'Preço fixo em BRL inválido').required(),
-  fixedPriceUsd: Yup.number().min(0.01, 'Preço fixo em USD inválido').required(),
-  fixedPriceEur: Yup.number().min(0.01, 'Preço fixo em EUR inválido').required(),
+  // Só o preço fixo na moeda da caixa é obrigatório; os outros vêm do servidor.
+  fixedPriceBrl: Yup.number().when('currency', {
+    is: SkinsCurrency.BRL,
+    then: (schema) => schema.min(0.01, 'Informe o preço fixo em BRL').required(),
+    otherwise: (schema) => schema.min(0),
+  }),
+  fixedPriceUsd: Yup.number().when('currency', {
+    is: SkinsCurrency.USD,
+    then: (schema) => schema.min(0.01, 'Informe o preço fixo em USD').required(),
+    otherwise: (schema) => schema.min(0),
+  }),
+  fixedPriceEur: Yup.number().when('currency', {
+    is: SkinsCurrency.EUR,
+    then: (schema) => schema.min(0.01, 'Informe o preço fixo em EUR').required(),
+    otherwise: (schema) => schema.min(0),
+  }),
   listPrice: Yup.number().when('items', {
     is: (items: unknown[]) => Array.isArray(items) && items.length > 0,
     then: (schema) =>

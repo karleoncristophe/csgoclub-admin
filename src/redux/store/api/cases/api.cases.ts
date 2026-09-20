@@ -29,13 +29,20 @@ export type CaseDropItem = {
   fixedValueEur?: number
   useFixedValue?: boolean
   flexiblePrice?: number
+  /** Valor vivo do catálogo em cada moeda (USD nativo SkinsBack), só leitura. */
+  liveValueBrl?: number
+  liveValueUsd?: number
+  liveValueEur?: number
   probability: number
   probabilityTolerance: number
   enabled: boolean
   expectedValue?: number
 }
 
-export type CaseDropItemPayload = Omit<CaseDropItem, 'expectedValue'>
+export type CaseDropItemPayload = Omit<
+  CaseDropItem,
+  'expectedValue' | 'flexiblePrice' | 'liveValueBrl' | 'liveValueUsd' | 'liveValueEur'
+>
 
 export type LootCase = {
   _id: string
@@ -97,6 +104,8 @@ export type CreateCasePayload = {
   fixedPriceBrl?: number
   fixedPriceUsd?: number
   fixedPriceEur?: number
+  /** Moeda em que o preço fixo foi digitado; o servidor recalcula as outras pela SkinsBack. */
+  fixedPriceSourceCurrency?: SkinsCurrency
   items: CaseDropItemPayload[]
   sharedCaseIds?: string[]
   vitrineId?: string | null
@@ -132,6 +141,16 @@ export type AdminCaseDetailsCase = {
   enabledItemsCount: number
   vitrineId?: string
   sharedCaseIds: string[]
+  fixedPriceBrl?: number
+  fixedPriceUsd?: number
+  fixedPriceEur?: number
+  fixedPriceFxSnapshot?: {
+    sourceCurrency: SkinsCurrency
+    sourceValue: number
+    rateBrl: number
+    rateEur: number
+    capturedAt?: string
+  }
   createdAt?: string
   updatedAt?: string
 }
@@ -160,6 +179,13 @@ export type AdminCaseFinancials = {
   totalRevenue: number
   totalPayout: number
   profit: number
+  /** Σ (VE injetado − item entregue): margem variável, o que move o banco. */
+  variableMarginValue?: number
+  averageVariableMarginPerOpen?: number
+  /** Σ (preço pago − VE injetado): ganho fixo garantido. */
+  fixedMarginValue?: number
+  /** Ganho fixo por clique com a configuração atual. */
+  fixedMarginPerOpen?: number
   marginPercent: number
   averagePayoutPerOpen: number
   biggestPayout: number

@@ -15,6 +15,8 @@ import {
   getEnabledDropItems,
   getProbabilityDelta,
   isProbabilitySumValid,
+  marginDirectionClassName,
+  marginDirectionVsTarget,
   roundEconomics,
   roundPrice,
   type CaseEconomicsConfig,
@@ -172,20 +174,23 @@ export function CaseEconomicsPanel({
             <ThemeText tone="label" className="text-xs uppercase">
               Margem agora
             </ThemeText>
-            <ThemeText
-              tone="primary"
-              className={`mt-1 text-lg font-semibold ${
-                negativeMargin ? 'text-red-600 dark:text-red-400' : ''
+            <p
+              className={`mt-1 text-lg font-semibold tabular-nums ${
+                currentMarginPercent == null
+                  ? 'text-foreground'
+                  : marginDirectionClassName(
+                      marginDirectionVsTarget(
+                        currentMarginPercent,
+                        config.targetMarginPercent,
+                      ),
+                    ) || 'text-foreground'
               }`}
             >
               {currentMarginPercent != null
                 ? `${currentMarginPercent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
                 : '—'}
-            </ThemeText>
-            <ThemeText
-              tone="faint"
-              className={`text-xs ${negativeMargin ? 'text-red-600 dark:text-red-400' : ''}`}
-            >
+            </p>
+            <ThemeText tone="faint" className="text-xs">
               {negativeMargin ? 'Preço abaixo do VE' : `alvo ${config.targetMarginPercent}%`}
             </ThemeText>
           </div>

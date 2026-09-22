@@ -113,6 +113,27 @@ export function computeRealMargin(
   return (finalPrice - totalExpectedValue) / totalExpectedValue
 }
 
+/** Folga para não pintar margem por ruído de 0,01%. */
+export const MARGIN_TARGET_DISPLAY_EPSILON = 0.05
+
+export function marginDirectionVsTarget(
+  realMarginPercent: number,
+  targetMarginPercent: number,
+): 'up' | 'down' | 'flat' {
+  const delta = realMarginPercent - targetMarginPercent
+  if (delta > MARGIN_TARGET_DISPLAY_EPSILON) return 'up'
+  if (delta < -MARGIN_TARGET_DISPLAY_EPSILON) return 'down'
+  return 'flat'
+}
+
+export function marginDirectionClassName(
+  direction: 'up' | 'down' | 'flat',
+): string {
+  if (direction === 'up') return 'text-emerald-600 dark:text-emerald-400'
+  if (direction === 'down') return 'text-red-600 dark:text-red-400'
+  return ''
+}
+
 /** Tolerância para comparar saldo com preço sem ruído de ponto flutuante. */
 const BANK_EPSILON = 1e-9
 

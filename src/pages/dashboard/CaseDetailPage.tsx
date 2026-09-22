@@ -1,13 +1,21 @@
+import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Box, ExternalLink, Package, Pencil } from 'lucide-react'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
+import { BankProgressBar } from '@/components/cases/BankProgressBar'
 import { TextBadge } from '@/components/StatusPill'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle, SectionTitle } from '@/components/ui/Title'
 import { listTable, linkBrand } from '@/components/ui/listTable'
 import { formatSkinsPrice } from '@/constants/skinsCurrency'
-import { computeBankInjection, evaluateDropEligibility } from '@/utils/caseEconomics'
+import {
+  computeBankInjection,
+  describeDropEligibility,
+  evaluateDropEligibility,
+  marginDirectionClassName,
+  marginDirectionVsTarget,
+} from '@/utils/caseEconomics'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import { useGetCaseDetailsQuery } from '@/redux/store/api/cases/api.cases'
 import { getErrorMessage } from '@/utils/getErrorMessage'
@@ -21,12 +29,58 @@ function formatPercent(value: unknown) {
   return `${asNumber(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
 }
 
-function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Metric({
+  label,
+  value,
+  hint,
+}: {
+  label: string
+  value: ReactNode
+  hint?: ReactNode
+}) {
   return (
     <div className="rounded-xl border border-border bg-surface-secondary p-3">
       <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">{label}</ThemeText>
-      <ThemeText as="p" tone="primary" className="mt-2 text-xl font-bold tabular-nums sm:text-2xl">{value}</ThemeText>
-      {hint ? <ThemeText as="p" tone="faint" className="mt-1.5 text-xs leading-relaxed">{hint}</ThemeText> : null}
+      <div className="mt-2 text-xl font-bold tabular-nums text-foreground sm:text-2xl">{value}</div>
+      {hint ? <div className="mt-1.5 text-xs leading-relaxed text-muted/75">{hint}</div> : null}
+    </div>
+  )
+}
+
+function ItemEligibilityCell({
+  enabled,
+  eligibility,
+  currency,
+}: {
+  enabled: boolean
+  eligibility: ReturnType<typeof evaluateDropEligibility>
+  currency: string
+}) {
+  if (!enabled) {
+    return <ThemeText tone="faint" className="text-xs">Desabilitado</ThemeText>
+  }
+
+  return (
+    <div className="min-w-[8.5rem] space-y-1.5">
+      {eligibility.eligible ? (
+        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
+          Sim
+        </span>
+      ) : (
+        <span
+          className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+          title={`Banco em ${formatSkinsPrice(eligibility.bankBalance, currency)} · exige ${formatSkinsPrice(eligibility.requiredBankBalance, currency)} · faltam ${formatSkinsPrice(eligibility.bankShortfall, currency)}`}
+        >
+          {describeDropEligibility(eligibility)}
+        </span>
+      )}
+      <BankProgressBar
+        ratio={
+          eligibility.coveredByOpenPrice || eligibility.requiredBankBalance <= 0
+            ? 1
+            : eligibility.bankBalance / eligibility.requiredBankBalance
+        }
+      />
     </div>
   )
 }
@@ -89,7 +143,26 @@ export default function CaseDetailPage() {
         <div className="mt-5 grid gap-3 border-t border-zinc-100 pt-5 sm:grid-cols-2 xl:grid-cols-4 dark:border-zinc-800">
           <Metric label="Preço da caixa" value={money(lootCase.price)} hint={lootCase.discountPercent > 0 ? `Tabela ${money(lootCase.listPrice)} · −${lootCase.discountPercent}%` : undefined} />
           <Metric label="VE" value={money(lootCase.expectedValue)} />
-          <Metric label="Margem agora × alvo" value={`${formatPercent(lootCase.realMarginPercent)} × ${formatPercent(lootCase.targetMarginPercent)}`} />
+          <Metric
+            label="Margem agora × alvo"
+            value={
+              <>
+                <span
+                  className={
+                    marginDirectionClassName(
+                      marginDirectionVsTarget(
+                        asNumber(lootCase.realMarginPercent),
+                        asNumber(lootCase.targetMarginPercent),
+                      ),
+                    ) || undefined
+                  }
+                >
+                  {formatPercent(lootCase.realMarginPercent)}
+                </span>
+                <span className="font-medium text-muted"> × {formatPercent(lootCase.targetMarginPercent)}</span>
+              </>
+            }
+          />
           <Metric label="Montante bruto da margem" value={money(financials.houseMarginValue)} hint={`${opens.toLocaleString('pt-BR')} aberturas no ambiente atual`} />
         </div>
       </Surface>
@@ -102,20 +175,55 @@ export default function CaseDetailPage() {
       <Surface variant="settingsPanel" className="!p-5">
         <div className="mb-4">
           <SectionTitle>Itens da caixa</SectionTitle>
-          <ThemeText tone="secondary" className="mt-1 text-sm">VE por skin e elegibilidade com o saldo mais o VE da próxima abertura.</ThemeText>
+          <ThemeText tone="secondary" className="mt-1 text-sm">Preço da skin, quanto ela contribui na caixa e se o banco já libera o drop.</ThemeText>
         </div>
         <div className={listTable.wrap}>
           <table className={listTable.table}>
-            <thead><tr className={listTable.theadRow}><th className={listTable.th}>Item</th><th className={listTable.th}>Valor</th><th className={listTable.th}>Chance</th><th className={listTable.th}>Elegibilidade</th></tr></thead>
+            <thead><tr className={listTable.theadRow}><th className={listTable.th}>Item</th><th className={listTable.th}>Valor</th><th className={listTable.th}>Chance</th><th className={listTable.th}>Elegível</th></tr></thead>
             <tbody className={listTable.tbody}>
-              {items.map((item, index) => (
-                <tr key={`${item.skinName}-${index}`} className={listTable.tr}>
-                  <td className={listTable.td}><div className="flex items-center gap-3"><SkinRarityVisual rarity={{ name: item.rarityName, color: item.rarityColor }} className="h-12 w-12 shrink-0" showStar={false}>{item.image ? <img src={item.image} alt={item.skinName} className="h-10 w-10 object-contain" /> : <Box className="h-5 w-5 text-zinc-400" aria-hidden />}</SkinRarityVisual><div className="min-w-0"><ThemeText tone="primary" className="truncate text-sm font-medium">{item.skinName}</ThemeText>{item.rarityName ? <ThemeText tone="faint" className="text-xs">{item.rarityName}</ThemeText> : null}</div></div></td>
-                  <td className={listTable.td}><ThemeText tone="primary" className="text-sm font-medium tabular-nums">{money(item.price)}</ThemeText><ThemeText tone="faint" className="text-xs tabular-nums">VE {money(item.expectedValue)}</ThemeText></td>
-                  <td className={listTable.td}><ThemeText tone="primary" className="text-sm tabular-nums">{item.probability.toFixed(4)}%</ThemeText></td>
-                  <td className={listTable.td}>{!item.enabled ? <ThemeText tone="faint" className="text-xs">Desabilitado</ThemeText> : <TextBadge>{evaluateDropEligibility({ item: { basePrice: item.basePrice, priceWithTax: item.priceWithTax, price: item.price, probability: item.probability }, openPrice: lootCase.price, bankBalance: nextOpenBalance, valueMode: lootCase.valueMode }).eligible ? 'Elegível' : 'Aguardando saldo'}</TextBadge>}</td>
-                </tr>
-              ))}
+              {items.map((item, index) => {
+                const eligibility = evaluateDropEligibility({
+                  item: {
+                    basePrice: item.basePrice,
+                    priceWithTax: item.priceWithTax,
+                    price: item.price,
+                    probability: item.probability,
+                  },
+                  openPrice: lootCase.price,
+                  bankBalance: nextOpenBalance,
+                  valueMode: lootCase.valueMode,
+                })
+
+                return (
+                  <tr key={`${item.skinName}-${index}`} className={listTable.tr}>
+                    <td className={listTable.td}>
+                      <div className="flex items-center gap-3">
+                        <SkinRarityVisual rarity={{ name: item.rarityName, color: item.rarityColor }} className="h-12 w-12 shrink-0" showStar={false}>
+                          {item.image ? <img src={item.image} alt={item.skinName} className="h-10 w-10 object-contain" /> : <Box className="h-5 w-5 text-zinc-400" aria-hidden />}
+                        </SkinRarityVisual>
+                        <div className="min-w-0">
+                          <ThemeText tone="primary" className="truncate text-sm font-medium">{item.skinName}</ThemeText>
+                          {item.rarityName ? <ThemeText tone="faint" className="text-xs">{item.rarityName}</ThemeText> : null}
+                        </div>
+                      </div>
+                    </td>
+                    <td className={listTable.td}>
+                      <ThemeText tone="primary" className="text-sm font-medium tabular-nums">{money(item.price)}</ThemeText>
+                      <ThemeText tone="faint" className="text-xs tabular-nums">Contribuição {money(item.expectedValue)}</ThemeText>
+                    </td>
+                    <td className={listTable.td}>
+                      <ThemeText tone="primary" className="text-sm tabular-nums">{item.probability.toFixed(4)}%</ThemeText>
+                    </td>
+                    <td className={listTable.td}>
+                      <ItemEligibilityCell
+                        enabled={item.enabled}
+                        eligibility={eligibility}
+                        currency={currency}
+                      />
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

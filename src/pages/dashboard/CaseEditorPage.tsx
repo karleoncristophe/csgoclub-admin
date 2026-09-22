@@ -19,6 +19,7 @@ import { fetchJapaSkinsPresetItems } from '@/components/cases/editor/caseJapaSki
 import type { CaseFormState } from '@/components/cases/editor/caseEditor.types'
 import {
   collectFormErrors,
+  liveCatalogValueForCurrency,
   mapCaseToFormValues,
   toCaseDropItemsPayload,
   touchAllCaseFormFields,
@@ -52,6 +53,8 @@ import {
   computePriceAfterDiscount,
   computeProbabilitySum,
   computeTotalExpectedValue,
+  marginDirectionClassName,
+  marginDirectionVsTarget,
   DEFAULT_ITEM_PROBABILITY_TOLERANCE,
   EMPTY_CASE_ECONOMY_LEDGER,
   resolveFairCaseListPrice,
@@ -76,19 +79,21 @@ function SummaryChip({
   label,
   value,
   hint,
+  valueClassName,
 }: {
   label: string
   value: string
   hint?: string
+  valueClassName?: string
 }) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 dark:border-zinc-800 dark:bg-zinc-900">
       <ThemeText as="span" tone="faint" className="block text-[10px] uppercase tracking-wide">
         {label}
       </ThemeText>
-      <ThemeText as="span" tone="primary" className="block text-sm font-semibold">
+      <span className={`block text-sm font-semibold ${valueClassName || 'text-foreground'}`}>
         {value}
-      </ThemeText>
+      </span>
       {hint ? (
         <ThemeText as="span" tone="faint" className="mt-0.5 block text-[10px] leading-snug">
           {hint}
@@ -231,7 +236,9 @@ export default function CaseEditorPage() {
         const operational =
           item.useFixedValue === true
             ? item.price
-            : (item.flexiblePrice ?? item.price)
+            : liveCatalogValueForCurrency(item, values.currency) ??
+              item.flexiblePrice ??
+              item.price
         return {
           basePrice: item.useFixedValue === true ? item.basePrice : operational,
           priceWithTax:
@@ -614,6 +621,16 @@ export default function CaseEditorPage() {
               totalEV > 0
                 ? `${(((values.price ?? 0) - totalEV) / totalEV * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
                 : '—'
+            }
+            valueClassName={
+              totalEV > 0
+                ? marginDirectionClassName(
+                    marginDirectionVsTarget(
+                      ((values.price ?? 0) - totalEV) / totalEV * 100,
+                      values.targetMarginPercent,
+                    ),
+                  ) || undefined
+                : undefined
             }
             hint={
               totalEV > 0 &&

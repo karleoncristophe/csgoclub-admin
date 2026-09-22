@@ -19,6 +19,11 @@ import {
 import { DataVisionBanner } from '@/components/ui/DataVisionBanner'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+import {
+  marginDirectionClassName,
+  marginDirectionVsTarget,
+  MARGIN_TARGET_DISPLAY_EPSILON,
+} from '@/utils/caseEconomics'
 
 export default function CasesPage() {
   const navigate = useNavigate()
@@ -176,18 +181,24 @@ export default function CasesPage() {
                       </ThemeText>
                     </td>
                     <td className={listTable.td}>
-                      <ThemeText
-                        tone={lootCase.expectedValueAlert ? 'danger' : 'primary'}
-                        className="text-sm font-medium tabular-nums"
+                      <span
+                        className={`text-sm font-medium tabular-nums ${
+                          marginDirectionClassName(
+                            marginDirectionVsTarget(
+                              lootCase.realMarginPercent,
+                              lootCase.targetMarginPercent,
+                            ),
+                          ) || 'text-foreground'
+                        }`}
                       >
                         {lootCase.realMarginPercent.toLocaleString('pt-BR', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                         %
-                      </ThemeText>
+                      </span>
                       {Math.abs(lootCase.realMarginPercent - lootCase.targetMarginPercent) >
-                      0.05 ? (
+                      MARGIN_TARGET_DISPLAY_EPSILON ? (
                         <ThemeText tone="faint" className="text-xs tabular-nums">
                           alvo {lootCase.targetMarginPercent}%
                         </ThemeText>

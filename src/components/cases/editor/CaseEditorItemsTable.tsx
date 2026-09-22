@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useRef, type ReactNode } from 'react'
 import { Lock, Trash2 } from 'lucide-react'
 import { BankProgressBar } from '@/components/cases/BankProgressBar'
 import { caseFieldProps } from '@/components/cases/editor/caseFieldHelp'
@@ -38,6 +38,7 @@ import {
   lockCaseDropItemToCurrentValue,
   operationalCaseDropValue,
   selectNumberInputOnFocus,
+  unlockCaseDropItemToLiveValue,
   updateCaseDropItem,
 } from './caseEditor.utils'
 
@@ -74,9 +75,10 @@ function fixedValueFieldFor(currency: SkinsCurrency) {
 function itemForEconomics(
   item: CaseDropItem,
   valueMode: CaseValueMode,
+  currency: SkinsCurrency,
 ): CaseDropItem {
   if (item.useFixedValue === true) return item
-  const live = operationalCaseDropValue(item)
+  const live = operationalCaseDropValue(item, currency)
   return {
     ...item,
     price: live,
@@ -97,8 +99,9 @@ export function CaseEditorItemsTable({
   catalogAlerts = [],
   bankLedgerHint,
 }: CaseEditorItemsTableProps) {
+  const preLockItemsRef = useRef(new Map<string, CaseDropItem>())
   const economicsItems = items.map((item) =>
-    itemForEconomics(item, valueMode),
+    itemForEconomics(item, valueMode, currency),
   )
   const virtualExpectedValue = roundPrice(
     economicsItems
@@ -133,7 +136,7 @@ export function CaseEditorItemsTable({
   const displayedItems = useMemo(
     () =>
       sortByNumericColumn(items, sort, (item, key) => {
-        const economicsItem = itemForEconomics(item, valueMode)
+        const economicsItem = itemForEconomics(item, valueMode, currency)
         const itemValue = resolveItemEconomicsValue(economicsItem, valueMode)
         if (key === 'value') return itemValue
         if (key === 'drop') return item.probability
@@ -146,7 +149,7 @@ export function CaseEditorItemsTable({
         })
         return eligibility.coveredByOpenPrice ? 0 : eligibility.requiredBankBalance
       }),
-    [bankAvailable, items, openPrice, sort, valueMode],
+    [bankAvailable, currency, items, openPrice, sort, valueMode],
   )
 
   const updateItem = (skinName: string, patch: Partial<CaseDropItem>) => {
@@ -169,13 +172,31 @@ export function CaseEditorItemsTable({
     })
   }
 
+  const rememberPreLockItem = (item: CaseDropItem) => {
+    if (!preLockItemsRef.current.has(item.skinName)) {
+      preLockItemsRef.current.set(item.skinName, item)
+    }
+  }
+
   const lockItem = (skinName: string) => {
     onItemsChange(
-      items.map((item) =>
-        item.skinName === skinName
-          ? lockCaseDropItemToCurrentValue(item, currency, valueMode)
-          : item,
-      ),
+      items.map((item) => {
+        if (item.skinName !== skinName) return item
+        rememberPreLockItem(item)
+        return lockCaseDropItemToCurrentValue(item, currency, valueMode)
+      }),
+    )
+  }
+
+  const unlockItem = (skinName: string) => {
+    const snapshot = preLockItemsRef.current.get(skinName)
+    preLockItemsRef.current.delete(skinName)
+    onItemsChange(
+      items.map((item) => {
+        if (item.skinName !== skinName) return item
+        if (snapshot) return snapshot
+        return unlockCaseDropItemToLiveValue(item, currency, valueMode)
+      }),
     )
   }
 
@@ -183,11 +204,11 @@ export function CaseEditorItemsTable({
     if (unlockedAlertNames.length === 0) return
     const unlocked = new Set(unlockedAlertNames)
     onItemsChange(
-      items.map((item) =>
-        unlocked.has(item.skinName)
-          ? lockCaseDropItemToCurrentValue(item, currency, valueMode)
-          : item,
-      ),
+      items.map((item) => {
+        if (!unlocked.has(item.skinName)) return item
+        rememberPreLockItem(item)
+        return lockCaseDropItemToCurrentValue(item, currency, valueMode)
+      }),
     )
   }
 
@@ -296,8 +317,8 @@ export function CaseEditorItemsTable({
             </thead>
             <tbody className={listTableAlt.tbody}>
               {displayedItems.map((item) => {
-                const economicsItem = itemForEconomics(item, valueMode)
-                const liveValue = operationalCaseDropValue(item)
+                const economicsItem = itemForEconomics(item, valueMode, currency)
+                const liveValue = operationalCaseDropValue(item, currency)
                 const itemValue = resolveItemEconomicsValue(economicsItem, valueMode)
                 const veItem = roundPrice(itemValue * (item.probability / 100))
                 const eligibility = evaluateDropEligibility({
@@ -404,17 +425,7 @@ export function CaseEditorItemsTable({
                                 lockItem(item.skinName)
                                 return
                               }
-                              updateItem(item.skinName, {
-                                useFixedValue: false,
-                                ...(item.flexiblePrice != null
-                                  ? {
-                                      price: item.flexiblePrice,
-                                      ...(valueMode === 'base'
-                                        ? { basePrice: item.flexiblePrice }
-                                        : { priceWithTax: item.flexiblePrice }),
-                                    }
-                                  : {}),
-                              })
+                              unlockItem(item.skinName)
                             }}
                           />
                         </div>

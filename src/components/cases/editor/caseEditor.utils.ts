@@ -144,8 +144,36 @@ function fixedValueFieldForCurrency(currency: SkinsCurrency) {
   return 'fixedValueBrl' as const
 }
 
+/** Valor vivo do catálogo na moeda da caixa. */
+export function liveCatalogValueForCurrency(
+  item: Pick<
+    CaseDropItem,
+    'flexiblePrice' | 'liveValueBrl' | 'liveValueUsd' | 'liveValueEur'
+  >,
+  currency: SkinsCurrency,
+): number | undefined {
+  const mapped =
+    currency === SkinsCurrency.USD
+      ? item.liveValueUsd
+      : currency === SkinsCurrency.EUR
+        ? item.liveValueEur
+        : item.liveValueBrl
+  if (mapped != null && Number.isFinite(mapped)) return mapped
+  if (item.flexiblePrice != null && Number.isFinite(item.flexiblePrice)) {
+    return item.flexiblePrice
+  }
+  return undefined
+}
+
 /** Valor operacional da moeda da caixa: catálogo vivo, ou o preço já aplicado. */
-export function operationalCaseDropValue(item: CaseDropItem): number {
+export function operationalCaseDropValue(
+  item: CaseDropItem,
+  currency?: SkinsCurrency,
+): number {
+  if (currency) {
+    const live = liveCatalogValueForCurrency(item, currency)
+    if (live != null) return live
+  }
   return item.flexiblePrice ?? item.price
 }
 
@@ -160,7 +188,7 @@ export function lockCaseDropItemToCurrentValue(
   valueMode: CaseValueMode,
 ): CaseDropItem {
   const field = fixedValueFieldForCurrency(currency)
-  const lockedValue = operationalCaseDropValue(item)
+  const lockedValue = operationalCaseDropValue(item, currency)
   return {
     ...item,
     useFixedValue: true,
@@ -173,6 +201,26 @@ export function lockCaseDropItemToCurrentValue(
     fixedValueEur: undefined,
     [field]: lockedValue,
   }
+}
+
+/**
+ * Volta a acompanhar o catálogo. Sem save, o valor fixado no formulário
+ * não pode ficar no lugar do preço vivo.
+ */
+export function unlockCaseDropItemToLiveValue(
+  item: CaseDropItem,
+  currency: SkinsCurrency,
+  valueMode: CaseValueMode,
+): CaseDropItem {
+  const live = liveCatalogValueForCurrency(item, currency) ?? item.price
+  return patchCaseDropItem(item, {
+    useFixedValue: false,
+    price: live,
+    ...(valueMode === 'base' ? { basePrice: live } : { priceWithTax: live }),
+    fixedValueBrl: undefined,
+    fixedValueUsd: undefined,
+    fixedValueEur: undefined,
+  })
 }
 
 export function updateCaseDropItem(

@@ -126,23 +126,9 @@ function WebhookUrlField({ item }: { item: PaymentProviderCredential }) {
   )
 }
 
-function parseOptionalMoney(raw: string, label: string): number | null {
-  const trimmed = raw.trim().replace(',', '.')
-  if (!trimmed) return null
-  const value = Number(trimmed)
-  if (!Number.isFinite(value) || value < 0) {
-    throw new Error(`${label} precisa ser um número maior ou igual a 0.`)
-  }
-  return value
-}
-
 function ProviderCard({ item }: { item: PaymentProviderCredential }) {
   const [save, saveState] = useUpsertPaymentProviderMutation()
   const [fields, setFields] = useState<Record<string, string>>({})
-  const [cashbackPercent, setCashbackPercent] = useState('0')
-  const [cashbackMaxUsd, setCashbackMaxUsd] = useState('')
-  const [cashbackMaxBrl, setCashbackMaxBrl] = useState('')
-  const [cashbackMaxEur, setCashbackMaxEur] = useState('')
   const [active, setActive] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -159,20 +145,11 @@ function ProviderCard({ item }: { item: PaymentProviderCredential }) {
       }
     }
     setFields(next)
-    setCashbackPercent(String(item.cashbackPercent ?? 0))
-    setCashbackMaxUsd(item.cashbackMaxUsd != null ? String(item.cashbackMaxUsd) : '')
-    setCashbackMaxBrl(item.cashbackMaxBrl != null ? String(item.cashbackMaxBrl) : '')
-    setCashbackMaxEur(item.cashbackMaxEur != null ? String(item.cashbackMaxEur) : '')
     setActive(item.status === 'ACTIVE')
   }, [item])
 
   const handleSave = async () => {
     setFormError(null)
-    const parsedCashback = Number(cashbackPercent.replace(',', '.'))
-    if (!Number.isFinite(parsedCashback) || parsedCashback < 0 || parsedCashback > 100) {
-      setFormError('Cashback precisa ser um número entre 0 e 100.')
-      return
-    }
     try {
       const config: Record<string, string | undefined> = {}
       for (const field of item.catalog.fields) {
@@ -181,10 +158,6 @@ function ProviderCard({ item }: { item: PaymentProviderCredential }) {
       }
       const body: UpsertPaymentProviderBody = {
         status: active ? 'ACTIVE' : 'INACTIVE',
-        cashbackPercent: parsedCashback,
-        cashbackMaxUsd: parseOptionalMoney(cashbackMaxUsd, 'Teto USD'),
-        cashbackMaxBrl: parseOptionalMoney(cashbackMaxBrl, 'Teto BRL'),
-        cashbackMaxEur: parseOptionalMoney(cashbackMaxEur, 'Teto EUR'),
       }
       if (item.provider === 'woovi') {
         body.woovi = {
@@ -268,41 +241,6 @@ function ProviderCard({ item }: { item: PaymentProviderCredential }) {
             />
           ),
         )}
-        <Input
-          description="Percentual creditado a mais sobre cada depósito pago (ex.: 2 = +2%)."
-          label="Cashback no depósito (%)"
-          name={`${item.provider}-cashback`}
-          onChange={(event) => setCashbackPercent(event.target.value)}
-          type="number"
-          value={cashbackPercent}
-        />
-        <Input
-          description="Teto do cashback quando a carteira do jogador está em USD. Vazio = sem teto."
-          label="Teto de cashback (USD)"
-          name={`${item.provider}-cashback-max-usd`}
-          onChange={(event) => setCashbackMaxUsd(event.target.value)}
-          placeholder="Ex.: 10"
-          type="number"
-          value={cashbackMaxUsd}
-        />
-        <Input
-          description="Teto do cashback quando a carteira está em BRL. Vazio = sem teto."
-          label="Teto de cashback (BRL)"
-          name={`${item.provider}-cashback-max-brl`}
-          onChange={(event) => setCashbackMaxBrl(event.target.value)}
-          placeholder="Ex.: 10"
-          type="number"
-          value={cashbackMaxBrl}
-        />
-        <Input
-          description="Teto do cashback quando a carteira está em EUR. Vazio = sem teto."
-          label="Teto de cashback (EUR)"
-          name={`${item.provider}-cashback-max-eur`}
-          onChange={(event) => setCashbackMaxEur(event.target.value)}
-          placeholder="Ex.: 5"
-          type="number"
-          value={cashbackMaxEur}
-        />
         <Switch
           checked={active}
           description={
@@ -345,8 +283,7 @@ export function PaymentProvidersPanel() {
         <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
           Chaves ficam criptografadas (nunca em texto puro). Cripto via XGate e Pix via
           Woovi. Cole no painel da gateway a URL absoluta do webhook desta API — a
-          mesma base usada pelo admin e pelo site. O cashback pode ter um teto por
-          moeda da carteira (USD, BRL ou EUR).
+          mesma base usada pelo admin e pelo site.
         </ThemeText>
       </div>
 

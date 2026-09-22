@@ -130,8 +130,8 @@ export const skinsApi = createApi({
     }),
     getSkinsbackRates: builder.query<SkinsbackRates, void>({
       query: () => ({ url: SKINSBACK.RATES, method: 'GET' }),
-      // Mesmo TTL curto do backend: a cotação muda pouco, mas queremos a atual.
-      keepUnusedDataFor: 120,
+      // Backend renova câmbio/preços a cada 12h; no admin basta segurar a sessão.
+      keepUnusedDataFor: 12 * 60 * 60,
     }),
     getSkinsCatalogItem: builder.query<SkinsCatalogItemDetail, GetSkinsCatalogItemParams>({
       query: ({ name, currency }) => ({

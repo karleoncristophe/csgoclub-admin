@@ -93,14 +93,32 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'Como o preço da caixa é definido?',
     answer:
-      'Você escolhe uma margem alvo. O sistema sugere: preço de tabela = VE × (1 + margem%).\n\nCom VE $0,15 e margem 30%, a sugestão fica ~$0,195. Depois você pode aplicar desconto sobre a tabela para o preço final da vitrine.\n\nMargem real = (preço final − VE) / VE. Se o final ficar abaixo do VE, a casa perde no design — o painel avisa.',
+      'O preço fixo da caixa não muda quando o catálogo atualiza. O VE é recalculado com os valores atuais dos itens e suas probabilidades; a margem real é recalculada sobre esse VE.',
     bullets: [
       'Preço de tabela = referência de catálogo.',
       'Preço final = o que o jogador paga de verdade.',
-      'Injeção no banco por abertura = preço ÷ (1 + margem alvo).',
+      'Preço sugerido para uma margem alvo = VE × (1 + margem alvo).',
     ],
     enumGroups: [ECONOMY_PANEL_FIELDS],
     tags: ['preço', 'margem', 'desconto', 'caixa'],
+  },
+  {
+    id: 'calc-1',
+    category: 'caixas-economia',
+    question: 'Como cada cálculo da caixa funciona no Admin?',
+    answer:
+      'Esta é a referência única dos cálculos exibidos em Caixas, Editar caixa e Detalhes. O preço fixo é o valor que o jogador paga e permanece fixo. O VE acompanha os itens ativos, os preços atuais e as probabilidades; quando o VE muda, a margem exibida muda automaticamente.',
+    bullets: [
+      'VE do item = preço usado pela caixa × (Drop % ÷ 100).',
+      'VE da caixa = soma dos VE de todos os itens ativos.',
+      'Margem real (%) = ((preço fixo − VE atual) ÷ VE atual) × 100.',
+      'Preço sugerido = VE atual × (1 + margem alvo ÷ 100). Ele só é uma sugestão; o preço fixo pode ser diferente.',
+      'Montante bruto da margem = (preço pago − VE registrado na abertura) × quantidade de aberturas.',
+      'Banco: entra o VE da abertura; sai o valor integral do item entregue. A margem não entra no banco.',
+      'Elegibilidade: item até o preço da abertura é coberto pela própria abertura; item acima dele exige saldo suficiente no banco.',
+      'Produção e Dev usam históricos e bancos separados.',
+    ],
+    tags: ['cálculos', 'VE', 'margem', 'preço fixo', 'banco', 'elegibilidade'],
   },
   {
     id: 'drop-1',
@@ -121,7 +139,7 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'Como funciona o motor de drop na prática?',
     answer:
-      'Toda abertura injeta o valor esperado no banco e sorteia por chance entre o pool.\n\nSe o item sorteado estiver travado, o sistema refaz o sorteio só entre elegíveis (re-roll), mantendo pesos relativos. Se ninguém estiver liberado, entrega o mais barato (fallback).',
+      'Toda abertura injeta o VE atual no banco e sorteia por chance entre o pool.\n\nSe o item sorteado estiver travado, o sistema refaz o sorteio só entre elegíveis (re-roll), mantendo pesos relativos. Se ninguém estiver liberado, entrega o mais barato (fallback).',
     bullets: [
       'Sorteio ponderado pelas chances que você definiu.',
       'Item travado tem chance zero no re-roll.',
@@ -135,9 +153,9 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'O que é o banco virtual da caixa?',
     answer:
-      'É a reserva que decide quais itens podem sair. A cada abertura humana o sistema injeta preço ÷ (1 + margem alvo).\n\nQuando alguém ganha um item, o valor exato sai do banco. Se o saldo cair, itens caros travam de novo até novas aberturas recomporem o saldo.\n\nInfluencer usa ledger de teste separado. Caixas no mesmo economyPoolId compartilham o banco.',
+      'É a reserva que decide quais itens podem sair. A cada abertura humana o sistema injeta o VE atual da caixa.\n\nQuando alguém ganha um item, o valor exato sai do banco. Se o saldo cair, itens caros travam de novo até novas aberturas recomporem o saldo.\n\nInfluencer usa ledger de teste separado. Caixas no mesmo economyPoolId compartilham o banco.',
     bullets: [
-      'Injeção = openPrice / (1 + margem%).',
+      'Injeção por abertura = VE atual.',
       'bankDelta = injeção − valor do item entregue.',
       'Item ≤ preço da abertura: sempre elegível.',
       'Bot de battle: bankDelta = 0 (não mexe no banco).',

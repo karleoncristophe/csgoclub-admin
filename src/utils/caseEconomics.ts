@@ -81,7 +81,7 @@ export function computeTotalExpectedValue(
   )
 }
 
-/** Preço de tabela = VE × (1 + margem%). Ex.: VE 10 e margem 20% → 12. */
+/** Preço de tabela = VE × (1 + margem%). */
 export function computeSuggestedSalePrice(
   totalExpectedValue: number,
   targetMarginPercent: number,
@@ -100,7 +100,7 @@ export function computePriceAfterDiscount(
 
 /**
  * Margem real em cima do VE: (preço − VE) / VE.
- * Com preço = VE × (1 + margem) e sem desconto, bate a margem alvo.
+ * Com preço = VE × (1 + margem), bate a margem alvo.
  */
 export function computeRealMargin(
   finalPrice: number,

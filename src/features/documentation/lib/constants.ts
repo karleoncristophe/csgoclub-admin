@@ -109,13 +109,16 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     answer:
       'Esta é a referência única dos cálculos exibidos em Caixas, Editar caixa e Detalhes. O preço fixo é o valor que o jogador paga e permanece fixo. O VE acompanha os itens ativos, os preços atuais e as probabilidades; quando o VE muda, a margem exibida muda automaticamente.',
     bullets: [
-      'VE do item = preço usado pela caixa × (Drop % ÷ 100).',
+      'VE do item = preço usado pela caixa × (% do Drop ÷ 100).',
       'VE da caixa = soma dos VE de todos os itens ativos.',
       'Margem real (%) = ((preço fixo − VE atual) ÷ VE atual) × 100.',
       'Preço sugerido = VE atual × (1 + margem alvo ÷ 100). Ele só é uma sugestão; o preço fixo pode ser diferente.',
       'Montante bruto da margem = (preço pago − VE registrado na abertura) × quantidade de aberturas.',
-      'Banco: entra o VE da abertura; sai o valor integral do item entregue. A margem não entra no banco.',
-      'Elegibilidade: item até o preço da abertura é coberto pela própria abertura; item acima dele exige saldo suficiente no banco.',
+      'Entrada no banco: saldo disponível = saldo anterior + VE da abertura. O % do Drop só define o peso do sorteio; não aumenta nem reduz o valor que entra.',
+      'Elegibilidade: se o valor do item ≤ preço da abertura, ele é coberto pela própria abertura. Se for maior, só é elegível quando saldo disponível ≥ valor integral do item.',
+      'Sorteio: o sistema sorteia usando o % do Drop apenas entre os itens elegíveis e mantém os pesos relativos dos itens bloqueados fora da roleta.',
+      'Retirada do banco: saldo depois = saldo anterior + VE da abertura − valor integral do item entregue. A margem não entra nem sai do banco.',
+      'Exemplo: preço R$ 13,50, VE R$ 9,92, saldo anterior R$ 20 e item de R$ 25. Saldo disponível = R$ 29,92; o item é elegível e o saldo final fica R$ 4,92.',
       'Produção e Dev usam históricos e bancos separados.',
     ],
     tags: ['cálculos', 'VE', 'margem', 'preço fixo', 'banco', 'elegibilidade'],
@@ -125,7 +128,7 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'O que significa “elegível” na tabela de itens?',
     answer:
-      'É a pergunta: “esta skin pode sair agora?”\n\nChance (Drop %) = peso na roleta. Elegível = o banco virtual consegue pagar o item neste momento.\n\nItem que custa até o preço da abertura sai sempre. Item mais caro só libera quando o saldo do banco ≥ valor de mercado dele.',
+      'É a pergunta: “esta skin pode sair agora?”\n\n% do Drop = peso na roleta. Elegível = o banco virtual consegue pagar o item neste momento.\n\nItem que custa até o preço da abertura sai sempre. Item mais caro só libera quando o saldo do banco ≥ valor de mercado dele.',
     bullets: [
       'Elegível = Sim → pode sair nesta abertura.',
       'Não (banco) → item caro; aguarda o banco acumular.',
@@ -156,7 +159,9 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
       'É a reserva que decide quais itens podem sair. A cada abertura humana o sistema injeta o VE atual da caixa.\n\nQuando alguém ganha um item, o valor exato sai do banco. Se o saldo cair, itens caros travam de novo até novas aberturas recomporem o saldo.\n\nInfluencer usa ledger de teste separado. Caixas no mesmo economyPoolId compartilham o banco.',
     bullets: [
       'Injeção por abertura = VE atual.',
-      'bankDelta = injeção − valor do item entregue.',
+      'Saldo disponível = saldo anterior + VE atual.',
+      'bankDelta = VE atual − valor do item entregue.',
+      'Saldo final = saldo anterior + bankDelta.',
       'Item ≤ preço da abertura: sempre elegível.',
       'Bot de battle: bankDelta = 0 (não mexe no banco).',
     ],
@@ -180,7 +185,7 @@ export const DOCUMENTATION_DATA: DocumentationItem[] = [
     category: 'caixas-economia',
     question: 'Como criar uma caixa passo a passo?',
     answer:
-      '1) Nome, slug, moeda e imagem.\n\n2) Busque skins e adicione na tabela.\n\n3) Ajuste Drop %.\n\n4) Revise VE, pool elegível e margem.\n\n5) Defina tabela, desconto e preço final.\n\n6) Salve sem alertas vermelhos.',
+      '1) Nome, slug, moeda e imagem.\n\n2) Busque skins e adicione na tabela.\n\n3) Ajuste o % do Drop.\n\n4) Revise VE, pool elegível e margem.\n\n5) Defina tabela, desconto e preço final.\n\n6) Salve sem alertas vermelhos.',
     bullets: [
       '“Usar sugerido” aplica o preço de tabela automático.',
       'Soma das chances deve fechar ~100% (com tolerância).',

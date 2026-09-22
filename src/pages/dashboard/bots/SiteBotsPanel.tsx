@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ImagePlus, ListPlus, Plus, Search, Trash2 } from 'lucide-react'
+import { ImagePlus, ListPlus, PencilLine, Plus, Search, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/Checkbox'
 import {
   CaseImageUploader,
@@ -19,12 +19,14 @@ import {
   useDeleteSiteBotMutation,
   useBulkDeleteSiteBotsMutation,
   useBulkImportSiteBotNamesMutation,
+  useBulkRenameSiteBotsMutation,
   useAssignSiteBotAvatarsMutation,
   useGetSiteBotsQuery,
   useGetSiteBotsStatusQuery,
   useUpdateSiteBotMutation,
   type AdminSiteBot,
   type SiteBotNameImportResult,
+  type SiteBotNameRenameResult,
 } from '@/redux/store/api/site-bots/api.site-bots'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { pickBotFallbackAvatar } from '@/lib/bot-avatar'
@@ -32,18 +34,20 @@ import { formatBotBalance, uploadBotAvatar } from './botAvatar'
 import { SiteBotsAvatarAssignModal } from './SiteBotsAvatarAssignModal'
 import {
   BULK_IMPORT_MAX_NAMES,
+  BULK_RENAME_STATUS_LABEL,
   BULK_STATUS_LABEL,
   botHasAvatar,
   normalizeBotKey,
   parseBulkNicknames,
+  parseBulkRenameLines,
   previewBulkNicknames,
+  previewBulkRename,
   validateAvatarFiles,
 } from './siteBotsBulk'
 
 export { parseBulkNicknames, previewBulkNicknames } from './siteBotsBulk'
 
 type PhotoFilter = 'all' | 'missing' | 'has'
-type ActiveFilter = 'all' | 'active' | 'inactive'
 
 function formatShownAt(value?: string | null) {
   if (!value) return '—'
@@ -228,11 +232,12 @@ export function SiteBotsPanel() {
     useAssignSiteBotAvatarsMutation()
   const [bulkImportNames, { isLoading: importingNames }] =
     useBulkImportSiteBotNamesMutation()
+  const [bulkRename, { isLoading: renamingMany }] =
+    useBulkRenameSiteBotsMutation()
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [query, setQuery] = useState('')
   const [photoFilter, setPhotoFilter] = useState<PhotoFilter>('all')
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all')
   const [name, setName] = useState('')
   const [createImage, setCreateImage] = useState<CaseImageValue>(null)
   const [createError, setCreateError] = useState<string | null>(null)
@@ -246,6 +251,10 @@ export function SiteBotsPanel() {
   const [importRaw, setImportRaw] = useState('')
   const [importError, setImportError] = useState<string | null>(null)
   const [importResult, setImportResult] = useState<SiteBotNameImportResult | null>(null)
+  const [renameModalOpen, setRenameModalOpen] = useState(false)
+  const [renameRaw, setRenameRaw] = useState('')
+  const [renameError, setRenameError] = useState<string | null>(null)
+  const [renameResult, setRenameResult] = useState<SiteBotNameRenameResult | null>(null)
   const [assignFiles, setAssignFiles] = useState<File[]>([])
   const [assignOpen, setAssignOpen] = useState(false)
   const [photoTargetKeys, setPhotoTargetKeys] = useState<string[] | null>(null)
@@ -279,11 +288,9 @@ export function SiteBotsPanel() {
       const hasPhoto = botHasAvatar(bot)
       if (photoFilter === 'missing' && hasPhoto) return false
       if (photoFilter === 'has' && !hasPhoto) return false
-      if (activeFilter === 'active' && !bot.active) return false
-      if (activeFilter === 'inactive' && bot.active) return false
       return true
     })
-  }, [activeFilter, bots, photoFilter, query])
+  }, [bots, photoFilter, query])
 
   const missingAvatarCount = useMemo(
     () => bots.filter((bot) => !botHasAvatar(bot)).length,
@@ -309,6 +316,20 @@ export function SiteBotsPanel() {
     }
     return bots.filter((bot) => selectedOnPage.includes(bot._id))
   }, [bots, photoTargetKeys, selectedOnPage])
+
+  const selectedBots = useMemo(() => {
+    const ids = new Set(selectedOnPage)
+    const visible = filteredBots.filter((bot) => ids.has(bot._id))
+    const visibleSet = new Set(visible.map((bot) => bot._id))
+    const hidden = bots.filter((bot) => ids.has(bot._id) && !visibleSet.has(bot._id))
+    return [...visible, ...hidden]
+  }, [bots, filteredBots, selectedOnPage])
+
+  const renamePreview = useMemo(
+    () => previewBulkRename(selectedBots, parseBulkRenameLines(renameRaw), bots),
+    [bots, renameRaw, selectedBots],
+  )
+  const renameOkCount = renamePreview.filter((row) => row.status === 'ok').length
 
   useEffect(() => {
     setSelectedIds((current) => {
@@ -391,6 +412,22 @@ export function SiteBotsPanel() {
     setImportResult(null)
   }
 
+  function openRenameModal() {
+    if (selectedBots.length === 0) return
+    setRenameError(null)
+    setRenameResult(null)
+    setRenameRaw(selectedBots.map((bot) => bot.name).join('\n'))
+    setRenameModalOpen(true)
+  }
+
+  function closeRenameModal() {
+    if (renamingMany) return
+    setRenameModalOpen(false)
+    setRenameRaw('')
+    setRenameError(null)
+    setRenameResult(null)
+  }
+
   function closeAssignModal() {
     if (batchUploading) return
     setAssignOpen(false)
@@ -454,6 +491,21 @@ export function SiteBotsPanel() {
       setImportRaw('')
     } catch (error) {
       setImportError(getErrorMessage(error))
+    }
+  }
+
+  async function handleBulkRename() {
+    const items = renamePreview
+      .filter((row) => row.status === 'ok')
+      .map((row) => ({ id: row.id, name: row.name }))
+    if (items.length === 0) return
+    setRenameError(null)
+    setRenameResult(null)
+    try {
+      const result = await bulkRename({ items }).unwrap()
+      setRenameResult(result)
+    } catch (error) {
+      setRenameError(getErrorMessage(error))
     }
   }
 
@@ -589,24 +641,6 @@ export function SiteBotsPanel() {
                 {label}
               </button>
             ))}
-            {(
-              [
-                ['all', 'Qualquer status'],
-                ['active', 'Ativos'],
-                ['inactive', 'Inativos'],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                className={
-                  activeFilter === value ? filterChipClass.active : filterChipClass.inactive
-                }
-                onClick={() => setActiveFilter(value)}
-              >
-                {label}
-              </button>
-            ))}
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -621,7 +655,17 @@ export function SiteBotsPanel() {
             }}
           >
             <ListPlus className="h-4 w-4" />
-            Importar nicks
+            Criar em escala
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="gap-2"
+            disabled={selectedOnPage.length === 0}
+            onClick={openRenameModal}
+          >
+            <PencilLine className="h-4 w-4" />
+            Atualizar em escala
           </Button>
           <Button
             type="button"
@@ -646,7 +690,7 @@ export function SiteBotsPanel() {
                   .length
               } sem foto`
             : ''}
-          {query || photoFilter !== 'all' || activeFilter !== 'all'
+          {query || photoFilter !== 'all'
             ? ` · ${filteredBots.length} visíveis`
             : ''}
         </ThemeText>
@@ -690,6 +734,17 @@ export function SiteBotsPanel() {
             handleAvatarFilesPicked(list)
           }}
         />
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="gap-2"
+          disabled={selectedOnPage.length === 0}
+          onClick={openRenameModal}
+        >
+          <PencilLine className="h-4 w-4" />
+          Atualizar nicks
+        </Button>
         <Button
           type="button"
           variant="secondary"
@@ -771,7 +826,7 @@ export function SiteBotsPanel() {
             ) : bots.length === 0 ? (
               <tr>
                 <td className={listTable.td} colSpan={7}>
-                  Nenhum bot. Importe nicks ou crie um.
+                  Nenhum bot. Crie em escala ou um nick.
                 </td>
               </tr>
             ) : filteredBots.length === 0 ? (
@@ -856,7 +911,7 @@ export function SiteBotsPanel() {
           if (!open) closeImportModal()
           else setImportModalOpen(true)
         }}
-        title="Importar nicks"
+        title="Criar nicks em escala"
         description="Cole os nicks que você quer criar. Nada é gerado aleatoriamente — só entra o que estiver nesta lista."
         size="lg"
         footer={
@@ -889,7 +944,7 @@ export function SiteBotsPanel() {
               onClick={() => void handleBulkImportNames()}
             >
               <ListPlus className="mr-1 h-4 w-4" />
-              Importar {importPreviewCounts.ok > 0 ? `(${importPreviewCounts.ok})` : ''}
+              Criar {importPreviewCounts.ok > 0 ? `(${importPreviewCounts.ok})` : ''}
             </Button>
           </>
         }
@@ -951,6 +1006,91 @@ export function SiteBotsPanel() {
           {importError ? (
             <ThemeText as="p" className="text-sm text-red-500">
               {importError}
+            </ThemeText>
+          ) : null}
+        </div>
+      </Modal>
+
+      <Modal
+        open={renameModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeRenameModal()
+          else setRenameModalOpen(true)
+        }}
+        title="Atualizar nicks em escala"
+        description="Um nick por linha, na mesma ordem da seleção. Só os que mudarem e forem válidos serão gravados."
+        size="lg"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeRenameModal}
+              disabled={renamingMany}
+            >
+              {renameResult ? 'Fechar' : 'Cancelar'}
+            </Button>
+            <Button
+              type="button"
+              disabled={renamingMany || renameOkCount === 0}
+              isLoading={renamingMany}
+              onClick={() => void handleBulkRename()}
+            >
+              <PencilLine className="mr-1 h-4 w-4" />
+              Atualizar {renameOkCount > 0 ? `(${renameOkCount})` : ''}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <ThemeText as="p" tone="faint" className="text-xs">
+            {selectedBots.length} selecionado(s) · {renameOkCount} serão atualizados
+          </ThemeText>
+          <textarea
+            aria-label="Novos nicks"
+            value={renameRaw}
+            onChange={(event) => setRenameRaw(event.target.value)}
+            rows={10}
+            disabled={renamingMany}
+            placeholder={'nickNovo1\nnickNovo2\nnickNovo3'}
+            className="w-full rounded-field border border-field-border bg-field px-3 py-2 font-mono text-sm text-field-foreground shadow-none outline-none transition placeholder:text-field-placeholder focus:border-focus focus:ring-4 focus:ring-focus/15 disabled:cursor-not-allowed disabled:opacity-70"
+          />
+
+          {renamePreview.length > 0 ? (
+            <div className="max-h-56 overflow-auto rounded-field border border-field-border">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 bg-surface-secondary">
+                  <tr className="text-left text-muted">
+                    <th className="px-2 py-1 font-medium">Atual</th>
+                    <th className="px-2 py-1 font-medium">Novo</th>
+                    <th className="px-2 py-1 text-right font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {renamePreview.map((row) => (
+                    <tr key={row.id} className="border-t border-field-border">
+                      <td className="px-2 py-1 font-mono">{row.currentName}</td>
+                      <td className="px-2 py-1 font-mono">{row.name || '—'}</td>
+                      <td className="px-2 py-1 text-right text-muted">
+                        {BULK_RENAME_STATUS_LABEL[row.status]}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+
+          {renameResult ? (
+            <ThemeText as="p" className="text-sm">
+              Atualização concluída: {renameResult.updated} alterado(s),{' '}
+              {renameResult.skipped} ignorado(s) de {renameResult.requested}.
+            </ThemeText>
+          ) : null}
+
+          {renameError ? (
+            <ThemeText as="p" className="text-sm text-red-500">
+              {renameError}
             </ThemeText>
           ) : null}
         </div>

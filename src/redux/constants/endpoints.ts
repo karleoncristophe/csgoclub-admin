@@ -70,6 +70,7 @@ export const SITE_BOTS = {
   GENERATE: '/admin/site-bots/generate',
   BULK_DELETE: '/admin/site-bots/bulk-delete',
   BULK_IMPORT_NAMES: '/admin/site-bots/bulk-import-names',
+  BULK_RENAME: '/admin/site-bots/bulk-rename',
   AVATARS: '/admin/site-bots/avatars',
   BY_ID: (id: string) => `/admin/site-bots/${id}`,
 } as const

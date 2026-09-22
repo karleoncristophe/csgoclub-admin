@@ -46,6 +46,9 @@ export type AdminSwapInventoryItem = {
   rarityName?: string | null
   rarityColor?: string | null
   value: number
+  valueUsd?: number | null
+  valueBrl?: number | null
+  valueEur?: number | null
   currency?: string | null
   status?: string | null
 }
@@ -60,13 +63,29 @@ export type AdminSwapListItem = {
   targetRarityColor?: string | null
   targetClassId?: string | null
   targetValue: number
+  targetValueUsd?: number | null
+  targetValueBrl?: number | null
+  targetValueEur?: number | null
   /** Custo real do alvo na SkinsBack em USD (é o que a dash paga). */
   targetCostUsd?: number | null
+  targetCostBrl?: number | null
+  targetCostEur?: number | null
   /** false quando o USD foi estimado pela cotação atual (swap antigo). */
   targetCostUsdRecorded?: boolean
+  rateBrl?: number | null
+  rateEur?: number | null
   sourceItemsTotal: number
+  sourceItemsTotalUsd?: number | null
+  sourceItemsTotalBrl?: number | null
+  sourceItemsTotalEur?: number | null
   balanceUsed: number
+  balanceUsedUsd?: number | null
+  balanceUsedBrl?: number | null
+  balanceUsedEur?: number | null
   changeCredited: number
+  changeCreditedUsd?: number | null
+  changeCreditedBrl?: number | null
+  changeCreditedEur?: number | null
   offeredTotal: number
   sourceItemCount: number
   sourceItems: AdminSwapInventoryItem[]
@@ -85,6 +104,7 @@ export type AdminSwapListSummary = {
   targetValueTotal: number
   /** Somatório do custo real em USD pago à SkinsBack. */
   targetCostUsdTotal?: number
+  targetCostBrlTotal?: number
   sourceItemsTotal: number
   balanceUsedTotal: number
   changeCreditedTotal: number

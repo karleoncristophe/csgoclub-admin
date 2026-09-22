@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ImagePlus, ListPlus, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { ImagePlus, ListPlus, Plus, Search, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/Checkbox'
 import {
   CaseImageUploader,
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { listTable } from '@/components/ui/listTable'
+import { filterChipClass } from '@/components/skins/filterChipClass'
 import { deleteUploadFile } from '@/lib/upload'
 import {
   useCreateSiteBotMutation,
@@ -19,7 +20,6 @@ import {
   useBulkDeleteSiteBotsMutation,
   useBulkImportSiteBotNamesMutation,
   useAssignSiteBotAvatarsMutation,
-  useGenerateSiteBotsMutation,
   useGetSiteBotsQuery,
   useGetSiteBotsStatusQuery,
   useUpdateSiteBotMutation,
@@ -29,44 +29,21 @@ import {
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { pickBotFallbackAvatar } from '@/lib/bot-avatar'
 import { formatBotBalance, uploadBotAvatar } from './botAvatar'
+import { SiteBotsAvatarAssignModal } from './SiteBotsAvatarAssignModal'
+import {
+  BULK_IMPORT_MAX_NAMES,
+  BULK_STATUS_LABEL,
+  botHasAvatar,
+  normalizeBotKey,
+  parseBulkNicknames,
+  previewBulkNicknames,
+  validateAvatarFiles,
+} from './siteBotsBulk'
 
-const BULK_IMPORT_MAX_NAMES = 1000
+export { parseBulkNicknames, previewBulkNicknames } from './siteBotsBulk'
 
-/** Aceita um nick por linha, vírgula ou ponto e vírgula; normaliza espaços. */
-export function parseBulkNicknames(raw: string): string[] {
-  return raw
-    .split(/[\n,;]+/)
-    .map((part) => part.normalize('NFKC').trim().replace(/\s+/g, ' '))
-    .filter((part) => part.length > 0)
-}
-
-type BulkImportPreviewRow = {
-  name: string
-  status: 'ok' | 'invalid' | 'duplicate_in_request' | 'already_exists'
-}
-
-export function previewBulkNicknames(
-  names: string[],
-  existingNames: Iterable<string>,
-): BulkImportPreviewRow[] {
-  const taken = new Set([...existingNames].map((n) => n.toLowerCase()))
-  const seen = new Set<string>()
-  return names.map((name) => {
-    const key = name.toLowerCase()
-    if (name.length < 2 || name.length > 32) return { name, status: 'invalid' }
-    if (seen.has(key)) return { name, status: 'duplicate_in_request' }
-    seen.add(key)
-    if (taken.has(key)) return { name, status: 'already_exists' }
-    return { name, status: 'ok' }
-  })
-}
-
-const BULK_STATUS_LABEL: Record<BulkImportPreviewRow['status'], string> = {
-  ok: 'Será criado',
-  invalid: 'Inválido (2–32 caracteres)',
-  duplicate_in_request: 'Repetido na lista',
-  already_exists: 'Já existe',
-}
+type PhotoFilter = 'all' | 'missing' | 'has'
+type ActiveFilter = 'all' | 'active' | 'inactive'
 
 function formatShownAt(value?: string | null) {
   if (!value) return '—'
@@ -242,7 +219,6 @@ export function SiteBotsPanel() {
   const { confirm } = useConfirm()
   const { data: bots = [], isLoading } = useGetSiteBotsQuery()
   const { data: status } = useGetSiteBotsStatusQuery()
-  const [generate, { isLoading: generating }] = useGenerateSiteBotsMutation()
   const [createBot, { isLoading: creating }] = useCreateSiteBotMutation()
   const [updateBot] = useUpdateSiteBotMutation()
   const [deleteBot] = useDeleteSiteBotMutation()
@@ -254,6 +230,9 @@ export function SiteBotsPanel() {
     useBulkImportSiteBotNamesMutation()
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [query, setQuery] = useState('')
+  const [photoFilter, setPhotoFilter] = useState<PhotoFilter>('all')
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all')
   const [name, setName] = useState('')
   const [createImage, setCreateImage] = useState<CaseImageValue>(null)
   const [createError, setCreateError] = useState<string | null>(null)
@@ -262,10 +241,14 @@ export function SiteBotsPanel() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [batchProgress, setBatchProgress] = useState('')
   const [batchUploading, setBatchUploading] = useState(false)
+  const [bulkActiveBusy, setBulkActiveBusy] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [importRaw, setImportRaw] = useState('')
   const [importError, setImportError] = useState<string | null>(null)
   const [importResult, setImportResult] = useState<SiteBotNameImportResult | null>(null)
+  const [assignFiles, setAssignFiles] = useState<File[]>([])
+  const [assignOpen, setAssignOpen] = useState(false)
+  const [photoTargetKeys, setPhotoTargetKeys] = useState<string[] | null>(null)
 
   const importPreview = useMemo(
     () =>
@@ -281,83 +264,51 @@ export function SiteBotsPanel() {
     return counts
   }, [importPreview])
   const importOverLimit = importPreview.length > BULK_IMPORT_MAX_NAMES
-  const missingAvatarInputRef = useRef<HTMLInputElement>(null)
-  const selectedAvatarInputRef = useRef<HTMLInputElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
-  const botsWithoutAvatar = useMemo(
-    () => bots.filter((bot) => !bot.avatarUrl?.trim()),
+  const filteredBots = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return bots.filter((bot) => {
+      if (
+        needle &&
+        !bot.name.toLowerCase().includes(needle) &&
+        !(bot.nameKey || '').toLowerCase().includes(needle)
+      ) {
+        return false
+      }
+      const hasPhoto = botHasAvatar(bot)
+      if (photoFilter === 'missing' && hasPhoto) return false
+      if (photoFilter === 'has' && !hasPhoto) return false
+      if (activeFilter === 'active' && !bot.active) return false
+      if (activeFilter === 'inactive' && bot.active) return false
+      return true
+    })
+  }, [activeFilter, bots, photoFilter, query])
+
+  const missingAvatarCount = useMemo(
+    () => bots.filter((bot) => !botHasAvatar(bot)).length,
     [bots],
   )
-
-  async function uploadAvatarsToBots(
-    targets: AdminSiteBot[],
-    files: File[],
-    title: string,
-    mode: 'missing' | 'selected',
-  ) {
-    if (!files.length || batchUploading) return
-    if (targets.length === 0) {
-      setPageError('Nenhum bot para receber foto nesta ação.')
-      return
-    }
-    if (
-      files.some(
-        (file) =>
-          !['image/png', 'image/jpeg', 'image/webp'].includes(file.type) ||
-          file.size > 10 * 1024 * 1024,
-      )
-    ) {
-      setPageError('Use PNG, JPEG ou WebP, com até 10 MB por arquivo.')
-      return
-    }
-    if (files.length > 100) {
-      setPageError('Envie no máximo 100 fotos por lote.')
-      return
-    }
-    const assignCount = Math.min(files.length, targets.length)
-    const leftoverFiles = files.length - assignCount
-    const leftoverBots = targets.length - assignCount
-    const approved = await confirm({
-      title,
-      description: [
-        `${assignCount} foto(s) para ${assignCount} bot(s), na ordem da listagem.`,
-        leftoverFiles > 0 ? `${leftoverFiles} arquivo(s) a mais serão ignorados.` : '',
-        leftoverBots > 0 ? `${leftoverBots} bot(s) ainda ficam sem foto.` : '',
-      ]
-        .filter(Boolean)
-        .join(' '),
-      confirmLabel: 'Enviar fotos',
-    })
-    if (!approved) return
-    setBatchUploading(true)
-    setPageError(null)
-    setBatchProgress(`Enviando ${assignCount} foto(s) no lote…`)
-    try {
-      const form = new FormData()
-      form.set('mode', mode)
-      if (mode === 'selected') {
-        form.set('ids', targets.map((bot) => bot._id).join(','))
-      }
-      for (const file of files.slice(0, assignCount)) {
-        form.append('files', file)
-      }
-      const result = await assignAvatars(form).unwrap()
-      setBatchProgress(
-        `Concluído: ${result.updated}/${result.attempted} avatares atualizados.`,
-      )
-      if (result.errors.length) setPageError(result.errors.join(' · '))
-    } catch (error) {
-      setPageError(getErrorMessage(error))
-    } finally {
-      setBatchUploading(false)
-    }
-  }
+  const visibleMissingCount = useMemo(
+    () => filteredBots.filter((bot) => !botHasAvatar(bot)).length,
+    [filteredBots],
+  )
 
   const botIdKey = useMemo(() => bots.map((bot) => bot._id).join(','), [bots])
   const botIds = useMemo(() => (botIdKey ? botIdKey.split(',') : []), [botIdKey])
+  const visibleIds = useMemo(() => filteredBots.map((bot) => bot._id), [filteredBots])
   const selectedOnPage = selectedIds.filter((id) => botIds.includes(id))
-  const allSelected =
-    botIds.length > 0 && selectedOnPage.length === botIds.length
+  const selectedVisible = selectedOnPage.filter((id) => visibleIds.includes(id))
+  const allVisibleSelected =
+    visibleIds.length > 0 && selectedVisible.length === visibleIds.length
+
+  const assignTargetBots = useMemo(() => {
+    if (photoTargetKeys?.length) {
+      const keys = new Set(photoTargetKeys)
+      return bots.filter((bot) => keys.has(normalizeBotKey(bot.nameKey || bot.name)))
+    }
+    return bots.filter((bot) => selectedOnPage.includes(bot._id))
+  }, [bots, photoTargetKeys, selectedOnPage])
 
   useEffect(() => {
     setSelectedIds((current) => {
@@ -405,8 +356,19 @@ export function SiteBotsPanel() {
     [confirm, deleteBot],
   )
 
-  function toggleSelectAll(checked: boolean) {
-    setSelectedIds(checked ? botIds : [])
+  function toggleSelectVisible(checked: boolean) {
+    setSelectedIds((current) => {
+      if (checked) {
+        return [...new Set([...current, ...visibleIds])]
+      }
+      const hide = new Set(visibleIds)
+      return current.filter((id) => !hide.has(id))
+    })
+  }
+
+  function selectVisibleWithoutPhoto() {
+    const ids = filteredBots.filter((bot) => !botHasAvatar(bot)).map((bot) => bot._id)
+    setSelectedIds((current) => [...new Set([...current, ...ids])])
   }
 
   function resetCreateForm() {
@@ -429,6 +391,58 @@ export function SiteBotsPanel() {
     setImportResult(null)
   }
 
+  function closeAssignModal() {
+    if (batchUploading) return
+    setAssignOpen(false)
+    setAssignFiles([])
+    setPhotoTargetKeys(null)
+  }
+
+  function openAvatarPicker(targetKeys?: string[]) {
+    setPageError(null)
+    setPhotoTargetKeys(targetKeys ?? null)
+    avatarInputRef.current?.click()
+  }
+
+  function handleAvatarFilesPicked(fileList: FileList | null) {
+    const files = Array.from(fileList ?? [])
+    if (!files.length) return
+    const invalid = validateAvatarFiles(files)
+    if (invalid) {
+      setPageError(invalid)
+      return
+    }
+    setAssignFiles(files)
+    setAssignOpen(true)
+  }
+
+  async function handleAssignConfirm(pairs: Array<{ file: File; botId: string }>) {
+    if (pairs.length === 0) return
+    setBatchUploading(true)
+    setPageError(null)
+    setBatchProgress(`Enviando ${pairs.length} foto(s)…`)
+    try {
+      const form = new FormData()
+      form.set('mode', 'selected')
+      form.set('ids', pairs.map((pair) => pair.botId).join(','))
+      for (const pair of pairs) {
+        form.append('files', pair.file)
+      }
+      const result = await assignAvatars(form).unwrap()
+      setBatchProgress(
+        `Concluído: ${result.updated}/${result.attempted} avatares atualizados.`,
+      )
+      if (result.errors.length) setPageError(result.errors.join(' · '))
+      setAssignOpen(false)
+      setAssignFiles([])
+      setPhotoTargetKeys(null)
+    } catch (error) {
+      setPageError(getErrorMessage(error))
+    } finally {
+      setBatchUploading(false)
+    }
+  }
+
   async function handleBulkImportNames() {
     const names = parseBulkNicknames(importRaw)
     if (names.length === 0 || importOverLimit) return
@@ -443,12 +457,39 @@ export function SiteBotsPanel() {
     }
   }
 
-  async function handleGenerate() {
+  function handleImportPhotos() {
+    const created = (importResult?.results ?? [])
+      .filter((row) => row.status === 'created')
+      .map((row) => normalizeBotKey(row.name))
+    if (created.length === 0) return
+    closeImportModal()
+    openAvatarPicker(created)
+  }
+
+  async function handleBulkActive(active: boolean) {
+    if (selectedOnPage.length === 0) return
+    const ok = await confirm({
+      title: active ? 'Ativar bots selecionados?' : 'Desativar bots selecionados?',
+      description: `${selectedOnPage.length} bot(s) ${
+        active ? 'entram' : 'saem'
+      } do pool de livedrop e battle.`,
+      confirmLabel: active ? 'Ativar' : 'Desativar',
+    })
+    if (!ok) return
+    setBulkActiveBusy(true)
     setPageError(null)
     try {
-      await generate({ count: 100 }).unwrap()
+      for (let index = 0; index < selectedOnPage.length; index += 8) {
+        await Promise.all(
+          selectedOnPage.slice(index, index + 8).map((id) =>
+            updateBot({ id, body: { active } }).unwrap(),
+          ),
+        )
+      }
     } catch (error) {
       setPageError(getErrorMessage(error))
+    } finally {
+      setBulkActiveBusy(false)
     }
   }
 
@@ -508,7 +549,7 @@ export function SiteBotsPanel() {
           ? ` · próximo drop por volta de ${formatShownAt(status.nextAt)}`
           : ''}
         {' · '}
-        {bots.length} bots
+        {bots.length} bots · {missingAvatarCount} sem foto
       </ThemeText>
 
       {pageError ? (
@@ -517,117 +558,185 @@ export function SiteBotsPanel() {
         </ThemeText>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <input
-          ref={missingAvatarInputRef}
-          type="file"
-          multiple
-          accept="image/png,image/jpeg,image/webp"
-          className="sr-only"
-          disabled={batchUploading || botsWithoutAvatar.length === 0}
-          onChange={(event) => {
-            const files = Array.from(event.target.files ?? [])
-            event.target.value = ''
-            void uploadAvatarsToBots(
-              botsWithoutAvatar,
-              files,
-              'Fotos para bots sem imagem',
-              'missing',
-            )
-          }}
-        />
-        <input
-          ref={selectedAvatarInputRef}
-          type="file"
-          multiple
-          accept="image/png,image/jpeg,image/webp"
-          className="sr-only"
-          disabled={batchUploading || selectedOnPage.length === 0}
-          onChange={(event) => {
-            const files = Array.from(event.target.files ?? [])
-            event.target.value = ''
-            void uploadAvatarsToBots(
-              bots.filter((bot) => selectedIds.includes(bot._id)),
-              files,
-              'Atualizar avatares selecionados',
-              'selected',
-            )
-          }}
-        />
-        <Button
-          type="button"
-          variant="secondary"
-          className="gap-2"
-          disabled={batchUploading || botsWithoutAvatar.length === 0}
-          isLoading={batchUploading || assigningAvatars}
-          onClick={() => missingAvatarInputRef.current?.click()}
-        >
-          <ImagePlus className="h-4 w-4" />
-          Fotos para quem não tem ({botsWithoutAvatar.length})
-        </Button>
-        {selectedOnPage.length > 0 ? (
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-[16rem] flex-1 space-y-2">
+          <div className="relative max-w-sm">
+            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted" />
+            <input
+              aria-label="Buscar nick"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar nick…"
+              className="w-full rounded-field border border-field-border bg-field py-2 pr-3 pl-9 text-sm text-field-foreground outline-none placeholder:text-field-placeholder focus:border-focus focus:ring-4 focus:ring-focus/15"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ['all', `Todos (${filteredBots.length})`],
+                ['missing', `Sem foto (${visibleMissingCount})`],
+                ['has', 'Com foto'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={
+                  photoFilter === value ? filterChipClass.active : filterChipClass.inactive
+                }
+                onClick={() => setPhotoFilter(value)}
+              >
+                {label}
+              </button>
+            ))}
+            {(
+              [
+                ['all', 'Qualquer status'],
+                ['active', 'Ativos'],
+                ['inactive', 'Inativos'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={
+                  activeFilter === value ? filterChipClass.active : filterChipClass.inactive
+                }
+                onClick={() => setActiveFilter(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Button
             type="button"
             variant="secondary"
             className="gap-2"
-            disabled={batchUploading}
-            onClick={() => selectedAvatarInputRef.current?.click()}
+            onClick={() => {
+              setImportError(null)
+              setImportResult(null)
+              setImportModalOpen(true)
+            }}
           >
-            <ImagePlus className="h-4 w-4" />
-            Fotos nos selecionados ({selectedOnPage.length})
+            <ListPlus className="h-4 w-4" />
+            Importar nicks
           </Button>
-        ) : null}
-        <span role="status" aria-live="polite" className="text-sm">
-          {batchProgress}
-        </span>
-        {selectedOnPage.length > 0 ? (
           <Button
             type="button"
-            variant="danger"
             className="gap-2"
-            disabled={deletingMany}
-            isLoading={deletingMany}
-            onClick={() => void handleBulkDelete()}
+            onClick={() => {
+              resetCreateForm()
+              setCreateModalOpen(true)
+            }}
           >
-            <Trash2 className="h-4 w-4" />
-            Excluir selecionados ({selectedOnPage.length})
+            <Plus className="h-4 w-4" />
+            Criar nick
           </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-secondary px-3 py-2">
+        <ThemeText as="p" tone="secondary" className="mr-auto text-sm">
+          {selectedOnPage.length} selecionado(s)
+          {selectedOnPage.length > 0
+            ? ` · ${
+                bots.filter((bot) => selectedOnPage.includes(bot._id) && !botHasAvatar(bot))
+                  .length
+              } sem foto`
+            : ''}
+          {query || photoFilter !== 'all' || activeFilter !== 'all'
+            ? ` · ${filteredBots.length} visíveis`
+            : ''}
+        </ThemeText>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={visibleIds.length === 0}
+          onClick={() => toggleSelectVisible(true)}
+        >
+          Selecionar visíveis
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={visibleMissingCount === 0}
+          onClick={selectVisibleWithoutPhoto}
+        >
+          Selecionar sem foto
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={selectedOnPage.length === 0}
+          onClick={() => setSelectedIds([])}
+        >
+          Limpar
+        </Button>
+        <input
+          ref={avatarInputRef}
+          type="file"
+          multiple
+          accept="image/png,image/jpeg,image/webp"
+          className="sr-only"
+          disabled={batchUploading}
+          onChange={(event) => {
+            const list = event.target.files
+            event.target.value = ''
+            handleAvatarFilesPicked(list)
+          }}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="gap-2"
+          disabled={batchUploading || selectedOnPage.length === 0}
+          onClick={() => openAvatarPicker()}
+        >
+          <ImagePlus className="h-4 w-4" />
+          Fotos nestes
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={bulkActiveBusy || selectedOnPage.length === 0}
+          isLoading={bulkActiveBusy}
+          onClick={() => void handleBulkActive(true)}
+        >
+          Ativar
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={bulkActiveBusy || selectedOnPage.length === 0}
+          onClick={() => void handleBulkActive(false)}
+        >
+          Desativar
+        </Button>
+        <Button
+          type="button"
+          variant="danger"
+          size="sm"
+          className="gap-2"
+          disabled={deletingMany || selectedOnPage.length === 0}
+          isLoading={deletingMany}
+          onClick={() => void handleBulkDelete()}
+        >
+          <Trash2 className="h-4 w-4" />
+          Excluir
+        </Button>
+        {batchProgress ? (
+          <span role="status" aria-live="polite" className="text-xs text-muted">
+            {batchProgress}
+          </span>
         ) : null}
-        <Button
-          type="button"
-          variant="secondary"
-          className="gap-2"
-          disabled={generating}
-          isLoading={generating}
-          onClick={() => void handleGenerate()}
-        >
-          <Sparkles className="h-4 w-4" />
-          Adicionar 100 bots
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          className="gap-2"
-          onClick={() => {
-            setImportError(null)
-            setImportResult(null)
-            setImportModalOpen(true)
-          }}
-        >
-          <ListPlus className="h-4 w-4" />
-          Importar nicks em lote
-        </Button>
-        <Button
-          type="button"
-          className="gap-2"
-          onClick={() => {
-            resetCreateForm()
-            setCreateModalOpen(true)
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          Criar nick
-        </Button>
       </div>
 
       <div className={listTable.wrap}>
@@ -636,12 +745,12 @@ export function SiteBotsPanel() {
             <tr className={listTable.theadRow}>
               <th className={`${listTable.th} w-10`}>
                 <Checkbox
-                  name="select-all-bots"
-                  label="Selecionar todos"
+                  name="select-visible-bots"
+                  label="Selecionar visíveis"
                   hideLabel
-                  checked={allSelected}
-                  disabled={bots.length === 0}
-                  onChange={(event) => toggleSelectAll(event.target.checked)}
+                  checked={allVisibleSelected}
+                  disabled={filteredBots.length === 0}
+                  onChange={(event) => toggleSelectVisible(event.target.checked)}
                 />
               </th>
               <th className={listTable.th}>Foto</th>
@@ -662,11 +771,17 @@ export function SiteBotsPanel() {
             ) : bots.length === 0 ? (
               <tr>
                 <td className={listTable.td} colSpan={7}>
-                  Nenhum bot. Adicione 100 ou crie um nick.
+                  Nenhum bot. Importe nicks ou crie um.
+                </td>
+              </tr>
+            ) : filteredBots.length === 0 ? (
+              <tr>
+                <td className={listTable.td} colSpan={7}>
+                  Nenhum bot neste filtro.
                 </td>
               </tr>
             ) : (
-              bots.map((bot) => (
+              filteredBots.map((bot) => (
                 <SiteBotRow
                   key={bot._id}
                   bot={bot}
@@ -741,8 +856,8 @@ export function SiteBotsPanel() {
           if (!open) closeImportModal()
           else setImportModalOpen(true)
         }}
-        title="Importar nicks em lote"
-        description="Cole um nick por linha (ou separados por vírgula). Repetidos e já existentes são ignorados automaticamente."
+        title="Importar nicks"
+        description="Cole os nicks que você quer criar. Nada é gerado aleatoriamente — só entra o que estiver nesta lista."
         size="lg"
         footer={
           <>
@@ -754,6 +869,17 @@ export function SiteBotsPanel() {
             >
               {importResult ? 'Fechar' : 'Cancelar'}
             </Button>
+            {importResult && importResult.created > 0 ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="gap-2"
+                onClick={handleImportPhotos}
+              >
+                <ImagePlus className="h-4 w-4" />
+                Fotos destes nicks
+              </Button>
+            ) : null}
             <Button
               type="button"
               disabled={
@@ -817,7 +943,8 @@ export function SiteBotsPanel() {
           {importResult ? (
             <ThemeText as="p" className="text-sm">
               Importação concluída: {importResult.created} criado(s), {importResult.skipped}{' '}
-              ignorado(s) de {importResult.requested}.
+              ignorado(s) de {importResult.requested}. Se as fotos tiverem o mesmo nome do
+              nick, use “Fotos destes nicks”.
             </ThemeText>
           ) : null}
 
@@ -828,6 +955,15 @@ export function SiteBotsPanel() {
           ) : null}
         </div>
       </Modal>
+
+      <SiteBotsAvatarAssignModal
+        open={assignOpen}
+        bots={assignTargetBots}
+        files={assignFiles}
+        busy={batchUploading || assigningAvatars}
+        onClose={closeAssignModal}
+        onConfirm={(pairs) => void handleAssignConfirm(pairs)}
+      />
     </div>
   )
 }

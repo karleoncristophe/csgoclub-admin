@@ -25,11 +25,7 @@ import {
   parsePositiveInt,
   useUrlFilters,
 } from '@/hooks/useUrlFilters'
-import {
-  useGetAdminSwapsQuery,
-  type SwapCurrency,
-  type SwapStatusFilter,
-} from '@/redux/store/api/swaps/api.swaps'
+import { useGetAdminSwapsQuery, type SwapStatusFilter } from '@/redux/store/api/swaps/api.swaps'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { SteamIdLink } from '@/components/users/SteamIdLink'
 import { filterChipClasses, userStatCardSpaciousClass } from '@/components/users/userPanelClasses'
@@ -41,7 +37,6 @@ const SWAPS_FILTER_DEFAULTS = {
   userId: '',
   q: '',
   status: '',
-  currency: '',
   from: '',
   to: '',
   page: '1',
@@ -100,7 +95,6 @@ export default function SwapsPage() {
   const safePage = Math.max(page, 1)
   const userId = filters.userId
   const status = filters.status as SwapStatusFilter | ''
-  const currency = filters.currency as SwapCurrency | ''
 
   const { data, isLoading, isFetching, isError, error } = useGetAdminSwapsQuery({
     page: safePage,
@@ -108,7 +102,6 @@ export default function SwapsPage() {
     dataEnvironment,
     ...(userId ? { userId } : {}),
     ...(status ? { status } : {}),
-    ...(currency ? { currency } : {}),
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
     ...(filters.from ? { from: filters.from } : {}),
     ...(filters.to ? { to: filters.to } : {}),
@@ -118,7 +111,6 @@ export default function SwapsPage() {
   const summary = data?.summary
   const swaps = data?.data ?? []
   const totalPages = Math.max(1, data?.totalPages ?? 1)
-  const summaryCurrency = currency || swaps[0]?.currency || 'BRL'
 
   useEffect(() => {
     if (page > totalPages) {
@@ -142,32 +134,29 @@ export default function SwapsPage() {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard
             label="Saiu em skins"
-            value={formatSwapMoney(summary.sourceItemsTotal, summaryCurrency)}
+            value={formatSwapMoney(summary.sourceItemsTotal)}
             hint={`${summary.totalSwaps} swaps · valor das skins ofertadas`}
             variant="brand"
           />
           <StatCard
             label="Saiu em saldo"
-            value={formatSwapMoney(summary.balanceUsedTotal, summaryCurrency)}
+            value={formatSwapMoney(summary.balanceUsedTotal)}
             hint="Complemento debitado da carteira"
           />
           <StatCard
             label="Montante"
-            value={formatSwapMoney(
-              summary.sourceItemsTotal + summary.balanceUsedTotal,
-              summaryCurrency,
-            )}
+            value={formatSwapMoney(summary.sourceItemsTotal + summary.balanceUsedTotal)}
             hint="Skins + saldo que saíram da conta"
           />
           <StatCard
             label="Custou na dash"
-            value={formatSwapMoney(summary.targetCostUsdTotal ?? 0, 'USD')}
-            hint={`Pago à SkinsBack em dólar · ${formatSwapMoney(summary.targetValueTotal, summaryCurrency)} cobrado do jogador`}
+            value={formatSwapMoney(summary.targetCostBrlTotal ?? summary.targetCostUsdTotal)}
+            hint={`Custo SkinsBack em BRL da cotação do swap · ${formatSwapMoney(summary.targetValueTotal)} cobrado do jogador`}
             variant="amber"
           />
           <StatCard
             label="Sobrou"
-            value={formatSwapMoney(summary.changeCreditedTotal, summaryCurrency)}
+            value={formatSwapMoney(summary.changeCreditedTotal)}
             hint="Troco creditado de volta na carteira"
             variant="rose"
           />
@@ -222,7 +211,7 @@ export default function SwapsPage() {
           </ThemeText>
         </div>
 
-        <div className="mb-3 grid gap-2 px-5 pt-4 lg:grid-cols-2">
+        <div className="mb-3 px-5 pt-4">
           <SegmentedTabs
             ariaLabel="Status do swap"
             value={status || 'all'}
@@ -233,17 +222,6 @@ export default function SwapsPage() {
               { id: 'in_progress', label: 'Em andamento' },
             ]}
             onChange={(next) => setFilter('status', next === 'all' ? '' : next)}
-          />
-          <SegmentedTabs
-            ariaLabel="Moeda do swap"
-            value={currency || 'all'}
-            items={[
-              { id: 'all', label: 'Moedas' },
-              { id: 'BRL', label: 'BRL' },
-              { id: 'USD', label: 'USD' },
-              { id: 'EUR', label: 'EUR' },
-            ]}
-            onChange={(next) => setFilter('currency', next === 'all' ? '' : next)}
           />
         </div>
         <div className="mb-4 flex flex-wrap items-center gap-2 px-5">
@@ -289,7 +267,7 @@ export default function SwapsPage() {
                   <th className={listTable.th}>Jogador</th>
                   <th className={listTable.th}>Saiu da conta</th>
                   <th className={`${listTable.th} text-right`}>Montante</th>
-                  <th className={`${listTable.th} text-right`}>Custou na dash (USD)</th>
+                  <th className={`${listTable.th} text-right`}>Custou na dash</th>
                   <th className={`${listTable.th} text-right`}>Sobrou</th>
                   <th className={listTable.th}>Status</th>
                   <th className={`${listTable.th} text-right`}>Ação</th>
@@ -375,20 +353,20 @@ export default function SwapsPage() {
                         </div>
                       </td>
                       <td className={`${listTable.tdMuted} text-right tabular-nums`}>
-                        {formatSwapMoney(swap.offeredTotal, swap.currency)}
+                        {formatSwapMoney(swap.offeredTotal)}
                       </td>
                       <td className={`${listTable.tdMuted} text-right tabular-nums`}>
                         <span className="block font-medium text-foreground">
-                          {formatSwapMoney(swap.targetCostUsd, 'USD')}
+                          {formatSwapMoney(swap.targetCostBrl ?? swap.targetCostUsd)}
                           {swap.targetCostUsdRecorded === false ? '*' : ''}
                         </span>
                         <span className="block text-xs text-muted">
-                          {formatSwapMoney(swap.targetValue, swap.currency)} cobrado
+                          {formatSwapMoney(swap.targetValue)} cobrado
                         </span>
                       </td>
                       <td className={`${listTable.tdMuted} text-right tabular-nums`}>
                         {swap.changeCredited > 0
-                          ? formatSwapMoney(swap.changeCredited, swap.currency)
+                          ? formatSwapMoney(swap.changeCredited)
                           : '—'}
                       </td>
                       <td className={listTable.td}>

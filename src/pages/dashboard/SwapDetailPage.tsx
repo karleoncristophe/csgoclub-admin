@@ -55,8 +55,6 @@ export default function SwapDetailPage() {
     { skip: !swapId },
   )
 
-  const currency = data?.currency ?? 'BRL'
-
   return (
     <div className="space-y-6">
       <BackLink
@@ -92,13 +90,12 @@ export default function SwapDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <SwapStatusBadge status={data.status} />
             <TextBadge>{swapFundingLabel(data)}</TextBadge>
-            <TextBadge>{data.currency}</TextBadge>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <ValueTile
               label="Saiu em skins"
-              value={formatSwapMoney(data.sourceItemsTotal, currency)}
+              value={formatSwapMoney(data.sourceItemsTotal)}
               hint={
                 data.sourceItemCount === 0
                   ? 'Nenhuma skin ofertada'
@@ -109,26 +106,26 @@ export default function SwapDetailPage() {
             />
             <ValueTile
               label="Saiu em saldo"
-              value={formatSwapMoney(data.balanceUsed, currency)}
+              value={formatSwapMoney(data.balanceUsed)}
               hint={data.balanceUsed > 0 ? 'Debitado da carteira' : 'Alvo coberto só com skins'}
             />
             <ValueTile
               label="Montante"
-              value={formatSwapMoney(data.offeredTotal, currency)}
+              value={formatSwapMoney(data.offeredTotal)}
               hint="Skins + saldo que saíram da conta"
             />
             <ValueTile
               label="Custou na dash"
-              value={formatSwapMoney(data.targetCostUsd, 'USD')}
+              value={formatSwapMoney(data.targetCostBrl ?? data.targetCostUsd)}
               hint={
                 data.targetCostUsdRecorded === false
-                  ? `Estimado pela cotação atual · ${formatSwapMoney(data.targetValue, currency)} cobrado do jogador`
-                  : `Pago à SkinsBack em dólar · ${formatSwapMoney(data.targetValue, currency)} cobrado do jogador`
+                  ? `Estimado pela cotação atual · ${formatSwapMoney(data.targetValue)} cobrado do jogador`
+                  : `Custo SkinsBack em BRL · ${formatSwapMoney(data.targetValue)} cobrado do jogador`
               }
             />
             <ValueTile
               label="Sobrou"
-              value={formatSwapMoney(data.changeCredited, currency)}
+              value={formatSwapMoney(data.changeCredited)}
               hint={data.changeCredited > 0 ? 'Troco creditado na carteira' : 'Sem troco'}
             />
           </div>
@@ -139,10 +136,10 @@ export default function SwapDetailPage() {
               Skins ofertadas + saldo debitado = custo na dash + troco.
             </ThemeText>
             <p className="rounded-xl border border-border bg-surface-secondary px-4 py-3 font-mono text-sm tabular-nums">
-              {formatSwapMoney(data.sourceItemsTotal, currency)} +{' '}
-              {formatSwapMoney(data.balanceUsed, currency)} ={' '}
-              {formatSwapMoney(data.targetValue, currency)} +{' '}
-              {formatSwapMoney(data.changeCredited, currency)}
+              {formatSwapMoney(data.sourceItemsTotal)} +{' '}
+              {formatSwapMoney(data.balanceUsed)} ={' '}
+              {formatSwapMoney(data.targetValue)} +{' '}
+              {formatSwapMoney(data.changeCredited)}
             </p>
             {data.status === 'failed' ? (
               <ThemeText as="p" tone="faint" className="text-xs">
@@ -234,7 +231,7 @@ export default function SwapDetailPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <ValueTile
                     label="Custo na dash"
-                    value={formatSwapMoney(data.targetValue, currency)}
+                    value={formatSwapMoney(data.targetValue)}
                     hint="priceWithTax do catálogo"
                   />
                   <ValueTile
@@ -268,7 +265,7 @@ export default function SwapDetailPage() {
                   Saldo
                 </ThemeText>
                 <ThemeText as="p" tone="primary" className="mt-1 text-base font-semibold">
-                  {formatSwapMoney(data.balanceUsed, currency)}
+                  {formatSwapMoney(data.balanceUsed)}
                 </ThemeText>
                 <ThemeText as="p" tone="faint" className="mt-1 text-xs">
                   Complemento quando as skins não cobriam o alvo.
@@ -324,7 +321,7 @@ export default function SwapDetailPage() {
                           </TextBadge>
                         </td>
                         <td className={`${listTable.tdMuted} text-right tabular-nums`}>
-                          {formatSwapMoney(item.value, item.currency ?? currency)}
+                          {formatSwapMoney(item.value)}
                         </td>
                       </tr>
                     ))}

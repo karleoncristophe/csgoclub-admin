@@ -1,11 +1,13 @@
 import { Chip } from '@heroui/react'
 import type { AdminSwapListItem, SwapStatus } from '@/redux/store/api/swaps/api.swaps'
 
-export function formatSwapMoney(value?: number | null, currency = 'BRL') {
+export const SWAP_DISPLAY_CURRENCY = 'BRL' as const
+
+export function formatSwapMoney(value?: number | null) {
   if (value == null || Number.isNaN(value)) return '—'
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency,
+    currency: SWAP_DISPLAY_CURRENCY,
     minimumFractionDigits: 2,
   }).format(value)
 }
@@ -52,13 +54,13 @@ export function swapFundingLabel(swap: Pick<AdminSwapListItem, 'sourceItemCount'
   return '—'
 }
 
-export function swapLeftAccountHint(swap: Pick<AdminSwapListItem, 'sourceItemCount' | 'balanceUsed' | 'currency'>) {
+export function swapLeftAccountHint(swap: Pick<AdminSwapListItem, 'sourceItemCount' | 'balanceUsed'>) {
   const parts: string[] = []
   if (swap.sourceItemCount > 0) {
     parts.push(swap.sourceItemCount === 1 ? '1 skin' : `${swap.sourceItemCount} skins`)
   }
   if (swap.balanceUsed > 0) {
-    parts.push(formatSwapMoney(swap.balanceUsed, swap.currency))
+    parts.push(formatSwapMoney(swap.balanceUsed))
   }
   return parts.length ? parts.join(' + ') : 'Nada debitado'
 }

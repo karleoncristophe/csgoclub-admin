@@ -4,7 +4,7 @@ import { SiteBotsPanel } from './bots/SiteBotsPanel'
 export default function BotsAdminPage() {
   return (
     <div className="space-y-6">
-      <PageTitle subtitle="O mesmo nick aparece no livedrop, no top drop e nas vagas de battle. A escolha é aleatória.">
+      <PageTitle subtitle="Filtre e selecione quem editar. Nicks entram pela lista que você colar; fotos casam com o nome do arquivo.">
         Bots
       </PageTitle>
       <SiteBotsPanel />

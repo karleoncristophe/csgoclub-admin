@@ -638,7 +638,6 @@ export default function CaseEditorPage() {
         currency={currency}
         valueMode={values.valueMode as CaseValueMode}
         openPrice={values.price ?? 0}
-        targetMarginPercent={values.targetMarginPercent}
         ledger={economyLedger}
         itemsError={itemsError}
         probabilityTargetPercent={values.probabilityTargetPercent}

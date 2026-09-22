@@ -75,10 +75,7 @@ export function CaseEconomicsPanel({
       ? roundEconomics(((finalPrice - totalEV) / totalEV) * 100, 2)
       : null
 
-  const bankInjection = computeBankInjection(
-    finalPrice,
-    config.targetMarginPercent,
-  )
+  const bankInjection = computeBankInjection(totalEV)
   const bankBalance = roundPrice(ledger.bankBalance ?? 0)
   // O saldo avaliado já considera a injeção da próxima abertura.
   const bankAvailable = roundPrice(bankBalance + bankInjection)
@@ -93,8 +90,8 @@ export function CaseEconomicsPanel({
   const bankTargetForFullPool = computeBankTargetForFullPool(items, valueMode)
   const opensToUnlockFullPool = computeOpensToUnlockItem({
     itemValue: bankTargetForFullPool,
+    expectedValue: totalEV,
     openPrice: finalPrice,
-    targetMarginPercent: config.targetMarginPercent,
   })
 
   const cumulativeMarginPercent =
@@ -216,7 +213,7 @@ export function CaseEconomicsPanel({
               {formatSkinsPrice(bankBalance, currency)}
             </ThemeText>
             <ThemeText tone="faint" className="text-xs">
-              +{formatSkinsPrice(bankInjection, currency)} por abertura (preço ÷ 1+alvo)
+              +{formatSkinsPrice(bankInjection, currency)} por abertura (VE virtual)
               {ledgerHint ? ` · ${ledgerHint}` : ''}
             </ThemeText>
           </div>

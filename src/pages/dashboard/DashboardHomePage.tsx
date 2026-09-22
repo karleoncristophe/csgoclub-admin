@@ -332,13 +332,6 @@ export default function DashboardHomePage() {
                   hint={`Valor dos itens sorteados na mesma moeda (${currency})`}
                 />
                 <MetricTile
-                  label="Margem variável (Σ VE − item)"
-                  value={economy?.variableMarginValue}
-                  format="currencyAmount"
-                  currency={currency}
-                  hint="Soma, abertura a abertura, da injeção no banco (preço ÷ 1+alvo) menos o item entregue. Positiva em item barato, negativa em item caro."
-                />
-                <MetricTile
                   label={isSandbox ? 'Volume de bônus' : 'Volume depositado'}
                   value={
                     metrics.totals[moneyKeys.depositsVolume] ??
@@ -375,7 +368,7 @@ export default function DashboardHomePage() {
                 <MetricTile
                   label="Aberturas no cálculo"
                   value={economy?.totalOpens}
-                  hint="Aberturas que compõem a margem variável e o ganho fixo"
+                  hint="Aberturas que entram no ganho fixo do período"
                 />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">

@@ -3,6 +3,7 @@ import { SkinsCurrency } from '@/constants/skinsCurrency'
 import {
   computeBankInjection,
   computeProbabilitySum,
+  computeTotalExpectedValue,
   countEligibleDropItems,
   isProbabilitySumValid,
   MIN_CASE_ITEM_PRICE,
@@ -165,8 +166,16 @@ export const caseEditorSchema = Yup.object({
         })),
         openPrice: parent.price,
         bankBalance: computeBankInjection(
-          parent.price,
-          parent.targetMarginPercent,
+          computeTotalExpectedValue(
+            items.map((item) => ({
+              basePrice: item.basePrice,
+              priceWithTax: item.priceWithTax,
+              price: item.price,
+              probability: item.probability,
+              enabled: item.enabled,
+            })),
+            parent.valueMode,
+          ),
         ),
         valueMode: parent.valueMode,
       })

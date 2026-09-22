@@ -139,6 +139,8 @@ export type AdminCaseDetailsCase = {
   probabilityTargetPercent: number
   itemsCount: number
   enabledItemsCount: number
+  totalOpens: number
+  totalTestOpens: number
   vitrineId?: string
   sharedCaseIds: string[]
   fixedPriceBrl?: number
@@ -155,48 +157,8 @@ export type AdminCaseDetailsCase = {
   updatedAt?: string
 }
 
-export type AdminCaseNextUnlock = {
-  skinName: string
-  itemValue: number
-  requiredBankBalance: number
-  bankShortfall: number
-  opensToUnlock: number | null
-}
-
 export type AdminCaseBank = {
   balance: number
-  injectionPerOpen: number
-  eligibleItemsCount: number
-  enabledItemsCount: number
-  targetForFullPool: number
-  shortfallForFullPool: number
-  opensToFullPool: number | null
-  nextUnlock: AdminCaseNextUnlock | null
-}
-
-export type AdminCaseFinancials = {
-  totalOpens: number
-  totalRevenue: number
-  totalPayout: number
-  profit: number
-  /** Σ (VE injetado − item entregue): margem variável, o que move o banco. */
-  variableMarginValue?: number
-  averageVariableMarginPerOpen?: number
-  /** Σ (preço pago − VE injetado): ganho fixo garantido. */
-  fixedMarginValue?: number
-  /** Ganho fixo por clique com a configuração atual. */
-  fixedMarginPerOpen?: number
-  marginPercent: number
-  averagePayoutPerOpen: number
-  biggestPayout: number
-  pendingCount: number
-  keptCount: number
-  convertedCount: number
-  directCount: number
-  rerollCount: number
-  fallbackCount: number
-  firstOpenAt?: string
-  lastOpenAt?: string
 }
 
 export type AdminCaseItemStats = {
@@ -212,20 +174,13 @@ export type AdminCaseItemStats = {
   expectedValue: number
   eligible: boolean
   coveredByOpenPrice: boolean
-  requiredBankBalance: number
-  bankShortfall: number
-  opensToUnlock: number | null
-  timesWon: number
-  totalPaidOut: number
-  actualDropPercent: number
-  lastWonAt?: string
 }
 
-export type AdminCaseDailyPoint = {
-  date: string
-  opens: number
-  revenue: number
-  payout: number
+export type AdminCaseFinancials = {
+  /** Aberturas do ambiente atual (produção ou Dev). */
+  totalOpens?: number
+  /** Soma da margem bruta (preço − VE registrado) nas aberturas deste ambiente. */
+  houseMarginValue?: number
 }
 
 export type AdminCaseDetails = {
@@ -233,9 +188,7 @@ export type AdminCaseDetails = {
   case: AdminCaseDetailsCase
   bank: AdminCaseBank
   financials: AdminCaseFinancials
-  ledger: CaseEconomyLedger
   items: AdminCaseItemStats[]
-  daily: AdminCaseDailyPoint[]
 }
 
 export type GetCaseDetailsParams = WithPlatformDataEnvironment<{ id: string }>

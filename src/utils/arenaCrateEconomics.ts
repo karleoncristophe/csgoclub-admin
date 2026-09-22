@@ -43,7 +43,7 @@ export function arenaBankBalance(
 
 /** Arena has no margin: injection = crate skin EV. */
 export function arenaBankInjection(openPrice: number) {
-  return computeBankInjection(openPrice, 0)
+  return computeBankInjection(openPrice)
 }
 
 export function computeArenaCrateValues(items: ArenaCrateItem[]) {
@@ -108,8 +108,8 @@ export function arenaOpensToUnlock(input: {
 }) {
   return computeOpensToUnlockItem({
     itemValue: input.itemValue,
+    expectedValue: input.openPrice,
     openPrice: input.openPrice,
-    targetMarginPercent: 0,
   })
 }
 

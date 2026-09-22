@@ -48,7 +48,6 @@ type CaseEditorItemsTableProps = {
   currency: SkinsCurrency
   valueMode: CaseValueMode
   openPrice: number
-  targetMarginPercent: number
   ledger: CaseEconomyLedger
   itemsError?: string
   onItemsChange: (items: CaseDropItem[]) => void
@@ -90,7 +89,6 @@ export function CaseEditorItemsTable({
   currency,
   valueMode,
   openPrice,
-  targetMarginPercent,
   ledger,
   itemsError,
   onItemsChange,
@@ -99,7 +97,19 @@ export function CaseEditorItemsTable({
   catalogAlerts = [],
   bankLedgerHint,
 }: CaseEditorItemsTableProps) {
-  const bankInjection = computeBankInjection(openPrice, targetMarginPercent)
+  const economicsItems = items.map((item) =>
+    itemForEconomics(item, valueMode),
+  )
+  const virtualExpectedValue = roundPrice(
+    economicsItems
+      .filter((item) => item.enabled !== false)
+      .reduce(
+        (sum, item) =>
+          sum + resolveItemEconomicsValue(item, valueMode) * (item.probability / 100),
+        0,
+      ),
+  )
+  const bankInjection = computeBankInjection(virtualExpectedValue)
   const bankAvailable = roundPrice((ledger.bankBalance ?? 0) + bankInjection)
   const { data: fxRates } = useGetSkinsbackRatesQuery()
   const { sort, toggle } = useTableSort<CaseItemSortKey>()
@@ -298,8 +308,8 @@ export function CaseEditorItemsTable({
                 })
                 const opensToUnlock = computeOpensToUnlockItem({
                   itemValue,
+                  expectedValue: virtualExpectedValue,
                   openPrice,
-                  targetMarginPercent,
                 })
                 const rowMuted = item.enabled === false
                 const catalogAlert = catalogAlertsByName.get(item.skinName)

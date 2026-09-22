@@ -116,17 +116,10 @@ export function computeRealMargin(
 /** Tolerância para comparar saldo com preço sem ruído de ponto flutuante. */
 const BANK_EPSILON = 1e-9
 
-/**
- * Valor Esperado injetado no banco por abertura.
- * Com preço = VE × (1 + margem), o VE equivalente é preço ÷ (1 + margem).
- */
-export function computeBankInjection(
-  openPrice: number,
-  targetMarginPercent: number,
-): number {
-  if (!Number.isFinite(openPrice) || openPrice <= 0) return 0
-  const margin = Math.max(0, targetMarginPercent) / 100
-  return roundPrice(openPrice / (1 + margin))
+/** O banco recebe o VE virtual vigente da caixa; margem não entra nesta conta. */
+export function computeBankInjection(expectedValue: number): number {
+  if (!Number.isFinite(expectedValue) || expectedValue <= 0) return 0
+  return roundPrice(expectedValue)
 }
 
 export function evaluateDropEligibility(input: {
@@ -160,15 +153,12 @@ export function evaluateDropEligibility(input: {
  */
 export function computeOpensToUnlockItem(input: {
   itemValue: number
+  expectedValue: number
   openPrice: number
-  targetMarginPercent: number
 }): number {
   if (input.itemValue <= input.openPrice + BANK_EPSILON) return 0
 
-  const injection = computeBankInjection(
-    input.openPrice,
-    input.targetMarginPercent,
-  )
+  const injection = computeBankInjection(input.expectedValue)
   if (injection <= 0) return Number.POSITIVE_INFINITY
 
   return Math.ceil(roundPrice(input.itemValue) / injection)

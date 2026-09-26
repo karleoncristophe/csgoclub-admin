@@ -218,7 +218,7 @@ export const battlesAdminApi = createApi({
     }),
     getAdminBattleBotResultTotal: builder.query<
       AdminBattleBotResultTotal,
-      WithPlatformDataEnvironment<Record<string, never>> | void
+      WithPlatformDataEnvironment<object> | void
     >({
       query: () => ({
         url: BATTLES_ADMIN.BOT_RESULT_TOTAL,

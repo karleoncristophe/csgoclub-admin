@@ -35,7 +35,6 @@ import { formatCentsAxisTick, formatCentsMoney } from '@/utils/formatDisplay'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import {
   applyPreset,
-  endOfLocalDay,
   formatDateInputLocal,
   isRangeWithinMaxYear,
   parseDateInputLocal,
@@ -172,8 +171,9 @@ export default function UpgradeOverviewPage() {
       limit: 1,
       currency,
       dataEnvironment,
-      from: startOfLocalDay(rangeStart).toISOString(),
-      to: endOfLocalDay(rangeEnd).toISOString(),
+      // Dias de calendário; o backend interpreta em America/Sao_Paulo.
+      from: formatDateInputLocal(rangeStart),
+      to: formatDateInputLocal(rangeEnd),
     }),
     [currency, dataEnvironment, rangeEnd, rangeStart],
   )

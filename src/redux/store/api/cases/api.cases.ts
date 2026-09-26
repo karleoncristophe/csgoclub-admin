@@ -212,6 +212,20 @@ export const casesApi = createApi({
       query: ({ id }) => ({ url: CASES.DETAILS(id), method: 'GET' }),
       providesTags: (_result, _error, { id }) => [{ type: 'Case', id }],
     }),
+    injectCaseBank: builder.mutation<
+      { balance: number; injected: number; environment: string },
+      WithPlatformDataEnvironment<{ id: string; amount: number }>
+    >({
+      query: ({ id, amount }) => ({
+        url: CASES.INJECT_BANK(id),
+        method: 'POST',
+        body: { amount },
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: 'Case', id },
+        'Cases',
+      ],
+    }),
     createCase: builder.mutation<LootCase, CreateCasePayload>({
       query: (body) => ({ url: CASES.ROOT, method: 'POST', body }),
       invalidatesTags: ['Cases'],
@@ -305,6 +319,7 @@ export const {
   useGetCasesQuery,
   useGetCaseByIdQuery,
   useGetCaseDetailsQuery,
+  useInjectCaseBankMutation,
   useCreateCaseMutation,
   useUpdateCaseMutation,
   useDeleteCaseMutation,

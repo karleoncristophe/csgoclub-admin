@@ -84,6 +84,7 @@ export const CASES = {
   ROOT: '/admin/cases',
   BY_ID: (id: string) => `/admin/cases/${id}`,
   DETAILS: (id: string) => `/admin/cases/${id}/details`,
+  INJECT_BANK: (id: string) => `/admin/cases/${id}/inject-bank`,
   DUPLICATE: (id: string) => `/admin/cases/${id}/duplicate`,
 } as const
 

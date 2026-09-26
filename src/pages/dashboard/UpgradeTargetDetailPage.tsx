@@ -31,11 +31,9 @@ import { formatCentsMoney } from '@/utils/formatDisplay'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import {
   applyPreset,
-  endOfLocalDay,
   formatDateInputLocal,
   isRangeWithinMaxYear,
   parseDateInputLocal,
-  startOfLocalDay,
 } from '@/utils/metricsDateRange'
 
 const INITIAL_RANGE = applyPreset('30d')
@@ -81,6 +79,7 @@ function formatDateTime(value?: string) {
   return new Intl.DateTimeFormat('pt-BR', {
     dateStyle: 'short',
     timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
   }).format(date)
 }
 
@@ -130,8 +129,8 @@ export default function UpgradeTargetDetailPage() {
       limit,
       currency,
       dataEnvironment,
-      from: startOfLocalDay(rangeStart).toISOString(),
-      to: endOfLocalDay(rangeEnd).toISOString(),
+      from: formatDateInputLocal(rangeStart),
+      to: formatDateInputLocal(rangeEnd),
       ...(result ? { result } : {}),
       ...(targetClassId ? { targetClassId } : { targetName }),
       ...(sort !== 'newest' ? { sort } : {}),

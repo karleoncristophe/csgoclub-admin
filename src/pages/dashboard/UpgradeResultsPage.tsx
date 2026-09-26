@@ -31,11 +31,9 @@ import { formatCentsMoney } from '@/utils/formatDisplay'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import {
   applyPreset,
-  endOfLocalDay,
   formatDateInputLocal,
   isRangeWithinMaxYear,
   parseDateInputLocal,
-  startOfLocalDay,
 } from '@/utils/metricsDateRange'
 
 type DetailView = 'skins' | 'plays' | 'chance'
@@ -88,6 +86,7 @@ function formatDateTime(value?: string) {
   return new Intl.DateTimeFormat('pt-BR', {
     dateStyle: 'short',
     timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
   }).format(date)
 }
 
@@ -150,8 +149,8 @@ export default function UpgradeResultsPage() {
       limit,
       currency,
       dataEnvironment,
-      from: startOfLocalDay(rangeStart).toISOString(),
-      to: endOfLocalDay(rangeEnd).toISOString(),
+      from: formatDateInputLocal(rangeStart),
+      to: formatDateInputLocal(rangeEnd),
       ...(view === 'plays' && result ? { result } : {}),
       ...(view !== 'chance' && debouncedSearch
         ? { search: debouncedSearch }

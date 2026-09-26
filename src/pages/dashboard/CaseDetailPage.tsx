@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Box, ExternalLink, Package, Pencil } from 'lucide-react'
 import { SkinRarityVisual } from '@/components/skins/SkinRarityVisual'
 import { BankProgressBar } from '@/components/cases/BankProgressBar'
 import { TextBadge } from '@/components/StatusPill'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle, SectionTitle } from '@/components/ui/Title'
@@ -17,7 +20,10 @@ import {
   marginDirectionVsTarget,
 } from '@/utils/caseEconomics'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
-import { useGetCaseDetailsQuery } from '@/redux/store/api/cases/api.cases'
+import {
+  useGetCaseDetailsQuery,
+  useInjectCaseBankMutation,
+} from '@/redux/store/api/cases/api.cases'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
 function asNumber(value: unknown, fallback = 0) {
@@ -60,6 +66,12 @@ function ItemEligibilityCell({
     return <ThemeText tone="faint" className="text-xs">Desabilitado</ThemeText>
   }
 
+  const ratio =
+    eligibility.coveredByOpenPrice || eligibility.requiredBankBalance <= 0
+      ? 1
+      : eligibility.bankBalance / eligibility.requiredBankBalance
+  const showShortfall = !eligibility.eligible && eligibility.bankShortfall > 0
+
   return (
     <div className="min-w-[8.5rem] space-y-1.5">
       {eligibility.eligible ? (
@@ -74,13 +86,12 @@ function ItemEligibilityCell({
           {describeDropEligibility(eligibility)}
         </span>
       )}
-      <BankProgressBar
-        ratio={
-          eligibility.coveredByOpenPrice || eligibility.requiredBankBalance <= 0
-            ? 1
-            : eligibility.bankBalance / eligibility.requiredBankBalance
-        }
-      />
+      <BankProgressBar ratio={ratio} />
+      {showShortfall ? (
+        <ThemeText tone="faint" className="text-[11px] tabular-nums">
+          Faltam {formatSkinsPrice(eligibility.bankShortfall, currency)}
+        </ThemeText>
+      ) : null}
     </div>
   )
 }
@@ -93,6 +104,34 @@ export default function CaseDetailPage() {
     { id, dataEnvironment },
     { skip: !id, refetchOnMountOrArgChange: true },
   )
+  const [injectBank, { isLoading: injecting }] = useInjectCaseBankMutation()
+  const [injectAmount, setInjectAmount] = useState('')
+  const [injectError, setInjectError] = useState<string | null>(null)
+  const [injectOk, setInjectOk] = useState<string | null>(null)
+
+  async function handleInjectBank() {
+    const amount = Number(String(injectAmount).replace(',', '.'))
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setInjectError('Informe um valor maior que zero.')
+      setInjectOk(null)
+      return
+    }
+    setInjectError(null)
+    setInjectOk(null)
+    try {
+      const result = await injectBank({
+        id,
+        amount,
+        dataEnvironment,
+      }).unwrap()
+      setInjectOk(
+        `+${formatSkinsPrice(result.injected, data?.case.currency ?? 'BRL')} no banco. Saldo agora ${formatSkinsPrice(result.balance, data?.case.currency ?? 'BRL')}.`,
+      )
+      setInjectAmount('')
+    } catch (err) {
+      setInjectError(getErrorMessage(err))
+    }
+  }
 
   if (isLoading) return <ThemeText tone="secondary" className="py-10 text-sm">Carregando detalhes da caixa...</ThemeText>
   if (isError || !data) {
@@ -167,9 +206,55 @@ export default function CaseDetailPage() {
         </div>
       </Surface>
 
-      <Surface variant="settingsPanel" className="!p-5">
-        <SectionTitle className="mb-1">Banco da caixa</SectionTitle>
+      <Surface variant="settingsPanel" className="!p-5 space-y-4">
+        <div>
+          <SectionTitle className="mb-1">Banco da caixa</SectionTitle>
+          <ThemeText tone="secondary" className="text-sm">
+            Injete saldo virtual para liberar skins caras no drop desta visão (
+            {isSandbox ? 'Influencer' : 'Produção'}).
+          </ThemeText>
+        </div>
         <Metric label="Saldo agora" value={money(bank.balance)} />
+        {!lootCase.deleted && !lootCase.archivedAt ? (
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[10rem] flex-1 sm:max-w-xs">
+              <Input
+                label="Adicionar ao banco"
+                name="inject-bank-amount"
+                type="number"
+                min={0.01}
+                step="0.01"
+                inputMode="decimal"
+                placeholder="500"
+                value={injectAmount}
+                onChange={(event) => {
+                  setInjectAmount(event.target.value)
+                  setInjectError(null)
+                  setInjectOk(null)
+                }}
+                disabled={injecting}
+              />
+            </div>
+            <Button
+              type="button"
+              disabled={injecting || !injectAmount.trim()}
+              isLoading={injecting}
+              onClick={() => void handleInjectBank()}
+            >
+              Creditar banco
+            </Button>
+          </div>
+        ) : null}
+        {injectOk ? (
+          <ThemeText as="p" className="text-sm text-emerald-700 dark:text-emerald-300">
+            {injectOk}
+          </ThemeText>
+        ) : null}
+        {injectError ? (
+          <ThemeText as="p" className="text-sm text-red-600 dark:text-red-400">
+            {injectError}
+          </ThemeText>
+        ) : null}
       </Surface>
 
       <Surface variant="settingsPanel" className="!p-5">

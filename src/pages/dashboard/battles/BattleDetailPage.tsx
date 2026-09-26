@@ -17,24 +17,32 @@ import {
   battleSeatTypeLabel,
   battleSeatAvatarSrc,
   formatBattleDateTime,
+  formatBattleHouseResult,
   formatBattleMoney,
+  resolveBattleBotResult,
 } from './battleUi'
 
 function ValueTile({
   label,
   value,
   hint,
+  valueClassName,
 }: {
   label: string
   value: string
   hint?: string
+  valueClassName?: string
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface-secondary p-3">
       <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
         {label}
       </ThemeText>
-      <ThemeText as="p" tone="primary" className="mt-1 text-lg font-semibold">
+      <ThemeText
+        as="p"
+        tone="primary"
+        className={`mt-1 text-lg font-semibold ${valueClassName ?? ''}`}
+      >
         {value}
       </ThemeText>
       {hint ? (
@@ -55,6 +63,17 @@ export default function BattleDetailPage() {
   const winner =
     data && data.winnerSeatIndex != null
       ? data.seats.find((s) => s.index === data.winnerSeatIndex)
+      : null
+
+  const botResult =
+    data
+      ? data.houseResult ??
+        resolveBattleBotResult({
+          seats: data.seats,
+          winnerSeatIndex: data.winnerSeatIndex,
+          winnerTeamIndex: data.winnerTeamIndex,
+          tieBreak: data.tieBreak,
+        })
       : null
 
   const allDrops =
@@ -117,7 +136,7 @@ export default function BattleDetailPage() {
             ) : null}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2">
             <ValueTile
               label="Preço total"
               value={formatBattleMoney(data.priceTotal, data.currency)}
@@ -127,30 +146,63 @@ export default function BattleDetailPage() {
               value={String(data.currentRound)}
               hint={`${data.caseSequence.length} caixas na sequência`}
             />
-            <ValueTile
-              label="Vencedor"
-              value={
-                winner?.name ??
-                (data.winnerSeatIndex != null
-                  ? `Seat #${data.winnerSeatIndex + 1}`
-                  : '—')
-              }
-              hint={
-                winner
-                  ? `${battleSeatTypeLabel(winner.type)} · ${formatBattleMoney(winner.totalValue, data.currency)}`
-                  : undefined
-              }
-            />
-            <ValueTile
-              label="Finalizada"
-              value={formatBattleDateTime(data.finishedAt)}
-              hint={
-                data.startedAt
-                  ? `Início ${formatBattleDateTime(data.startedAt)}`
-                  : undefined
-              }
-            />
           </div>
+
+          <Surface variant="settingsPanel" className="!p-5 space-y-4">
+            <div>
+              <SectionTitle>Resultado da batalha</SectionTitle>
+              <ThemeText tone="secondary" className="mt-1 text-sm">
+                Horário, vencedor e resultado do bot (ganho em verde, perda em vermelho).
+              </ThemeText>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <ValueTile
+                label="Horário"
+                value={formatBattleDateTime(data.finishedAt ?? data.startedAt)}
+                hint={
+                  data.finishedAt && data.startedAt
+                    ? `Início ${formatBattleDateTime(data.startedAt)}`
+                    : undefined
+                }
+              />
+              <ValueTile
+                label="Vencedor"
+                value={
+                  winner?.name ??
+                  (data.winnerSeatIndex != null
+                    ? `Seat #${data.winnerSeatIndex + 1}`
+                    : '—')
+                }
+                hint={winner ? battleSeatTypeLabel(winner.type) : undefined}
+              />
+              <ValueTile
+                label={
+                  botResult?.sign === '-'
+                    ? 'Valor que o bot perdeu'
+                    : botResult?.sign === '+'
+                      ? 'Valor que o bot ganhou'
+                      : 'Resultado do bot'
+                }
+                value={formatBattleHouseResult(botResult, data.currency)}
+                valueClassName={
+                  botResult?.sign === '+'
+                    ? 'text-emerald-700 dark:text-emerald-300'
+                    : botResult?.sign === '-'
+                      ? 'text-red-600 dark:text-red-400'
+                      : undefined
+                }
+                hint={
+                  botResult
+                    ? botResult.sign === '+'
+                      ? 'Bot ganhou — valor das skins do oponente'
+                      : 'Bot perdeu — valor das skins do bot'
+                    : data.seats.some((seat) => seat.type === 'bot')
+                      ? 'Sem resultado (empate ou só bots).'
+                      : 'Sem bot nesta battle.'
+                }
+              />
+            </div>
+          </Surface>
 
           <Surface variant="settingsPanel" className="!p-5 space-y-4">
             <SectionTitle>Jogadores</SectionTitle>
@@ -204,6 +256,19 @@ export default function BattleDetailPage() {
                         >
                           {formatBattleMoney(seat.totalValue, data.currency)}
                         </ThemeText>
+                        {seat.type === 'bot' && botResult ? (
+                          <ThemeText
+                            as="p"
+                            className={`mt-0.5 text-xs font-semibold tabular-nums ${
+                              botResult.sign === '+'
+                                ? 'text-emerald-700 dark:text-emerald-300'
+                                : 'text-red-600 dark:text-red-400'
+                            }`}
+                          >
+                            Resultado{' '}
+                            {formatBattleHouseResult(botResult, data.currency)}
+                          </ThemeText>
+                        ) : null}
                         {seat.userId ? (
                           <Link
                             to={`/dashboard/users/${seat.userId}`}

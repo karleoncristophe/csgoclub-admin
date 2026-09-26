@@ -25,6 +25,66 @@ export function formatBattleMoney(value: number, currency = 'USD') {
   }).format(value)
 }
 
+/** Resultado do bot na battle: ganho positivo, perda negativa. */
+export function formatBattleHouseResult(
+  result: { sign: '+' | '-'; amount: number } | null | undefined,
+  currency = 'USD',
+) {
+  if (!result || !(result.amount > 0)) return '—'
+  const money = formatBattleMoney(result.amount, currency)
+  return result.sign === '-' ? `−${money}` : `+${money}`
+}
+
+export type BattleBotSignedResult = {
+  sign: '+' | '-'
+  amount: number
+}
+
+/**
+ * Resultado do bot para a tela admin.
+ * Bot ganhou → + valor das skins do(s) jogador(es).
+ * Bot perdeu → − valor das skins do bot.
+ * Conta qualquer assento user (inclui influencer na visão Dev).
+ */
+export function resolveBattleBotResult(input: {
+  seats: AdminBattleSeat[]
+  winnerSeatIndex?: number | null
+  winnerTeamIndex?: number | null
+  tieBreak?: boolean
+}): BattleBotSignedResult | null {
+  if (input.tieBreak) return null
+  const seats = input.seats ?? []
+  const bots = seats.filter((seat) => seat.type === 'bot')
+  const humans = seats.filter((seat) => seat.type === 'user')
+  if (bots.length === 0 || humans.length === 0) return null
+
+  const isWinner = (seat: AdminBattleSeat) =>
+    input.winnerTeamIndex != null
+      ? seat.teamIndex === input.winnerTeamIndex
+      : seat.index === input.winnerSeatIndex
+
+  const botWon = bots.some(isWinner)
+  const humanWon = humans.some(isWinner)
+  if (botWon === humanWon) return null
+
+  const seatAmount = (seat: AdminBattleSeat) => {
+    const fromDrops = (seat.drops ?? []).reduce(
+      (sum, drop) => sum + (Number(drop.itemValue) || 0),
+      0,
+    )
+    return fromDrops > 0 ? fromDrops : Number(seat.totalValue) || 0
+  }
+  const round = (value: number) =>
+    Math.round((value + Number.EPSILON) * 100) / 100
+
+  if (botWon) {
+    const amount = round(humans.reduce((sum, seat) => sum + seatAmount(seat), 0))
+    return amount > 0 ? { sign: '+', amount } : null
+  }
+  const amount = round(bots.reduce((sum, seat) => sum + seatAmount(seat), 0))
+  return amount > 0 ? { sign: '-', amount } : null
+}
+
 export function formatBattleDateTime(value?: string | null) {
   if (!value) return '—'
   const date = new Date(value)

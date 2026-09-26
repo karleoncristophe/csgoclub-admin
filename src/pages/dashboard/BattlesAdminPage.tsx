@@ -13,12 +13,16 @@ import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import {
   useCancelAdminBattleMutation,
   useGetAdminBattlesQuery,
+  useGetAdminBattleBotResultTotalQuery,
 } from '@/redux/store/api/battles/api.battles'
+import { Surface } from '@/components/ui/Surface'
 import {
   BattlePlayerAvatars,
   BattleStatusBadge,
   battleModeLabel,
+  formatBattleHouseResult,
   formatBattleMoney,
+  resolveBattleBotResult,
 } from './battles/battleUi'
 
 const BATTLES_PAGE_SIZE = 20
@@ -44,10 +48,23 @@ export default function BattlesAdminPage() {
     limit: BATTLES_PAGE_SIZE,
     dataEnvironment,
   })
+  const { data: botResultTotal } = useGetAdminBattleBotResultTotalQuery({
+    dataEnvironment,
+  })
   const battles = battlesData?.data ?? []
   const totalPages = Math.max(1, battlesData?.totalPages ?? 1)
   const currentPage = Math.min(safePage, totalPages)
   const [cancelBattle] = useCancelAdminBattleMutation()
+  const primaryTotal = botResultTotal?.byCurrency?.[0]
+  const netSigned =
+    primaryTotal == null
+      ? null
+      : primaryTotal.net === 0
+        ? null
+        : primaryTotal.net > 0
+          ? ({ sign: '+' as const, amount: primaryTotal.net })
+          : ({ sign: '-' as const, amount: Math.abs(primaryTotal.net) })
+  const netCurrency = primaryTotal?.currency ?? 'BRL'
 
   useEffect(() => {
     if (page > totalPages) {
@@ -69,6 +86,64 @@ export default function BattlesAdminPage() {
 
       <DataVisionBanner />
 
+      <Surface variant="settingsPanel" className="!p-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-border bg-surface-secondary p-3 sm:col-span-2">
+            <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
+              Resultado total do bot
+            </ThemeText>
+            <ThemeText
+              as="p"
+              className={`mt-1 text-2xl font-bold tabular-nums ${
+                netSigned?.sign === '+'
+                  ? 'text-emerald-700 dark:text-emerald-300'
+                  : netSigned?.sign === '-'
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-foreground'
+              }`}
+            >
+              {formatBattleHouseResult(netSigned, netCurrency)}
+            </ThemeText>
+            <ThemeText as="p" tone="faint" className="mt-1 text-xs">
+              Soma de todas as battles finalizadas da visão atual ·{' '}
+              {botResultTotal?.battleCount ?? 0} battle(s) com resultado
+            </ThemeText>
+          </div>
+          <div className="rounded-xl border border-border bg-surface-secondary p-3">
+            <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
+              Total ganho
+            </ThemeText>
+            <ThemeText
+              as="p"
+              className="mt-1 text-lg font-semibold tabular-nums text-emerald-700 dark:text-emerald-300"
+            >
+              {primaryTotal && primaryTotal.won > 0
+                ? `+${formatBattleMoney(primaryTotal.won, netCurrency)}`
+                : formatBattleMoney(0, netCurrency)}
+            </ThemeText>
+            <ThemeText as="p" tone="faint" className="mt-1 text-xs">
+              {primaryTotal?.winCount ?? 0} vitória(s)
+            </ThemeText>
+          </div>
+          <div className="rounded-xl border border-border bg-surface-secondary p-3">
+            <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
+              Total perdido
+            </ThemeText>
+            <ThemeText
+              as="p"
+              className="mt-1 text-lg font-semibold tabular-nums text-red-600 dark:text-red-400"
+            >
+              {primaryTotal && primaryTotal.lost > 0
+                ? `−${formatBattleMoney(primaryTotal.lost, netCurrency)}`
+                : formatBattleMoney(0, netCurrency)}
+            </ThemeText>
+            <ThemeText as="p" tone="faint" className="mt-1 text-xs">
+              {primaryTotal?.lossCount ?? 0} derrota(s)
+            </ThemeText>
+          </div>
+        </div>
+      </Surface>
+
       <div className="flex items-center justify-between gap-3">
         <ThemeText as="h2" className="text-lg font-semibold">
           Battles recentes
@@ -86,6 +161,7 @@ export default function BattlesAdminPage() {
               <th className={listTable.th}>Status</th>
               <th className={listTable.th}>Modo</th>
               <th className={listTable.th}>Preço</th>
+              <th className={listTable.th}>Resultado</th>
               <th className={listTable.th}>Round</th>
               <th className={listTable.th} />
             </tr>
@@ -93,13 +169,13 @@ export default function BattlesAdminPage() {
           <tbody className={listTable.tbody}>
             {battlesLoading ? (
               <tr>
-                <td className={listTable.td} colSpan={7}>
+                <td className={listTable.td} colSpan={8}>
                   Carregando...
                 </td>
               </tr>
             ) : battles.length === 0 ? (
               <tr>
-                <td className={listTable.td} colSpan={7}>
+                <td className={listTable.td} colSpan={8}>
                   Nenhuma battle
                 </td>
               </tr>
@@ -109,6 +185,14 @@ export default function BattlesAdminPage() {
                   battle.status === 'lobby' ||
                   battle.status === 'countdown' ||
                   battle.status === 'running'
+                const botResult =
+                  battle.houseResult ??
+                  resolveBattleBotResult({
+                    seats: battle.seats,
+                    winnerSeatIndex: battle.winnerSeatIndex,
+                    winnerTeamIndex: battle.winnerTeamIndex,
+                    tieBreak: battle.tieBreak,
+                  })
 
                 return (
                   <tr key={battle.id} className={listTable.tr}>
@@ -140,6 +224,19 @@ export default function BattlesAdminPage() {
                     </td>
                     <td className={listTable.tdStrong}>
                       {formatBattleMoney(battle.priceTotal, battle.currency)}
+                    </td>
+                    <td className={listTable.td}>
+                      <span
+                        className={`text-sm font-semibold tabular-nums ${
+                          botResult?.sign === '+'
+                            ? 'text-emerald-700 dark:text-emerald-300'
+                            : botResult?.sign === '-'
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-muted'
+                        }`}
+                      >
+                        {formatBattleHouseResult(botResult, battle.currency)}
+                      </span>
                     </td>
                     <td className={listTable.td}>
                       {battle.currentRound}

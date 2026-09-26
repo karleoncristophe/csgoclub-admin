@@ -36,6 +36,7 @@ export type AdminBattleSeat = {
   botId: string | null
   name: string | null
   avatarUrl: string | null
+  teamIndex?: number | null
   paid: boolean
   totalValue: number
   drops: AdminBattleDrop[]
@@ -66,12 +67,19 @@ export type AdminBattle = {
   seats: AdminBattleSeat[]
   currentRound: number
   winnerSeatIndex: number | null
+  winnerTeamIndex?: number | null
   tieBreak: boolean
   fillWithBots: boolean
   countdownEndsAt: string | null
   startedAt: string | null
   finishedAt: string | null
   createdAt: string | null
+  /** Resultado do bot: + valor do cliente (bot ganhou) ou − valor do bot (bot perdeu). */
+  houseResult?: {
+    name: string
+    sign: '+' | '-'
+    amount: number
+  } | null
 }
 
 export type AdminBattleFilters = {
@@ -99,6 +107,23 @@ export type AdminBattleBotMetrics = {
   startDate: string | null
   endDate: string | null
   byCurrency: AdminBattleBotMetricsCurrency[]
+}
+
+export type AdminBattleBotResultTotalCurrency = {
+  currency: string
+  /** Ganho líquido do bot (won − lost). Pode ser negativo. */
+  net: number
+  won: number
+  lost: number
+  winCount: number
+  lossCount: number
+  battleCount: number
+}
+
+export type AdminBattleBotResultTotal = {
+  environment: 'PRODUCTION' | 'SANDBOX'
+  battleCount: number
+  byCurrency: AdminBattleBotResultTotalCurrency[]
 }
 
 /** @deprecated use AdminBattle — list returns full serialize */
@@ -191,6 +216,16 @@ export const battlesAdminApi = createApi({
       }),
       providesTags: ['BattlesAdmin'],
     }),
+    getAdminBattleBotResultTotal: builder.query<
+      AdminBattleBotResultTotal,
+      WithPlatformDataEnvironment<Record<string, never>> | void
+    >({
+      query: () => ({
+        url: BATTLES_ADMIN.BOT_RESULT_TOTAL,
+        method: 'GET',
+      }),
+      providesTags: ['BattlesAdmin'],
+    }),
     getAdminBattleById: builder.query<AdminBattle, string>({
       query: (id) => ({
         url: BATTLES_ADMIN.BY_ID(id),
@@ -215,6 +250,7 @@ export const {
   useDeleteBattleBotMutation,
   useGetAdminBattlesQuery,
   useGetAdminBattleBotMetricsQuery,
+  useGetAdminBattleBotResultTotalQuery,
   useGetAdminBattleByIdQuery,
   useCancelAdminBattleMutation,
 } = battlesAdminApi

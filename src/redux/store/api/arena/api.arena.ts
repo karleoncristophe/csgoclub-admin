@@ -53,10 +53,78 @@ export type ArenaCrate = {
     bankBalanceEur?: number
     totalOpens?: number
   }
+  testEconomyLedger?: {
+    bankBalanceBrl?: number
+    bankBalanceUsd?: number
+    bankBalanceEur?: number
+    totalOpens?: number
+  }
   active: boolean
   createdAt?: string
   updatedAt?: string
 }
+
+export type AdminArenaCrateDetailsItem = {
+  skinName: string
+  image?: string
+  rarityName?: string
+  rarityColor?: string
+  price: number
+  valueBrl: number
+  valueUsd: number
+  valueEur: number
+  probability: number
+  enabled: boolean
+  expectedValue: number
+  eligible: boolean
+  coveredByOpenPrice: boolean
+  requiredBankBalance: number
+  bankShortfall: number
+  opensToUnlock: number | null
+}
+
+export type AdminArenaCrateDetails = {
+  environment: 'PRODUCTION' | 'SANDBOX'
+  currency: 'BRL' | 'USD' | 'EUR'
+  crate: {
+    _id: string
+    name: string
+    slug: string
+    description?: string
+    imageUrl?: string
+    rarity: ArenaRarity
+    color?: string
+    active: boolean
+    expectedValue: number
+    valueBrl: number
+    valueUsd: number
+    valueEur: number
+    displayValueBrl?: number
+    displayValueUsd?: number
+    displayValueEur?: number
+    itemsCount: number
+    enabledItemsCount: number
+    createdAt?: string
+    updatedAt?: string
+  }
+  bank: {
+    currency: 'BRL' | 'USD' | 'EUR'
+    balance: number
+    injectionPerOpen: number
+    eligibleItemsCount: number
+    enabledItemsCount: number
+    totalOpens: number
+    bankBalanceBrl: number
+    bankBalanceUsd: number
+    bankBalanceEur: number
+  }
+  items: AdminArenaCrateDetailsItem[]
+}
+
+export type GetArenaCrateDetailsParams = WithPlatformDataEnvironment<{
+  id: string
+  currency?: 'BRL' | 'USD' | 'EUR'
+}>
 
 export type CreateArenaCratePayload = {
   name: string
@@ -401,6 +469,23 @@ export const arenaApi = createApi({
       query: (id) => ({ url: ARENA.CRATE_BY_ID(id), method: 'GET' }),
       providesTags: (_result, _error, id) => [{ type: 'ArenaCrate', id }],
     }),
+    getArenaCrateDetails: builder.query<
+      AdminArenaCrateDetails,
+      GetArenaCrateDetailsParams
+    >({
+      query: ({ id, currency, ...rest }) => ({
+        url: ARENA.CRATE_DETAILS(id),
+        method: 'GET',
+        params: omitDataEnvironmentQueryArg({
+          ...(currency ? { currency } : {}),
+          ...rest,
+        }),
+      }),
+      providesTags: (_result, _error, { id }) => [
+        { type: 'ArenaCrate', id },
+        'ArenaCrates',
+      ],
+    }),
     createArenaCrate: builder.mutation<ArenaCrate, CreateArenaCratePayload>({
       query: (body) => ({ url: ARENA.CRATES, method: 'POST', body }),
       invalidatesTags: ['ArenaCrates'],
@@ -533,6 +618,7 @@ export const arenaApi = createApi({
 export const {
   useGetArenaCratesQuery,
   useGetArenaCrateByIdQuery,
+  useGetArenaCrateDetailsQuery,
   useCreateArenaCrateMutation,
   useUpdateArenaCrateMutation,
   useDeleteArenaCrateMutation,

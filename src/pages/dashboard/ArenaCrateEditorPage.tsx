@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFormik } from 'formik'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { BackLink } from '@/components/ui/BackLink'
 import { useGoBack } from '@/hooks/useGoBack'
@@ -367,6 +367,14 @@ export default function ArenaCrateEditorPage() {
             </ThemeText>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {isEdit && id ? (
+              <Link
+                to={`/dashboard/arena/${id}/details`}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/60"
+              >
+                Ver detalhes
+              </Link>
+            ) : null}
             <Button
               type="button"
               variant="secondary"

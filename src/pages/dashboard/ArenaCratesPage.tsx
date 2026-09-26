@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { BarChart3, Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   ARENA_RARITY_COLOR,
   ARENA_RARITY_LABEL,
@@ -127,7 +127,7 @@ export default function ArenaCratesPage() {
                     <tr key={crate._id} className={listTable.tr}>
                       <td className={listTable.td}>
                         <Link
-                          to={`/dashboard/arena/${crate._id}`}
+                          to={`/dashboard/arena/${crate._id}/details`}
                           className="block rounded-xl transition hover:opacity-80"
                         >
                           <CaseListNameCell
@@ -181,6 +181,14 @@ export default function ArenaCratesPage() {
                       </td>
                       <td className={listTable.td}>
                         <div className="flex items-center justify-end gap-1">
+                          <IconButton
+                            label="Ver detalhes da crate"
+                            onClick={() =>
+                              navigate(`/dashboard/arena/${crate._id}/details`)
+                            }
+                          >
+                            <BarChart3 className="h-4 w-4" aria-hidden />
+                          </IconButton>
                           <IconButton
                             label="Editar crate"
                             onClick={() =>

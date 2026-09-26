@@ -127,6 +127,7 @@ export const AI_ASSISTANT = {
 export const BATTLES_ADMIN = {
   ROOT: '/admin/battles',
   BOT_METRICS: '/admin/battles/bot-metrics',
+  BOT_RESULT_TOTAL: '/admin/battles/bot-result-total',
   BY_ID: (id: string) => `/admin/battles/${id}`,
   CANCEL: (id: string) => `/admin/battles/${id}/cancel`,
   BOTS: '/admin/battles/bots',
@@ -136,6 +137,7 @@ export const BATTLES_ADMIN = {
 export const ARENA = {
   CRATES: '/admin/arena/crates',
   CRATE_BY_ID: (id: string) => `/admin/arena/crates/${id}`,
+  CRATE_DETAILS: (id: string) => `/admin/arena/crates/${id}/details`,
   CRATE_OPENS: '/admin/arena/crate-opens',
   CRATE_OPEN_BY_ID: (openId: string) => `/admin/arena/crate-opens/${openId}`,
   PRICING: '/admin/arena/pricing',

@@ -10,7 +10,6 @@ import {
   formatDateKeyLocal,
   getMatrixForMonth,
   getRangeForWeekLocal,
-  getUpcomingWeekendLocal,
   parseDateKeyLocal,
 } from '@/utils/dateRangePickerCalendar'
 import { endOfLocalDay, startOfLocalDay } from '@/utils/metricsDateRange'
@@ -43,6 +42,23 @@ function todayLocal(): Date {
   const d = new Date()
   d.setHours(0, 0, 0, 0)
   return d
+}
+
+function isFutureDay(day: Date): boolean {
+  return startOfLocalDay(day).getTime() > todayLocal().getTime()
+}
+
+function clampRangeToToday(from: Date, to: Date): { from: Date; to: Date } {
+  const today = todayLocal()
+  const start = startOfLocalDay(from)
+  const end = startOfLocalDay(to)
+  if (start.getTime() > today.getTime()) {
+    return { from: today, to: today }
+  }
+  return {
+    from: start,
+    to: end.getTime() > today.getTime() ? today : end,
+  }
 }
 
 const QUICK_OPTIONS: QuickOption[] = [
@@ -91,35 +107,11 @@ const QUICK_OPTIONS: QuickOption[] = [
     },
   },
   {
-    id: 'tomorrow',
-    label: 'Amanhã',
-    getRange: () => {
-      const d = addDaysLocal(todayLocal(), 1)
-      return { from: d, to: d }
-    },
-  },
-  {
     id: 'this-week',
     label: 'Nesta semana',
     getRange: () => {
       const days = getRangeForWeekLocal(new Date())
-      return { from: days[0]!, to: days[days.length - 1]! }
-    },
-  },
-  {
-    id: 'this-weekend',
-    label: 'Neste fim de semana',
-    getRange: () => {
-      const [sat, sun] = getUpcomingWeekendLocal(new Date())
-      return { from: sat, to: sun }
-    },
-  },
-  {
-    id: 'next-week',
-    label: 'Na próxima semana',
-    getRange: () => {
-      const days = getRangeForWeekLocal(addDaysLocal(new Date(), 7))
-      return { from: days[0]!, to: days[days.length - 1]! }
+      return clampRangeToToday(days[0]!, days[days.length - 1]!)
     },
   },
 ]
@@ -258,8 +250,9 @@ export function DateRangePickerModal({
     }
     const s = startOfLocalDay(appliedStart)
     const e = startOfLocalDay(appliedEnd)
-    setSelectedDates(buildRangeSet(s, e))
-    setVisibleMonth(new Date(s.getFullYear(), s.getMonth(), 1))
+    const { from, to } = clampRangeToToday(s, e)
+    setSelectedDates(buildRangeSet(from, to))
+    setVisibleMonth(new Date(from.getFullYear(), from.getMonth(), 1))
   }, [open, appliedStart, appliedEnd])
 
   useEffect(() => {
@@ -287,14 +280,21 @@ export function DateRangePickerModal({
     }
   }, [selectedDates])
 
+  const maxVisibleMonth = useMemo(() => {
+    const today = todayLocal()
+    return startOfLocalDay(new Date(today.getFullYear(), today.getMonth(), 1))
+  }, [open])
+
+  const canGoForward = visibleMonth.getTime() < maxVisibleMonth.getTime()
+
   const toggleDate = (day: Date | null) => {
-    if (!day) return
-    const clickedDate = new Date(day)
-    clickedDate.setHours(0, 0, 0, 0)
+    if (!day || isFutureDay(day)) return
+    const clickedDate = startOfLocalDay(day)
 
     setSelectedDates((prev) => {
       const dates = Array.from(prev)
         .map((k) => parseDateKeyLocal(k))
+        .filter((d) => !isFutureDay(d))
         .sort((a, b) => a.getTime() - b.getTime())
 
       if (dates.length === 0) {
@@ -311,18 +311,14 @@ export function DateRangePickerModal({
         end = last
       }
 
-      const nextSelection = new Set<string>()
-      let current = new Date(start)
-      while (current.getTime() <= end.getTime()) {
-        nextSelection.add(formatDateKeyLocal(current))
-        current = addDaysLocal(current, 1)
-      }
-      return nextSelection
+      const { from, to } = clampRangeToToday(start, end)
+      return buildRangeSet(from, to)
     })
   }
 
   const applyQuick = (opt: QuickOption) => {
-    const { from, to } = opt.getRange()
+    const range = opt.getRange()
+    const { from, to } = clampRangeToToday(range.from, range.to)
     setSelectedDates(buildRangeSet(from, to))
   }
 
@@ -343,8 +339,9 @@ export function DateRangePickerModal({
       return
     }
     const sorted = Array.from(selectedDates).sort()
-    const start = parseDateKeyLocal(sorted[0]!)
-    const endDay = parseDateKeyLocal(sorted[sorted.length - 1]!)
+    const rawStart = parseDateKeyLocal(sorted[0]!)
+    const rawEnd = parseDateKeyLocal(sorted[sorted.length - 1]!)
+    const { from: start, to: endDay } = clampRangeToToday(rawStart, rawEnd)
     const spanDays =
       Math.floor(
         (endDay.getTime() - start.getTime()) / (24 * 60 * 60 * 1000),
@@ -384,7 +381,7 @@ export function DateRangePickerModal({
               Período
             </ThemeText>
             <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
-              Selecione um intervalo de datas (máx. {MAX_RANGE_DAYS} dias)
+              Selecione um intervalo até hoje (máx. {MAX_RANGE_DAYS} dias)
             </ThemeText>
           </div>
           <button
@@ -437,8 +434,12 @@ export function DateRangePickerModal({
             <button
               type="button"
               aria-label="Próximo mês"
-              onClick={() => setVisibleMonth((m) => addMonthsLocal(m, 1))}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              disabled={!canGoForward}
+              onClick={() => {
+                if (!canGoForward) return
+                setVisibleMonth((m) => addMonthsLocal(m, 1))
+              }}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -467,15 +468,20 @@ export function DateRangePickerModal({
                         }
                         const key = formatDateKeyLocal(cell)
                         const isSelected = selectedDates.has(key)
+                        const disabled = isFutureDay(cell)
                         return (
                           <button
                             key={key}
                             type="button"
+                            disabled={disabled}
+                            aria-disabled={disabled}
                             onClick={() => toggleDate(cell)}
                             className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm transition ${
-                              isSelected
-                                ? 'bg-brand-500 font-medium text-white shadow-md shadow-brand-600/30'
-                                : 'text-zinc-800 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
+                              disabled
+                                ? 'cursor-not-allowed text-zinc-300 dark:text-zinc-600'
+                                : isSelected
+                                  ? 'bg-brand-500 font-medium text-white shadow-md shadow-brand-600/30'
+                                  : 'text-zinc-800 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
                             }`}
                           >
                             {cell.getDate()}

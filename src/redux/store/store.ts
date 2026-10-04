@@ -1,3 +1,4 @@
+import { freeCratesApi } from '@/redux/store/api/free-crates/api.free-crates'
 import { configureStore } from '@reduxjs/toolkit'
 import { aiAssistantApi } from '@/redux/store/api/ai/api.ai'
 import { authApi } from '@/redux/store/api/auth/api.auth'
@@ -42,6 +43,7 @@ export const store = configureStore({
     [battlesAdminApi.reducerPath]: battlesAdminApi.reducer,
     [siteBotsApi.reducerPath]: siteBotsApi.reducer,
     [arenaApi.reducerPath]: arenaApi.reducer,
+    [freeCratesApi.reducerPath]: freeCratesApi.reducer,
     [paymentApi.reducerPath]: paymentApi.reducer,
     [metricsApi.reducerPath]: metricsApi.reducer,
     [usersApi.reducerPath]: usersApi.reducer,
@@ -66,6 +68,7 @@ export const store = configureStore({
       battlesAdminApi.middleware,
       siteBotsApi.middleware,
       arenaApi.middleware,
+      freeCratesApi.middleware,
       paymentApi.middleware,
       metricsApi.middleware,
       usersApi.middleware,

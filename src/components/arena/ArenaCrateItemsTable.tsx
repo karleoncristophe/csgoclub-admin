@@ -46,6 +46,8 @@ type ArenaCrateItemsTableProps = {
   itemsError?: string
   headerAction?: ReactNode
   onItemsChange: (items: ArenaCrateItem[]) => void
+  /** Ajusta o texto de elegibilidade do pool (banco), sem misturar com liberação da campanha. */
+  context?: 'arena' | 'free'
 }
 
 export function ArenaCrateItemsTable({
@@ -56,6 +58,7 @@ export function ArenaCrateItemsTable({
   itemsError,
   headerAction,
   onItemsChange,
+  context = 'arena',
 }: ArenaCrateItemsTableProps) {
   const sum = enabledProbabilitySum(items)
   const probabilityError = itemsError ?? arenaProbabilitySumError(items)
@@ -118,10 +121,10 @@ export function ArenaCrateItemsTable({
             Skins da crate ({items.length})
           </ThemeText>
           <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
-            Valor da jogada é o preço global da Arena — sem margem. Skins até
-            esse valor saem sempre; as mais caras só ficam elegíveis quando o
-            banco acumula o prêmio delas. Elegíveis agora: {eligibleCount}/
-            {enabledCount}. Soma das chances:{' '}
+            {context === 'free'
+              ? 'A abertura é gratuita para o jogador — o “preço” do pool é o VE sem margem. Skins até esse valor saem sempre; as mais caras só entram no sorteio quando o banco próprio acumula o prêmio. Pool elegível agora: '
+              : 'Valor da jogada é o preço global da Arena — sem margem. Skins até esse valor saem sempre; as mais caras só ficam elegíveis quando o banco acumula o prêmio delas. Elegíveis agora: '}
+            {eligibleCount}/{enabledCount}. Soma das chances:{' '}
             <span
               className={
                 probabilityError || remainderSuggestion

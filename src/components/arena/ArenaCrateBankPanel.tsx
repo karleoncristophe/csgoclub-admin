@@ -16,6 +16,8 @@ type ArenaCrateBankPanelProps = {
   valueEur: number
   ledger?: ArenaCrateEconomyLedger
   currency: SkinsCurrency
+  /** Copy do painel — free crates usam banco próprio, sem preço de jogada da Arena. */
+  context?: 'arena' | 'free'
 }
 
 function BankStat({
@@ -44,6 +46,7 @@ export function ArenaCrateBankPanel({
   valueEur,
   ledger,
   currency,
+  context = 'arena',
 }: ArenaCrateBankPanelProps) {
   const openPrice =
     currency === SkinsCurrency.EUR
@@ -63,15 +66,17 @@ export function ArenaCrateBankPanel({
     bankBalance: bankAvailable,
     currency,
   })
+  const isFree = context === 'free'
 
   return (
     <Surface variant="cardInset" className="!p-5">
       <ThemeText as="h3" tone="primary" className="mb-1 text-sm font-semibold">
-        Banco da crate (sem margem)
+        {isFree ? 'Banco próprio desta caixa (sem margem)' : 'Banco da crate (sem margem)'}
       </ThemeText>
       <ThemeText as="p" tone="secondary" className="mb-4 text-xs">
-        Cada abertura injeta o VE das skins (sem margem) e o drop retira o
-        prêmio. A jogada da Arena continua no preço global.
+        {isFree
+          ? 'Cada abertura injeta o VE das skins (sem margem) e o drop retira o prêmio. Este banco é separado da Arena e também entre produção e teste. “Elegíveis” aqui é só o pool do sorteio pelo banco — a liberação da caixa para o jogador fica no bloco de regras acima.'
+          : 'Cada abertura injeta o VE das skins (sem margem) e o drop retira o prêmio. A jogada da Arena continua no preço global.'}
       </ThemeText>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <BankStat

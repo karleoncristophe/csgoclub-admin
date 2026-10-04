@@ -79,6 +79,7 @@ const NAV_SECTIONS: readonly NavSection[] = [
     items: [
       { href: '/dashboard/battles', label: 'Battles', Icon: Swords },
       { href: '/dashboard/bots', label: 'Bots', Icon: Bot },
+      { href: '/dashboard/free-crates', label: 'Caixas gratuitas', Icon: Sparkles },
       { href: '/dashboard/arena', label: 'Arena', Icon: Crosshair },
       { href: '/dashboard/arena/plays', label: 'Jogadas', Icon: Target },
       { href: '/dashboard/arena/crate-opens', label: 'Aberturas Arena', Icon: Sparkles },

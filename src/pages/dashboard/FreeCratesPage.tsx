@@ -16,7 +16,11 @@ import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import { getErrorMessage } from '@/utils/getErrorMessage'
-import { freeCrateUnlockSummary } from '@/utils/freeCrateRules'
+import {
+  formatFreeCrateMoney,
+  freeCrateUnlockSummary,
+  resolveFreeCrateThreshold,
+} from '@/utils/freeCrateRules'
 import {
   FREE_KINDS,
   FREE_LABELS,
@@ -168,6 +172,7 @@ export default function FreeCratesPage() {
                   const published = data?.policy?.crates.find(
                     (c) => c.kind === kind,
                   )
+                  const unlock = resolveFreeCrateThreshold(kind, crate)
                   return (
                     <tr key={kind} className={listTable.tr}>
                       <td className={listTable.td}>
@@ -187,8 +192,13 @@ export default function FreeCratesPage() {
                           {FREE_LABELS[kind]}
                         </ThemeText>
                         <ThemeText as="p" tone="secondary" className="text-xs">
-                          {freeCrateUnlockSummary(kind)}
+                          {freeCrateUnlockSummary(kind, unlock)}
                         </ThemeText>
+                        {unlock ? (
+                          <ThemeText as="p" tone="faint" className="text-xs">
+                            {formatFreeCrateMoney(unlock)}
+                          </ThemeText>
+                        ) : null}
                       </td>
                       <td className={listTable.td}>
                         {crate?.items?.length ?? 0}

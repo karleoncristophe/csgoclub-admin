@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { ArenaCrateItemsTable } from '@/components/arena/ArenaCrateItemsTable'
 import { ArenaCrateBankPanel } from '@/components/arena/ArenaCrateBankPanel'
@@ -28,10 +28,11 @@ import { arenaProbabilitySumError } from '@/validators/arenaCrateEditorSchema'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import {
   freeCrateGroupLabel,
-  freeCrateThresholdBrl,
   freeCrateUnlockDetails,
   freeCrateUnlockGroup,
   freeCrateUnlockSummary,
+  resolveFreeCrateThreshold,
+  type FreeCrateMoney,
 } from '@/utils/freeCrateRules'
 import type { ArenaCrateItem, ArenaRarity } from '@/redux/store/api/arena/api.arena'
 import {
@@ -64,12 +65,17 @@ export default function FreeCrateEditorPage() {
   }
 
   const crate = data.crates.find((c) => c.kind === kind)
+  const campaignMinimum = resolveFreeCrateThreshold(
+    'deposit_20',
+    data.crates.find((c) => c.kind === 'deposit_20'),
+  )
   return (
     <Editor
       key={`${kind}:${crate?.version ?? 0}:${environment}`}
       kind={kind as FreeKind}
       crate={crate}
       banks={data.banks}
+      campaignMinimum={campaignMinimum}
       policyEnabled={Boolean(data.policy?.enabled)}
       publishedVersion={
         data.policy?.crates.find((c) => c.kind === kind)?.version
@@ -78,57 +84,107 @@ export default function FreeCrateEditorPage() {
   )
 }
 
-function UnlockRulesPanel({ kind }: { kind: FreeKind }) {
+function UnlockRulesPanel({
+  kind,
+  unlock,
+  campaignMinimum,
+  onChange,
+}: {
+  kind: FreeKind
+  unlock: FreeCrateMoney | null
+  campaignMinimum: FreeCrateMoney | null
+  onChange: (next: FreeCrateMoney) => void
+}) {
   const group = freeCrateUnlockGroup(kind)
-  const thresholdBrl = freeCrateThresholdBrl(kind)
-  const details = freeCrateUnlockDetails(kind)
+  const details = freeCrateUnlockDetails(kind, unlock)
+  const editable = kind !== 'welcome'
+  const shown = unlock ?? campaignMinimum
 
   return (
-    <Surface variant="settingsPanel" className="space-y-4 !p-5">
+    <Surface
+      variant="settingsPanel"
+      className="space-y-4 !border-brand-500/40 !p-5"
+    >
       <div>
         <ThemeText as="h2" tone="primary" className="text-base font-semibold">
-          Liberação para o jogador
+          Depósito para liberar (BRL · USD · EUR)
         </ThemeText>
         <ThemeText as="p" tone="secondary" className="mt-1 text-sm">
-          Regras da campanha — independentes do banco/sorteio das skins. O
-          limiar de depósito é fixo pela modalidade (espelha o backend).
+          {editable
+            ? 'Edite o valor em cada moeda e salve o rascunho. Depois publique na listagem para valer na campanha.'
+            : 'Boas-vindas usa o mínimo da faixa Depósito · R$20. Abra essa faixa para editar BRL/USD/EUR.'}
         </ThemeText>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Input label="Modalidade" value={FREE_LABELS[kind]} disabled />
         <Input label="Grupo" value={freeCrateGroupLabel(group)} disabled />
-        {thresholdBrl != null ? (
-          <CurrencyInput
-            label="Depósito mínimo do dia (BRL)"
-            name="thresholdBrl"
-            value={thresholdBrl}
-            currency={SkinsCurrency.BRL}
-            disabled
-            onChange={() => undefined}
-            hint="Fixo pela modalidade · soma dos depósitos elegíveis do dia global"
-          />
-        ) : (
-          <Input
-            label="Depósito mínimo do dia (BRL)"
-            value={
-              kind === 'welcome'
-                ? 'Qualquer depósito elegível (1ª vez)'
-                : 'R$ 20 para abrir a janela diária'
-            }
-            disabled
-          />
-        )}
         <Input
           label="Reset do dia global"
           value="06:00 · América/São Paulo"
           disabled
         />
+        {!editable ? (
+          <div className="flex items-end">
+            <Link
+              to="/dashboard/free-crates/deposit_20"
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700"
+            >
+              Editar mínimo (R$20)
+            </Link>
+          </div>
+        ) : null}
       </div>
+
+      {shown ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          <CurrencyInput
+            label={
+              kind === 'daily' || kind === 'welcome'
+                ? 'Mínimo elegível (BRL)'
+                : 'Depósito do dia (BRL)'
+            }
+            name="unlockThresholdBrl"
+            value={shown.brl}
+            currency={SkinsCurrency.BRL}
+            disabled={!editable}
+            onChange={(brl) => unlock && onChange({ ...unlock, brl })}
+            hint={
+              editable
+                ? 'Canônico para liberar a faixa'
+                : 'Somente leitura aqui — edite em Depósito · R$20'
+            }
+          />
+          <CurrencyInput
+            label={
+              kind === 'daily' || kind === 'welcome'
+                ? 'Mínimo elegível (USD)'
+                : 'Depósito do dia (USD)'
+            }
+            name="unlockThresholdUsd"
+            value={shown.usd}
+            currency={SkinsCurrency.USD}
+            disabled={!editable}
+            onChange={(usd) => unlock && onChange({ ...unlock, usd })}
+          />
+          <CurrencyInput
+            label={
+              kind === 'daily' || kind === 'welcome'
+                ? 'Mínimo elegível (EUR)'
+                : 'Depósito do dia (EUR)'
+            }
+            name="unlockThresholdEur"
+            value={shown.eur}
+            currency={SkinsCurrency.EUR}
+            disabled={!editable}
+            onChange={(eur) => unlock && onChange({ ...unlock, eur })}
+          />
+        </div>
+      ) : null}
 
       <div className="rounded-xl border border-separator bg-surface-secondary px-4 py-3">
         <ThemeText as="p" tone="primary" className="text-sm font-medium">
-          {freeCrateUnlockSummary(kind)}
+          {freeCrateUnlockSummary(kind, shown)}
         </ThemeText>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">
           {details.map((line) => (
@@ -144,12 +200,14 @@ function Editor({
   kind,
   crate,
   banks,
+  campaignMinimum,
   policyEnabled,
   publishedVersion,
 }: {
   kind: FreeKind
   crate?: FreeCrate
   banks: FreeCatalog['banks']
+  campaignMinimum: FreeCrateMoney | null
   policyEnabled: boolean
   publishedVersion?: number
 }) {
@@ -165,6 +223,9 @@ function Editor({
     displayValueUsd: crate?.displayValueUsd ?? 0,
     displayValueEur: crate?.displayValueEur ?? 0,
   })
+  const [unlock, setUnlock] = useState<FreeCrateMoney | null>(() =>
+    resolveFreeCrateThreshold(kind, crate),
+  )
   const [currency, setCurrency] = useState<SkinsCurrency>(SkinsCurrency.BRL)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -234,6 +295,13 @@ function Editor({
           active,
           items,
           ...display,
+          ...(unlock
+            ? {
+                unlockThresholdBrl: unlock.brl,
+                unlockThresholdUsd: unlock.usd,
+                unlockThresholdEur: unlock.eur,
+              }
+            : {}),
         },
       }).unwrap()
       setSaved(true)
@@ -293,7 +361,12 @@ function Editor({
 
         {error ? <Surface variant="errorBanner">{error}</Surface> : null}
 
-        <UnlockRulesPanel kind={kind} />
+        <UnlockRulesPanel
+          kind={kind}
+          unlock={unlock}
+          campaignMinimum={campaignMinimum}
+          onChange={setUnlock}
+        />
 
         <Surface variant="settingsPanel" className="grid gap-4 !p-5 md:grid-cols-2">
           <ThemeText

@@ -5,7 +5,13 @@ import type { PlatformDataEnvironment } from '@/utils/platformDataEnvironmentSto
 export const FREE_KINDS = ['welcome', 'deposit_20', 'deposit_100', 'deposit_250', 'deposit_500', 'deposit_1000', 'daily'] as const
 export type FreeKind = typeof FREE_KINDS[number]
 export const FREE_LABELS: Record<FreeKind, string> = { welcome: 'Boas-vindas', deposit_20: 'Depósito · R$20', deposit_100: 'Depósito · R$100', deposit_250: 'Depósito · R$250', deposit_500: 'Depósito · R$500', deposit_1000: 'Depósito · R$1.000', daily: 'Resgate diário' }
-export type FreeCrate = Omit<ArenaCrate, 'slug'> & { kind: FreeKind; version: number }
+export type FreeCrate = Omit<ArenaCrate, 'slug'> & {
+  kind: FreeKind
+  version: number
+  unlockThresholdBrl?: number
+  unlockThresholdUsd?: number
+  unlockThresholdEur?: number
+}
 export type FreeCatalog = { crates: FreeCrate[]; policy: { version: number; enabled: boolean; createdAt: string; crates: (FreeCrate & { crateId: string })[] } | null; banks: { key: string; ledger: NonNullable<ArenaCrate['economyLedger']> }[] }
 export type FreeGrant = { _id: string; userId: string; kind: FreeKind; period: string; status: 'available' | 'opening' | 'opened' | 'cancelled'; currency: string; isTest: boolean; createdAt: string; creditedAt?: string; depositIds: string[]; policyVersion: number; snapshot: FreeCrate; cancelReason?: string; cancelledBy?: string; result?: { item: ArenaCrateItem; method: string; bank: { balanceBefore: number; injection: number; balanceAfter: number } } }
 export type FreeGrantQuery = { environment: PlatformDataEnvironment; userId?: string; kind?: string; status?: string; period?: string; page?: number }

@@ -214,12 +214,16 @@ export const casesApi = createApi({
     }),
     injectCaseBank: builder.mutation<
       { balance: number; injected: number; environment: string },
-      WithPlatformDataEnvironment<{ id: string; amount: number }>
+      WithPlatformDataEnvironment<{
+        id: string
+        amount: number
+        mode?: 'credit' | 'debit'
+      }>
     >({
-      query: ({ id, amount }) => ({
+      query: ({ id, amount, mode = 'credit' }) => ({
         url: CASES.INJECT_BANK(id),
         method: 'POST',
-        body: { amount },
+        body: { amount, mode },
       }),
       invalidatesTags: (_result, _error, { id }) => [
         { type: 'Case', id },

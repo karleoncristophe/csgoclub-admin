@@ -7,6 +7,7 @@ import { BankProgressBar } from '@/components/cases/BankProgressBar'
 import { TextBadge } from '@/components/StatusPill'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { SegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { Surface } from '@/components/ui/Surface'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { PageTitle, SectionTitle } from '@/components/ui/Title'
@@ -105,11 +106,12 @@ export default function CaseDetailPage() {
     { skip: !id, refetchOnMountOrArgChange: true },
   )
   const [injectBank, { isLoading: injecting }] = useInjectCaseBankMutation()
+  const [bankMode, setBankMode] = useState<'credit' | 'debit'>('credit')
   const [injectAmount, setInjectAmount] = useState('')
   const [injectError, setInjectError] = useState<string | null>(null)
   const [injectOk, setInjectOk] = useState<string | null>(null)
 
-  async function handleInjectBank() {
+  async function handleAdjustBank() {
     const amount = Number(String(injectAmount).replace(',', '.'))
     if (!Number.isFinite(amount) || amount <= 0) {
       setInjectError('Informe um valor maior que zero.')
@@ -119,13 +121,18 @@ export default function CaseDetailPage() {
     setInjectError(null)
     setInjectOk(null)
     try {
+      const currency = data?.case.currency ?? 'BRL'
       const result = await injectBank({
         id,
         amount,
+        mode: bankMode,
         dataEnvironment,
       }).unwrap()
+      const deltaLabel = formatSkinsPrice(Math.abs(result.injected), currency)
       setInjectOk(
-        `+${formatSkinsPrice(result.injected, data?.case.currency ?? 'BRL')} no banco. Saldo agora ${formatSkinsPrice(result.balance, data?.case.currency ?? 'BRL')}.`,
+        bankMode === 'debit'
+          ? `−${deltaLabel} retirados do banco. Saldo agora ${formatSkinsPrice(result.balance, currency)}.`
+          : `+${deltaLabel} no banco. Saldo agora ${formatSkinsPrice(result.balance, currency)}.`,
       )
       setInjectAmount('')
     } catch (err) {
@@ -210,39 +217,58 @@ export default function CaseDetailPage() {
         <div>
           <SectionTitle className="mb-1">Banco da caixa</SectionTitle>
           <ThemeText tone="secondary" className="text-sm">
-            Injete saldo virtual para liberar skins caras no drop desta visão (
-            {isSandbox ? 'Influencer' : 'Produção'}).
+            Adicione ou retire saldo virtual nesta visão (
+            {isSandbox ? 'Influencer' : 'Produção'}). Creditar libera skins
+            caras; debitar não pode passar do saldo atual.
           </ThemeText>
         </div>
         <Metric label="Saldo agora" value={money(bank.balance)} />
         {!lootCase.deleted && !lootCase.archivedAt ? (
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[10rem] flex-1 sm:max-w-xs">
-              <Input
-                label="Adicionar ao banco"
-                name="inject-bank-amount"
-                type="number"
-                min={0.01}
-                step="0.01"
-                inputMode="decimal"
-                placeholder="500"
-                value={injectAmount}
-                onChange={(event) => {
-                  setInjectAmount(event.target.value)
-                  setInjectError(null)
-                  setInjectOk(null)
-                }}
-                disabled={injecting}
-              />
+          <div className="space-y-3">
+            <SegmentedTabs
+              ariaLabel="Tipo de ajuste do banco"
+              value={bankMode}
+              onChange={(value) => {
+                setBankMode(value as 'credit' | 'debit')
+                setInjectError(null)
+                setInjectOk(null)
+              }}
+              items={[
+                { id: 'credit', label: 'Adicionar' },
+                { id: 'debit', label: 'Retirar' },
+              ]}
+            />
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="min-w-[10rem] flex-1 sm:max-w-xs">
+                <Input
+                  label={
+                    bankMode === 'debit' ? 'Retirar do banco' : 'Adicionar ao banco'
+                  }
+                  name="adjust-bank-amount"
+                  type="number"
+                  min={0.01}
+                  step="0.01"
+                  inputMode="decimal"
+                  placeholder="500"
+                  value={injectAmount}
+                  onChange={(event) => {
+                    setInjectAmount(event.target.value)
+                    setInjectError(null)
+                    setInjectOk(null)
+                  }}
+                  disabled={injecting}
+                />
+              </div>
+              <Button
+                type="button"
+                variant={bankMode === 'debit' ? 'secondary' : 'primary'}
+                disabled={injecting || !injectAmount.trim()}
+                isLoading={injecting}
+                onClick={() => void handleAdjustBank()}
+              >
+                {bankMode === 'debit' ? 'Retirar do banco' : 'Creditar banco'}
+              </Button>
             </div>
-            <Button
-              type="button"
-              disabled={injecting || !injectAmount.trim()}
-              isLoading={injecting}
-              onClick={() => void handleInjectBank()}
-            >
-              Creditar banco
-            </Button>
           </div>
         ) : null}
         {injectOk ? (

@@ -192,21 +192,26 @@ export default function CaseDetailPage() {
           <Metric
             label="Margem agora × alvo"
             value={
-              <>
-                <span
-                  className={
-                    marginDirectionClassName(
-                      marginDirectionVsTarget(
-                        asNumber(lootCase.realMarginPercent),
-                        asNumber(lootCase.targetMarginPercent),
-                      ),
-                    ) || undefined
-                  }
-                >
-                  {formatPercent(lootCase.realMarginPercent)}
-                </span>
-                <span className="font-medium text-muted"> × {formatPercent(lootCase.targetMarginPercent)}</span>
-              </>
+              <span
+                className={
+                  marginDirectionClassName(
+                    marginDirectionVsTarget(
+                      asNumber(lootCase.realMarginPercent),
+                      asNumber(lootCase.targetMarginPercent),
+                    ),
+                  ) || undefined
+                }
+              >
+                {money(
+                  asNumber(lootCase.price) - asNumber(lootCase.expectedValue),
+                )}
+              </span>
+            }
+            hint={
+              <span className="tabular-nums">
+                {formatPercent(lootCase.realMarginPercent)} ×{' '}
+                {formatPercent(lootCase.targetMarginPercent)}
+              </span>
             }
           />
           <Metric label="Montante bruto da margem" value={money(financials.houseMarginValue)} hint={`${opens.toLocaleString('pt-BR')} aberturas no ambiente atual`} />

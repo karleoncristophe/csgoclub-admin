@@ -312,11 +312,6 @@ export default function DashboardLayout() {
               <ThemeToggle />
             </div>
           </header>
-          <div className="hidden border-b border-separator px-4 py-3 sm:flex sm:items-center sm:justify-end sm:gap-2 lg:hidden">
-            <PlatformDataEnvironmentToggle />
-            <ColorThemePicker />
-            <ThemeToggle />
-          </div>
           <main
             data-page-scroll-container
             className="scrollbar-edge min-h-0 flex-1 overflow-y-auto overscroll-contain p-4"

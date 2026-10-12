@@ -1,6 +1,10 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Trash2 } from 'lucide-react'
 import { BankProgressBar } from '@/components/cases/BankProgressBar'
+import {
+  formatNumberFieldValue,
+  selectNumberInputOnFocus,
+} from '@/components/cases/editor/caseEditor.utils'
 import { SkinRarityBar } from '@/components/skins/SkinRarityBar'
 import { SkinTripleCurrencyPrices } from '@/components/skins/SkinTripleCurrencyPrices'
 import {
@@ -10,9 +14,12 @@ import {
 import { SortableTh, sortByNumericColumn, useTableSort } from '@/components/ui/SortableTh'
 import { Surface } from '@/components/ui/Surface'
 import { Input } from '@/components/ui/Input'
+import { Switch } from '@/components/ui/Switch'
 import { ThemeText } from '@/components/ui/ThemeText'
 import { formatSkinsPrice, SkinsCurrency } from '@/constants/skinsCurrency'
 import type { ArenaCrateItem } from '@/redux/store/api/arena/api.arena'
+import { useGetSkinsbackRatesQuery } from '@/redux/store/api/skins/api.skins'
+import { previewSkinsbackFx } from '@/utils/skinsbackFx'
 import {
   arenaBankBalance,
   arenaBankInjection,
@@ -38,6 +45,12 @@ import { listTableAlt } from '@/components/ui/listTable'
 
 type ArenaItemSortKey = 'prize' | 'chance' | 'bank'
 
+const PRIZE_VALUE_INPUTS = [
+  { currency: SkinsCurrency.BRL, field: 'valueBrl' as const, label: 'BRL' },
+  { currency: SkinsCurrency.USD, field: 'valueUsd' as const, label: 'USD' },
+  { currency: SkinsCurrency.EUR, field: 'valueEur' as const, label: 'EUR' },
+]
+
 type ArenaCrateItemsTableProps = {
   items: ArenaCrateItem[]
   crateValue: number
@@ -60,6 +73,14 @@ export function ArenaCrateItemsTable({
   onItemsChange,
   context = 'arena',
 }: ArenaCrateItemsTableProps) {
+  const allowEditPrize = context === 'free'
+  const { data: fxRates } = useGetSkinsbackRatesQuery(undefined, {
+    skip: !allowEditPrize,
+  })
+  const [fixedSkinNames, setFixedSkinNames] = useState<Set<string>>(
+    () => new Set(),
+  )
+
   const sum = enabledProbabilitySum(items)
   const probabilityError = itemsError ?? arenaProbabilitySumError(items)
   const chanceInputError = arenaProbabilityInputError(items)
@@ -104,6 +125,37 @@ export function ArenaCrateItemsTable({
         item.skinName === skinName ? { ...item, ...patch } : item,
       ),
     )
+  }
+
+  const enablePrizeEdit = (skinName: string) => {
+    setFixedSkinNames((current) => new Set(current).add(skinName))
+  }
+
+  const disablePrizeEdit = (skinName: string) => {
+    setFixedSkinNames((current) => {
+      const next = new Set(current)
+      next.delete(skinName)
+      return next
+    })
+  }
+
+  const setPrizeFromPrimary = (skinName: string, primaryValue: number) => {
+    const fx = previewSkinsbackFx(primaryValue, currency, fxRates)
+    if (fx) {
+      updateItem(skinName, {
+        valueBrl: fx[SkinsCurrency.BRL],
+        valueUsd: fx[SkinsCurrency.USD],
+        valueEur: fx[SkinsCurrency.EUR],
+      })
+      return
+    }
+    const field =
+      currency === SkinsCurrency.USD
+        ? 'valueUsd'
+        : currency === SkinsCurrency.EUR
+          ? 'valueEur'
+          : 'valueBrl'
+    updateItem(skinName, { [field]: primaryValue })
   }
 
   const applyRemainderSuggestion = () => {
@@ -236,11 +288,111 @@ export function ArenaCrateItemsTable({
                       </div>
                     </td>
                     <td className="py-3 pr-4 align-top">
-                      <SkinTripleCurrencyPrices
-                        valueBrl={item.valueBrl}
-                        valueUsd={item.valueUsd}
-                        valueEur={item.valueEur}
-                      />
+                      {allowEditPrize ? (
+                        <div className="min-w-[280px] space-y-1 sm:min-w-[420px]">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                            <div className="w-28 shrink-0 pb-1.5">
+                              <Switch
+                                bare
+                                label="Fixar valor"
+                                name={`free-fixed-${item.skinName}`}
+                                checked={fixedSkinNames.has(item.skinName)}
+                                onChange={(checked) => {
+                                  if (checked) {
+                                    enablePrizeEdit(item.skinName)
+                                    return
+                                  }
+                                  disablePrizeEdit(item.skinName)
+                                }}
+                              />
+                            </div>
+                            <div className="grid flex-1 grid-cols-3 gap-2">
+                              {PRIZE_VALUE_INPUTS.map((input) => {
+                                const isActiveCurrency =
+                                  input.currency === currency
+                                const isEditing = fixedSkinNames.has(
+                                  item.skinName,
+                                )
+                                const primaryValue =
+                                  arenaPrizeForCurrency(item, currency)
+                                const fxPreview = previewSkinsbackFx(
+                                  primaryValue,
+                                  currency,
+                                  fxRates,
+                                )
+                                const displayValue = isActiveCurrency
+                                  ? primaryValue
+                                  : (fxPreview?.[input.currency] ??
+                                    item[input.field])
+                                return (
+                                  <label
+                                    key={input.field}
+                                    className="block min-w-0"
+                                  >
+                                    <ThemeText
+                                      tone={
+                                        isActiveCurrency ? 'label' : 'faint'
+                                      }
+                                      className="mb-1 block text-[10px] font-semibold uppercase tracking-wide"
+                                    >
+                                      {input.label}
+                                    </ThemeText>
+                                    <input
+                                      type="number"
+                                      min={0.01}
+                                      step="0.01"
+                                      value={formatNumberFieldValue(
+                                        displayValue,
+                                      )}
+                                      placeholder={
+                                        isActiveCurrency ? undefined : '…'
+                                      }
+                                      title={
+                                        isActiveCurrency
+                                          ? undefined
+                                          : `Convertido de ${currency} pela cotação SkinsBack atual.`
+                                      }
+                                      disabled={
+                                        !isEditing || !isActiveCurrency
+                                      }
+                                      onChange={(event) => {
+                                        if (!isActiveCurrency) return
+                                        const parsed = Number(
+                                          event.target.value,
+                                        )
+                                        const value = Number.isFinite(parsed)
+                                          ? Math.max(0, parsed)
+                                          : 0
+                                        setPrizeFromPrimary(
+                                          item.skinName,
+                                          value,
+                                        )
+                                      }}
+                                      onFocus={selectNumberInputOnFocus}
+                                      className="w-full rounded-field border border-field-border bg-field px-2 py-1.5 text-sm font-medium text-field-foreground shadow-none outline-none transition placeholder:text-field-placeholder focus:border-focus focus:ring-4 focus:ring-focus/15 disabled:cursor-not-allowed disabled:bg-default disabled:text-muted disabled:opacity-70"
+                                      aria-label={`Valor de ${item.skinName} em ${input.label}`}
+                                    />
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
+                          <ThemeText
+                            tone="faint"
+                            className="block text-[10px]"
+                          >
+                            {fixedSkinNames.has(item.skinName)
+                              ? `Fixo em ${currency}; as outras moedas seguem a cotação SkinsBack. Salve o rascunho para gravar.`
+                              : 'Ligue “Fixar valor” para editar o prêmio desta skin.'}
+                          </ThemeText>
+                        </div>
+                      ) : (
+                        <SkinTripleCurrencyPrices
+                          valueBrl={item.valueBrl}
+                          valueUsd={item.valueUsd}
+                          valueEur={item.valueEur}
+                        />
+                      )}
                     </td>
                     <td className="py-3 pr-4 align-top">
                       <Input

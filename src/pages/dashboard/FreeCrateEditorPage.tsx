@@ -250,6 +250,7 @@ function Editor({
               rarity: skin.rarity,
               probability: 0,
               enabled: true,
+              // Values already include the weapon category tax from the API.
               valueBrl: skin.valueBrl,
               valueUsd: skin.valueUsd,
               valueEur: skin.valueEur,

@@ -12,6 +12,7 @@ export type AdminBattleBot = {
   avatarUrl?: string
   balance: number
   active: boolean
+  preferred: boolean
   lastShownAt?: string | null
   createdAt?: string
   updatedAt?: string

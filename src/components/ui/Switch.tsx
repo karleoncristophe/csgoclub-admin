@@ -14,6 +14,8 @@ type SwitchProps = {
   disabled?: boolean
   /** Exibe somente o trilho do switch, sem o campo externo de estado. */
   bare?: boolean
+  /** Esconde o texto do label (mantém acessível para leitores de tela). */
+  hideLabel?: boolean
 }
 
 /**
@@ -31,21 +33,28 @@ export function Switch({
   fieldHelp,
   disabled = false,
   bare = false,
+  hideLabel = false,
 }: SwitchProps) {
   const uid = useId()
   const switchId = `${name ?? 'switch'}-${uid}`
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1.5">
-        <label
-          htmlFor={switchId}
-          className="text-sm font-medium text-foreground"
-        >
+    <div className={hideLabel ? 'inline-flex' : 'flex flex-col gap-1.5'}>
+      {hideLabel ? (
+        <label htmlFor={switchId} className="sr-only">
           {label}
         </label>
-        {fieldHelp ? <FieldHelpButton fieldHelp={fieldHelp} /> : null}
-      </div>
+      ) : (
+        <div className="flex items-center gap-1.5">
+          <label
+            htmlFor={switchId}
+            className="text-sm font-medium text-foreground"
+          >
+            {label}
+          </label>
+          {fieldHelp ? <FieldHelpButton fieldHelp={fieldHelp} /> : null}
+        </div>
+      )}
       <button
         id={switchId}
         type="button"

@@ -14,6 +14,7 @@ import {
   DualSeriesMetricsChart,
   useChartVariant,
 } from '@/components/charts/AnalyticsCharts'
+import { UpgradeBankPanel } from '@/components/upgrades/UpgradeBankPanel'
 import { UpgradePageNavigation } from '@/components/upgrades/UpgradePageNavigation'
 import { UpgradePageHeader } from '@/components/upgrades/UpgradePageHeader'
 import {
@@ -239,6 +240,8 @@ export default function UpgradeOverviewPage() {
           </ThemeText>
         ) : null}
       </Surface>
+
+      <UpgradeBankPanel currency={currency} />
 
       {isLoading && queryOk ? (
         <div className="flex items-center gap-2 py-16 text-sm text-muted">

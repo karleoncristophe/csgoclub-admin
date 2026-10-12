@@ -9,6 +9,7 @@ export type AdminSiteBot = {
   avatarUrl?: string
   balance?: number
   active: boolean
+  preferred: boolean
   lastShownAt?: string | null
   createdAt?: string
   updatedAt?: string
@@ -68,7 +69,7 @@ export const siteBotsApi = createApi({
     }),
     createSiteBot: builder.mutation<
       AdminSiteBot,
-      { name: string; avatarUrl?: string; active?: boolean }
+      { name: string; avatarUrl?: string; active?: boolean; preferred?: boolean }
     >({
       query: (body) => ({ url: SITE_BOTS.ROOT, method: 'POST', body }),
       invalidatesTags: ['SiteBots'],
@@ -86,13 +87,26 @@ export const siteBotsApi = createApi({
     }),
     updateSiteBot: builder.mutation<
       AdminSiteBot,
-      { id: string; body: Partial<Pick<AdminSiteBot, 'name' | 'avatarUrl' | 'active'>> }
+      { id: string; body: Partial<Pick<AdminSiteBot, 'name' | 'avatarUrl' | 'active' | 'preferred'>> }
     >({
       query: ({ id, body }) => ({
         url: SITE_BOTS.BY_ID(id),
         method: 'PATCH',
         body,
       }),
+      async onQueryStarted({ id, body }, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          siteBotsApi.util.updateQueryData('getSiteBots', undefined, (draft) => {
+            const bot = draft.find((item) => item._id === id)
+            if (bot) Object.assign(bot, body)
+          }),
+        )
+        try {
+          await queryFulfilled
+        } catch {
+          patch.undo()
+        }
+      },
       invalidatesTags: ['SiteBots'],
     }),
     deleteSiteBot: builder.mutation<{ ok: boolean; avatarUrl?: string }, string>({

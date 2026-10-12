@@ -150,6 +150,8 @@ export const ARENA = {
 
 export const UPGRADES_ADMIN = {
   ROOT: '/admin/upgrades',
+  BANK: '/admin/upgrades/bank',
+  BANK_ADJUST: '/admin/upgrades/bank/adjust',
 } as const
 
 export const PAYMENT = {

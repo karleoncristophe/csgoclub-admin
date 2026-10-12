@@ -162,9 +162,33 @@ export type GetAdminUpgradeAnalyticsParams = WithPlatformDataEnvironment<{
   targetName?: string
 }>
 
+export type AdminUpgradeBank = {
+  balance: number
+  currency: UpgradeCurrency
+  environment: 'real' | 'test'
+  key?: string
+}
+
+function upgradeBankEnvironment(
+  dataEnvironment?: 'PRODUCTION' | 'SANDBOX',
+): 'real' | 'test' {
+  return dataEnvironment === 'SANDBOX' ? 'test' : 'real'
+}
+
+export type GetAdminUpgradeBankParams = WithPlatformDataEnvironment<{
+  currency: UpgradeCurrency
+}>
+
+export type AdjustAdminUpgradeBankParams = WithPlatformDataEnvironment<{
+  currency: UpgradeCurrency
+  amount: number
+  mode: 'credit' | 'debit'
+}>
+
 export const upgradesAdminApi = createApi({
   reducerPath: 'upgradesAdminApi',
   baseQuery: baseQueryWithReauth,
+  tagTypes: ['UpgradeBank'],
   endpoints: (builder) => ({
     getAdminUpgradeAnalytics: builder.query<
       AdminUpgradeAnalyticsResponse,
@@ -175,7 +199,48 @@ export const upgradesAdminApi = createApi({
         params: omitDataEnvironmentQueryArg(args),
       }),
     }),
+    getAdminUpgradeBank: builder.query<
+      AdminUpgradeBank,
+      GetAdminUpgradeBankParams
+    >({
+      query: ({ currency, dataEnvironment }) => ({
+        url: UPGRADES_ADMIN.BANK,
+        params: {
+          currency,
+          environment: upgradeBankEnvironment(dataEnvironment),
+        },
+      }),
+      providesTags: (_r, _e, arg) => [
+        {
+          type: 'UpgradeBank',
+          id: `${upgradeBankEnvironment(arg.dataEnvironment)}:${arg.currency}`,
+        },
+      ],
+    }),
+    adjustAdminUpgradeBank: builder.mutation<
+      AdminUpgradeBank,
+      AdjustAdminUpgradeBankParams
+    >({
+      query: ({ currency, amount, mode, dataEnvironment }) => ({
+        url: UPGRADES_ADMIN.BANK_ADJUST,
+        method: 'POST',
+        params: {
+          environment: upgradeBankEnvironment(dataEnvironment),
+        },
+        body: { currency, amount, mode },
+      }),
+      invalidatesTags: (_r, _e, arg) => [
+        {
+          type: 'UpgradeBank',
+          id: `${upgradeBankEnvironment(arg.dataEnvironment)}:${arg.currency}`,
+        },
+      ],
+    }),
   }),
 })
 
-export const { useGetAdminUpgradeAnalyticsQuery } = upgradesAdminApi
+export const {
+  useGetAdminUpgradeAnalyticsQuery,
+  useGetAdminUpgradeBankQuery,
+  useAdjustAdminUpgradeBankMutation,
+} = upgradesAdminApi

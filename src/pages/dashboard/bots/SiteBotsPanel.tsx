@@ -10,7 +10,9 @@ import { Button } from '@/components/ui/Button'
 import { useConfirm } from '@/components/ui/ConfirmModalContext'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { Switch } from '@/components/ui/Switch'
 import { ThemeText } from '@/components/ui/ThemeText'
+import { getErrorMessage } from '@/utils/getErrorMessage'
 import { listTable } from '@/components/ui/listTable'
 import { filterChipClass } from '@/components/skins/filterChipClass'
 import { deleteUploadFile } from '@/lib/upload'
@@ -28,7 +30,6 @@ import {
   type SiteBotNameImportResult,
   type SiteBotNameRenameResult,
 } from '@/redux/store/api/site-bots/api.site-bots'
-import { getErrorMessage } from '@/utils/getErrorMessage'
 import { pickBotFallbackAvatar } from '@/lib/bot-avatar'
 import { formatBotBalance, uploadBotAvatar } from './botAvatar'
 import { SiteBotsAvatarAssignModal } from './SiteBotsAvatarAssignModal'
@@ -169,13 +170,15 @@ const SiteBotRow = memo(function SiteBotRow({
   onToggleSelected,
   onError,
   onToggleActive,
+  onTogglePreferred,
   onDelete,
 }: {
   bot: AdminSiteBot
   selected: boolean
   onToggleSelected: (id: string, checked: boolean) => void
   onError: (message: string | null) => void
-  onToggleActive: (bot: AdminSiteBot) => void
+  onToggleActive: (bot: AdminSiteBot, active: boolean) => void
+  onTogglePreferred: (bot: AdminSiteBot, preferred: boolean) => void
   onDelete: (bot: AdminSiteBot) => void
 }) {
   return (
@@ -198,13 +201,24 @@ const SiteBotRow = memo(function SiteBotRow({
       <td className={listTable.td}>{formatBotBalance(bot.balance)}</td>
       <td className={listTable.td}>{formatShownAt(bot.lastShownAt)}</td>
       <td className={listTable.td}>
-        <button
-          className="underline"
-          onClick={() => onToggleActive(bot)}
-          type="button"
-        >
-          {bot.active ? 'Sim' : 'Não'}
-        </button>
+        <Switch
+          bare
+          hideLabel
+          label={`Ativo — ${bot.name}`}
+          name={`bot-active-${bot._id}`}
+          checked={bot.active}
+          onChange={(checked) => onToggleActive(bot, checked)}
+        />
+      </td>
+      <td className={listTable.td}>
+        <Switch
+          bare
+          hideLabel
+          label={`Preferido em battle — ${bot.name}`}
+          name={`bot-preferred-${bot._id}`}
+          checked={bot.preferred}
+          onChange={(checked) => onTogglePreferred(bot, checked)}
+        />
       </td>
       <td className={listTable.td}>
         <button
@@ -348,11 +362,21 @@ export function SiteBotsPanel() {
   }, [])
 
   const handleToggleActive = useCallback(
-    (bot: AdminSiteBot) => {
-      void updateBot({
-        id: bot._id,
-        body: { active: !bot.active },
-      })
+    (bot: AdminSiteBot, active: boolean) => {
+      if (active === bot.active) return
+      void updateBot({ id: bot._id, body: { active } })
+        .unwrap()
+        .catch((err) => setPageError(getErrorMessage(err)))
+    },
+    [updateBot],
+  )
+
+  const handleTogglePreferred = useCallback(
+    (bot: AdminSiteBot, preferred: boolean) => {
+      if (preferred === bot.preferred) return
+      void updateBot({ id: bot._id, body: { preferred } })
+        .unwrap()
+        .catch((err) => setPageError(getErrorMessage(err)))
     },
     [updateBot],
   )
@@ -813,25 +837,26 @@ export function SiteBotsPanel() {
               <th className={listTable.th}>Saldo</th>
               <th className={listTable.th}>Último drop</th>
               <th className={listTable.th}>Ativo</th>
+              <th className={listTable.th}>Preferido em battle</th>
               <th className={listTable.th} />
             </tr>
           </thead>
           <tbody className={listTable.tbody}>
             {isLoading ? (
               <tr>
-                <td className={listTable.td} colSpan={7}>
+                <td className={listTable.td} colSpan={8}>
                   Carregando...
                 </td>
               </tr>
             ) : bots.length === 0 ? (
               <tr>
-                <td className={listTable.td} colSpan={7}>
+                <td className={listTable.td} colSpan={8}>
                   Nenhum bot. Crie em escala ou um nick.
                 </td>
               </tr>
             ) : filteredBots.length === 0 ? (
               <tr>
-                <td className={listTable.td} colSpan={7}>
+                <td className={listTable.td} colSpan={8}>
                   Nenhum bot neste filtro.
                 </td>
               </tr>
@@ -844,6 +869,7 @@ export function SiteBotsPanel() {
                   onToggleSelected={toggleSelected}
                   onError={setPageError}
                   onToggleActive={handleToggleActive}
+                  onTogglePreferred={handleTogglePreferred}
                   onDelete={handleDeleteBot}
                 />
               ))

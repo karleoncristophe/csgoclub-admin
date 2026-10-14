@@ -10,19 +10,13 @@ import { usePlatformDataEnvironment } from '@/hooks/usePlatformDataEnvironment'
 import {
   useAdjustAdminUpgradeBankMutation,
   useGetAdminUpgradeBankQuery,
-  type UpgradeCurrency,
 } from '@/redux/store/api/upgrades/api.upgrades'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 
-type UpgradeBankPanelProps = {
-  currency: UpgradeCurrency
-}
-
-export function UpgradeBankPanel({ currency }: UpgradeBankPanelProps) {
+export function UpgradeBankPanel() {
   const dataEnvironment = usePlatformDataEnvironment()
   const isSandbox = dataEnvironment === 'SANDBOX'
   const { data: bank, isLoading } = useGetAdminUpgradeBankQuery({
-    currency,
     dataEnvironment,
   })
   const [adjustBank, { isLoading: adjusting }] =
@@ -43,16 +37,15 @@ export function UpgradeBankPanel({ currency }: UpgradeBankPanelProps) {
     setOk(null)
     try {
       const result = await adjustBank({
-        currency,
         amount: value,
         mode,
         dataEnvironment,
       }).unwrap()
-      const deltaLabel = formatSkinsPrice(value, currency)
+      const deltaLabel = formatSkinsPrice(value, 'BRL')
       setOk(
         mode === 'debit'
-          ? `−${deltaLabel} retirados do banco. Saldo agora ${formatSkinsPrice(result.balance, currency)}.`
-          : `+${deltaLabel} no banco. Saldo agora ${formatSkinsPrice(result.balance, currency)}.`,
+          ? `−${deltaLabel} retirados do banco. Saldo agora ${formatSkinsPrice(result.balance, 'BRL')}.`
+          : `+${deltaLabel} no banco. Saldo agora ${formatSkinsPrice(result.balance, 'BRL')}.`,
       )
       setAmount('')
     } catch (err) {
@@ -65,15 +58,15 @@ export function UpgradeBankPanel({ currency }: UpgradeBankPanelProps) {
       <div>
         <SectionTitle className="mb-1">Banco do Upgrade</SectionTitle>
         <ThemeText tone="secondary" className="text-sm">
-          Saldo virtual que cobre vitórias nesta moeda (
-          {isSandbox ? 'Influencer / teste' : 'Produção'}). Creditar aumenta a
-          capacidade de pagar skins; debitar não pode passar do saldo atual.
+          Banco único em BRL, separado por ambiente (
+          {isSandbox ? 'Influencer / teste' : 'Produção'}). Stakes e prêmios em
+          USD/EUR são convertidos para reais antes de entrar ou sair do banco.
         </ThemeText>
       </div>
 
       <div className="rounded-xl border border-border bg-surface-secondary p-3 sm:max-w-xs">
         <ThemeText as="p" tone="label" className="text-[11px] uppercase tracking-wide">
-          Saldo agora · {currency}
+          Saldo agora · BRL
         </ThemeText>
         <ThemeText
           as="p"
@@ -82,7 +75,7 @@ export function UpgradeBankPanel({ currency }: UpgradeBankPanelProps) {
         >
           {isLoading
             ? '…'
-            : formatSkinsPrice(bank?.balance ?? 0, currency)}
+            : formatSkinsPrice(bank?.balance ?? 0, 'BRL')}
         </ThemeText>
       </div>
 

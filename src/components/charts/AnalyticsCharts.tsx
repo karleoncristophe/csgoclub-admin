@@ -229,7 +229,7 @@ export function formatSeriesAxisLabel(
       month: 'short',
       timeZone: 'UTC',
     }).format(new Date(Date.UTC(Number(y), Number(m) - 1, 1)))
-    return `${monthShort.replace(/\./g, '')} ${y.slice(2)}`
+    return `${monthShort.replace(/\./g, '')}/${y}`
   }
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
     const [, mm, dd] = raw.split('-')

@@ -164,7 +164,7 @@ export type GetAdminUpgradeAnalyticsParams = WithPlatformDataEnvironment<{
 
 export type AdminUpgradeBank = {
   balance: number
-  currency: UpgradeCurrency
+  currency: 'BRL'
   environment: 'real' | 'test'
   key?: string
 }
@@ -175,12 +175,9 @@ function upgradeBankEnvironment(
   return dataEnvironment === 'SANDBOX' ? 'test' : 'real'
 }
 
-export type GetAdminUpgradeBankParams = WithPlatformDataEnvironment<{
-  currency: UpgradeCurrency
-}>
+export type GetAdminUpgradeBankParams = WithPlatformDataEnvironment<{}>
 
 export type AdjustAdminUpgradeBankParams = WithPlatformDataEnvironment<{
-  currency: UpgradeCurrency
   amount: number
   mode: 'credit' | 'debit'
 }>
@@ -203,17 +200,16 @@ export const upgradesAdminApi = createApi({
       AdminUpgradeBank,
       GetAdminUpgradeBankParams
     >({
-      query: ({ currency, dataEnvironment }) => ({
+      query: ({ dataEnvironment }) => ({
         url: UPGRADES_ADMIN.BANK,
         params: {
-          currency,
           environment: upgradeBankEnvironment(dataEnvironment),
         },
       }),
       providesTags: (_r, _e, arg) => [
         {
           type: 'UpgradeBank',
-          id: `${upgradeBankEnvironment(arg.dataEnvironment)}:${arg.currency}`,
+          id: `${upgradeBankEnvironment(arg.dataEnvironment)}:BRL`,
         },
       ],
     }),
@@ -221,18 +217,18 @@ export const upgradesAdminApi = createApi({
       AdminUpgradeBank,
       AdjustAdminUpgradeBankParams
     >({
-      query: ({ currency, amount, mode, dataEnvironment }) => ({
+      query: ({ amount, mode, dataEnvironment }) => ({
         url: UPGRADES_ADMIN.BANK_ADJUST,
         method: 'POST',
         params: {
           environment: upgradeBankEnvironment(dataEnvironment),
         },
-        body: { currency, amount, mode },
+        body: { amount, mode },
       }),
       invalidatesTags: (_r, _e, arg) => [
         {
           type: 'UpgradeBank',
-          id: `${upgradeBankEnvironment(arg.dataEnvironment)}:${arg.currency}`,
+          id: `${upgradeBankEnvironment(arg.dataEnvironment)}:BRL`,
         },
       ],
     }),

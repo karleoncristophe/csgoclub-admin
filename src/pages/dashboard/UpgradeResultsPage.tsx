@@ -31,6 +31,7 @@ import { formatCentsMoney } from '@/utils/formatDisplay'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import {
   applyPreset,
+  clampRangeToToday,
   formatDateInputLocal,
   isRangeWithinMaxYear,
   parseDateInputLocal,
@@ -139,8 +140,10 @@ export default function UpgradeResultsPage() {
   const limit = (PAGE_SIZE_OPTIONS as readonly number[]).includes(parsedLimit)
     ? parsedLimit
     : 20
-  const rangeStart = parseDateInputLocal(filters.from) ?? INITIAL_RANGE.start
-  const rangeEnd = parseDateInputLocal(filters.to) ?? INITIAL_RANGE.end
+  const { start: rangeStart, end: rangeEnd } = clampRangeToToday(
+    parseDateInputLocal(filters.from) ?? INITIAL_RANGE.start,
+    parseDateInputLocal(filters.to) ?? INITIAL_RANGE.end,
+  )
   const queryOk = isRangeWithinMaxYear(rangeStart, rangeEnd)
 
   const queryArgs = useMemo(

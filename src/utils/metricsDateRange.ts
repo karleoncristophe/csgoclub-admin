@@ -19,21 +19,35 @@ export function applyPreset(preset: PeriodPresetId): { start: Date; end: Date } 
   const start = startOfLocalDay(new Date())
   switch (preset) {
     case '7d':
-      start.setDate(start.getDate() - 7)
+      start.setDate(start.getDate() - 6)
       break
     case '30d':
-      start.setDate(start.getDate() - 30)
+      start.setDate(start.getDate() - 29)
       break
     case '90d':
-      start.setDate(start.getDate() - 90)
+      start.setDate(start.getDate() - 89)
       break
     case '365d':
-      start.setDate(start.getDate() - 365)
+      start.setDate(start.getDate() - 364)
       break
     default:
       break
   }
   return { start, end }
+}
+
+/** Limita intervalos persistidos ou vindos da URL ao dia atual local. */
+export function clampRangeToToday(start: Date, end: Date, now = new Date()) {
+  const today = startOfLocalDay(now)
+  const safeStart = startOfLocalDay(start)
+  const safeEnd = startOfLocalDay(end)
+  if (safeStart.getTime() > today.getTime()) {
+    return { start: today, end: today }
+  }
+  return {
+    start: safeStart,
+    end: safeEnd.getTime() > today.getTime() ? today : safeEnd,
+  }
 }
 
 export function parseDateInputLocal(ymd: string): Date | null {

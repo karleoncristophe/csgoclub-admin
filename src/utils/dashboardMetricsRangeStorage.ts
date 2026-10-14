@@ -1,5 +1,6 @@
 import {
   endOfLocalDay,
+  clampRangeToToday,
   isRangeWithinMaxYear,
   startOfLocalDay,
 } from '@/utils/metricsDateRange'
@@ -15,9 +16,12 @@ export function loadStoredMetricsRange(): { start: Date; end: Date } | null {
     if (!raw) return null
     const o = JSON.parse(raw) as StoredShape
     if (!o?.start || !o?.end) return null
-    const start = startOfLocalDay(new Date(o.start))
-    const end = endOfLocalDay(new Date(o.end))
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
+    const parsedStart = new Date(o.start)
+    const parsedEnd = new Date(o.end)
+    if (Number.isNaN(parsedStart.getTime()) || Number.isNaN(parsedEnd.getTime())) return null
+    const bounded = clampRangeToToday(parsedStart, parsedEnd)
+    const start = startOfLocalDay(bounded.start)
+    const end = endOfLocalDay(bounded.end)
     if (start.getTime() > end.getTime()) return null
     if (!isRangeWithinMaxYear(start, end)) return null
     return { start, end }

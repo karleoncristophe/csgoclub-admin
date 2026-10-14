@@ -67,7 +67,7 @@ const QUICK_OPTIONS: QuickOption[] = [
     label: 'Últimos 7 dias',
     getRange: () => {
       const end = todayLocal()
-      const from = addDaysLocal(end, -7)
+      const from = addDaysLocal(end, -6)
       return { from, to: end }
     },
   },
@@ -76,7 +76,7 @@ const QUICK_OPTIONS: QuickOption[] = [
     label: 'Últimos 30 dias',
     getRange: () => {
       const end = todayLocal()
-      const from = addDaysLocal(end, -30)
+      const from = addDaysLocal(end, -29)
       return { from, to: end }
     },
   },
@@ -85,7 +85,7 @@ const QUICK_OPTIONS: QuickOption[] = [
     label: 'Últimos 90 dias',
     getRange: () => {
       const end = todayLocal()
-      const from = addDaysLocal(end, -90)
+      const from = addDaysLocal(end, -89)
       return { from, to: end }
     },
   },
@@ -94,7 +94,7 @@ const QUICK_OPTIONS: QuickOption[] = [
     label: 'Último ano',
     getRange: () => {
       const end = todayLocal()
-      const from = addDaysLocal(end, -365)
+      const from = addDaysLocal(end, -364)
       return { from, to: end }
     },
   },

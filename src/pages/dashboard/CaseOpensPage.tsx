@@ -163,9 +163,9 @@ export default function CaseOpensPage() {
         <div className="space-y-3">
           <div className="grid gap-3 md:grid-cols-3">
           <StatCard
-            label="Margem esperada da plataforma"
+            label="Custo fixo"
             value={formatMoney(summary.totalHouseMargin, currency)}
-            hint="Preço pago menos VE registrado na abertura. Pode ser negativa quando o VE supera o preço."
+            hint="Soma de (preço − VE) em todas as aberturas. Ganho fixo garantido por abertura."
             variant="brand"
           />
           <StatCard
@@ -174,9 +174,12 @@ export default function CaseOpensPage() {
             hint="Soma do preço pago nas aberturas"
           />
           <StatCard
-            label="Total ganho"
-            value={formatMoney(summary.totalWonValue, currency)}
-            hint="Soma do valor dos itens dropados"
+            label="Margem"
+            value={formatMoney(
+              (summary.totalExpectedValue ?? 0) - summary.totalHouseMargin,
+              currency,
+            )}
+            hint="VE total menos o custo fixo."
             variant="amber"
           />
           </div>

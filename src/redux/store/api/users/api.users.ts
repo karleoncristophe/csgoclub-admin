@@ -195,7 +195,12 @@ export type AdminCaseOpenListSummary = {
   totalOpens: number
   totalPaid: number
   totalWonValue: number
+  /** Soma do VE / injeção no banco nas aberturas. */
+  totalExpectedValue?: number
+  /** Custo fixo / margem esperada: Σ (preço − VE). */
   totalHouseMargin: number
+  /** Margem variável: Σ (VE − item dropado). */
+  totalVariableMargin?: number
   pendingCount: number
   keptCount: number
   convertedCount: number
